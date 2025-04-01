@@ -10,8 +10,16 @@ import ContentDetail from "./pages/ContentDetail";
 import Category from "./pages/Category";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
+import UserProfile from "./pages/UserProfile";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 // Route guard component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -40,6 +48,11 @@ const AppRoutes = () => {
       <Route path="/series" element={<Category />} />
       <Route path="/anime" element={<Category />} />
       <Route path="/sports" element={<Category />} />
+      <Route path="/profile" element={
+        <ProtectedRoute>
+          <UserProfile />
+        </ProtectedRoute>
+      } />
       <Route path="/favorites" element={
         <ProtectedRoute>
           <Category />

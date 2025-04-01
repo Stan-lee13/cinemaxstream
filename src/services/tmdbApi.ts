@@ -1,212 +1,269 @@
+
 /**
- * The Movie Database (TMDB) API Service
- * Handles fetching movie, TV, and related data from TMDB
+ * API Service for fetching content from TMDB
  */
 
-// TMDB API Configuration
-const TMDB_API_KEY = "4626200399b08f9d04b72348e3625f15";
+import { toast } from "sonner";
+
+// Base URLs for TMDB API
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
-const TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p";
+const TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p/original";
+const TMDB_POSTER_BASE_URL = "https://image.tmdb.org/t/p/w500";
 
-// Image sizes available from TMDB
-export const TMDB_IMAGE_SIZES = {
-  poster: {
-    small: "w185",
-    medium: "w342",
-    large: "w500",
-    original: "original"
-  },
-  backdrop: {
-    small: "w300",
-    medium: "w780",
-    large: "w1280",
-    original: "original"
-  }
-};
+// API Key for TMDB
+const API_KEY = "4626200399b08f9d04b72348e3625f15";
 
-// Types for TMDB API responses
-export interface TMDBMovie {
-  id: number;
+// Types for data
+export interface ContentItem {
+  id: string;
   title: string;
-  overview: string;
-  poster_path: string | null;
-  backdrop_path: string | null;
-  release_date: string;
-  vote_average: number;
-  genre_ids: number[];
-  original_language: string;
-  runtime?: number;
+  description: string;
+  image: string;
+  backdrop?: string;
+  year: string;
+  duration: string;
+  rating: string;
+  category: string;
+  type?: string;
 }
 
-export interface TMDBTvShow {
-  id: number;
-  name: string;
-  overview: string;
-  poster_path: string | null;
-  backdrop_path: string | null;
-  first_air_date: string;
-  vote_average: number;
-  genre_ids: number[];
-  original_language: string;
-  number_of_seasons?: number;
-}
-
-export interface TMDBSearchResponse<T> {
-  page: number;
-  results: T[];
-  total_results: number;
-  total_pages: number;
-}
-
-// Helper function to build URLs for TMDB API requests
-const buildUrl = (endpoint: string, queryParams: Record<string, string> = {}) => {
-  const url = new URL(`${TMDB_BASE_URL}${endpoint}`);
-  url.searchParams.append("api_key", TMDB_API_KEY);
-  
-  // Add additional query parameters
-  Object.entries(queryParams).forEach(([key, value]) => {
-    url.searchParams.append(key, value);
-  });
-  
-  return url.toString();
+// Function to format content item
+const formatContentItem = (item: any, type: string = 'movie'): ContentItem => {
+  const isMovie = type === 'movie';
+  return {
+    id: item.id.toString(),
+    title: isMovie ? item.title : item.name,
+    description: item.overview,
+    image: item.poster_path ? `${TMDB_POSTER_BASE_URL}${item.poster_path}` : '/placeholder.svg',
+    backdrop: item.backdrop_path ? `${TMDB_IMAGE_BASE_URL}${item.backdrop_path}` : undefined,
+    year: (isMovie ? item.release_date : item.first_air_date)?.substring(0, 4) || 'N/A',
+    duration: isMovie ? '120 min' : 'Seasons: ' + (item.number_of_seasons || 'N/A'),
+    rating: (item.vote_average / 2).toFixed(1),
+    category: type,
+  };
 };
 
-// Helper function to build image URLs
-export const getImageUrl = (path: string | null, size: string = TMDB_IMAGE_SIZES.poster.medium): string => {
-  if (!path) {
-    return "https://placehold.co/500x750?text=No+Image";
-  }
-  return `${TMDB_IMAGE_BASE_URL}/${size}${path}`;
-};
-
-// Convert TMDB data format to our application's content format
-export const mapTMDBToContent = (item: TMDBMovie | TMDBTvShow, type: "movie" | "series"): any => {
-  if (type === "movie") {
-    const movie = item as TMDBMovie;
-    return {
-      id: movie.id,
-      title: movie.title,
-      description: movie.overview,
-      image: getImageUrl(movie.poster_path),
-      backdrop: getImageUrl(movie.backdrop_path, TMDB_IMAGE_SIZES.backdrop.large),
-      category: "movie", // This would ideally be mapped from genre_ids
-      year: movie.release_date ? movie.release_date.split("-")[0] : "",
-      duration: movie.runtime ? `${movie.runtime}m` : "N/A",
-      rating: movie.vote_average.toFixed(1),
-      content_type: "movie"
-    };
-  } else {
-    const show = item as TMDBTvShow;
-    return {
-      id: show.id,
-      title: show.name,
-      description: show.overview,
-      image: getImageUrl(show.poster_path),
-      backdrop: getImageUrl(show.backdrop_path, TMDB_IMAGE_SIZES.backdrop.large),
-      category: "series", // This would ideally be mapped from genre_ids
-      year: show.first_air_date ? show.first_air_date.split("-")[0] : "",
-      duration: show.number_of_seasons ? `${show.number_of_seasons} Seasons` : "N/A",
-      rating: show.vote_average.toFixed(1),
-      content_type: "series"
-    };
+// Function to search content
+const searchContent = async (query: string): Promise<ContentItem[]> => {
+  try {
+    const url = `${TMDB_BASE_URL}/search/multi?api_key=${API_KEY}&query=${encodeURIComponent(query)}`;
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`Search failed with status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    return data.results
+      .filter((item: any) => item.media_type === 'movie' || item.media_type === 'tv')
+      .map((item: any) => formatContentItem(item, item.media_type));
+  } catch (error) {
+    console.error("Error searching content:", error);
+    toast.error("Failed to search content");
+    return [];
   }
 };
 
-// API Functions
+// Function to get trending movies
+const getTrendingMovies = async (): Promise<ContentItem[]> => {
+  try {
+    const url = `${TMDB_BASE_URL}/trending/movie/day?api_key=${API_KEY}`;
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch trending movies: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    return data.results.map((item: any) => formatContentItem(item, 'movie'));
+  } catch (error) {
+    console.error("Error fetching trending movies:", error);
+    toast.error("Failed to load trending movies");
+    return [];
+  }
+};
+
+// Function to get trending TV shows
+const getTrendingTvShows = async (): Promise<ContentItem[]> => {
+  try {
+    const url = `${TMDB_BASE_URL}/trending/tv/day?api_key=${API_KEY}`;
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch trending TV shows: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    return data.results.map((item: any) => formatContentItem(item, 'series'));
+  } catch (error) {
+    console.error("Error fetching trending TV shows:", error);
+    toast.error("Failed to load trending TV shows");
+    return [];
+  }
+};
+
+// Function to get popular movies
+const getPopularMovies = async (): Promise<ContentItem[]> => {
+  try {
+    const url = `${TMDB_BASE_URL}/movie/popular?api_key=${API_KEY}`;
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch popular movies: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    return data.results.map((item: any) => formatContentItem(item, 'movie'));
+  } catch (error) {
+    console.error("Error fetching popular movies:", error);
+    toast.error("Failed to load popular movies");
+    return [];
+  }
+};
+
+// Function to get popular TV shows
+const getPopularTvShows = async (): Promise<ContentItem[]> => {
+  try {
+    const url = `${TMDB_BASE_URL}/tv/popular?api_key=${API_KEY}`;
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch popular TV shows: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    return data.results.map((item: any) => formatContentItem(item, 'series'));
+  } catch (error) {
+    console.error("Error fetching popular TV shows:", error);
+    toast.error("Failed to load popular TV shows");
+    return [];
+  }
+};
+
+// Function to get anime (using animation genre and filtering)
+const getAnime = async (): Promise<ContentItem[]> => {
+  try {
+    // Using animation genre ID (16) to filter for anime-like content
+    const url = `${TMDB_BASE_URL}/discover/tv?api_key=${API_KEY}&with_genres=16&sort_by=popularity.desc`;
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch anime: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    return data.results.map((item: any) => {
+      const formattedItem = formatContentItem(item, 'series');
+      formattedItem.category = 'anime';
+      return formattedItem;
+    });
+  } catch (error) {
+    console.error("Error fetching anime:", error);
+    toast.error("Failed to load anime");
+    return [];
+  }
+};
+
+// Function to get content details
+const getContentDetails = async (id: string, type: string = 'movie'): Promise<ContentItem | null> => {
+  try {
+    const url = `${TMDB_BASE_URL}/${type}/${id}?api_key=${API_KEY}`;
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch content details: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    return formatContentItem(data, type);
+  } catch (error) {
+    console.error("Error fetching content details:", error);
+    toast.error("Failed to load content details");
+    return null;
+  }
+};
+
+// Function to get similar content
+const getSimilarContent = async (id: string, type: string = 'movie'): Promise<ContentItem[]> => {
+  try {
+    const url = `${TMDB_BASE_URL}/${type}/${id}/similar?api_key=${API_KEY}`;
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch similar content: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    return data.results.map((item: any) => formatContentItem(item, type));
+  } catch (error) {
+    console.error("Error fetching similar content:", error);
+    toast.error("Failed to load similar content");
+    return [];
+  }
+};
+
+// Function to get content by category
+const getContentByCategory = async (category: string): Promise<ContentItem[]> => {
+  try {
+    let url = '';
+    let type = 'movie';
+    
+    switch (category) {
+      case 'movies':
+        url = `${TMDB_BASE_URL}/movie/popular?api_key=${API_KEY}`;
+        type = 'movie';
+        break;
+      case 'series':
+        url = `${TMDB_BASE_URL}/tv/popular?api_key=${API_KEY}`;
+        type = 'series';
+        break;
+      case 'anime':
+        return getAnime();
+      case 'trending':
+        const trendingMovies = await getTrendingMovies();
+        const trendingTvShows = await getTrendingTvShows();
+        return [...trendingMovies, ...trendingTvShows];
+      default:
+        url = `${TMDB_BASE_URL}/trending/all/day?api_key=${API_KEY}`;
+    }
+    
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch content by category: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    return data.results.map((item: any) => {
+      // Determine type from media_type if available
+      const itemType = item.media_type || type;
+      return formatContentItem(item, itemType === 'tv' ? 'series' : itemType);
+    });
+  } catch (error) {
+    console.error(`Error fetching ${category} content:`, error);
+    toast.error(`Failed to load ${category} content`);
+    return [];
+  }
+};
+
+// Export API functions
 export const tmdbApi = {
-  // Get trending movies
-  getTrendingMovies: async (timeWindow: "day" | "week" = "week") => {
-    try {
-      const response = await fetch(buildUrl(`/trending/movie/${timeWindow}`));
-      const data = await response.json() as TMDBSearchResponse<TMDBMovie>;
-      return data.results.map(movie => mapTMDBToContent(movie, "movie"));
-    } catch (error) {
-      console.error("Error fetching trending movies:", error);
-      return [];
-    }
-  },
-  
-  // Get trending TV shows
-  getTrendingTvShows: async (timeWindow: "day" | "week" = "week") => {
-    try {
-      const response = await fetch(buildUrl(`/trending/tv/${timeWindow}`));
-      const data = await response.json() as TMDBSearchResponse<TMDBTvShow>;
-      return data.results.map(show => mapTMDBToContent(show, "series"));
-    } catch (error) {
-      console.error("Error fetching trending TV shows:", error);
-      return [];
-    }
-  },
-  
-  // Get popular movies
-  getPopularMovies: async () => {
-    try {
-      const response = await fetch(buildUrl("/movie/popular"));
-      const data = await response.json() as TMDBSearchResponse<TMDBMovie>;
-      return data.results.map(movie => mapTMDBToContent(movie, "movie"));
-    } catch (error) {
-      console.error("Error fetching popular movies:", error);
-      return [];
-    }
-  },
-  
-  // Get popular TV shows
-  getPopularTvShows: async () => {
-    try {
-      const response = await fetch(buildUrl("/tv/popular"));
-      const data = await response.json() as TMDBSearchResponse<TMDBTvShow>;
-      return data.results.map(show => mapTMDBToContent(show, "series"));
-    } catch (error) {
-      console.error("Error fetching popular TV shows:", error);
-      return [];
-    }
-  },
-  
-  // Get movie details
-  getMovieDetails: async (id: number) => {
-    try {
-      const response = await fetch(buildUrl(`/movie/${id}`));
-      const movie = await response.json() as TMDBMovie;
-      return mapTMDBToContent(movie, "movie");
-    } catch (error) {
-      console.error(`Error fetching movie details for ID ${id}:`, error);
-      return null;
-    }
-  },
-  
-  // Get TV show details
-  getTvShowDetails: async (id: number) => {
-    try {
-      const response = await fetch(buildUrl(`/tv/${id}`));
-      const show = await response.json() as TMDBTvShow;
-      return mapTMDBToContent(show, "series");
-    } catch (error) {
-      console.error(`Error fetching TV show details for ID ${id}:`, error);
-      return null;
-    }
-  },
-  
-  // Search for movies
-  searchMovies: async (query: string) => {
-    try {
-      const response = await fetch(buildUrl("/search/movie", { query }));
-      const data = await response.json() as TMDBSearchResponse<TMDBMovie>;
-      return data.results.map(movie => mapTMDBToContent(movie, "movie"));
-    } catch (error) {
-      console.error("Error searching movies:", error);
-      return [];
-    }
-  },
-  
-  // Search for TV shows
-  searchTvShows: async (query: string) => {
-    try {
-      const response = await fetch(buildUrl("/search/tv", { query }));
-      const data = await response.json() as TMDBSearchResponse<TMDBTvShow>;
-      return data.results.map(show => mapTMDBToContent(show, "series"));
-    } catch (error) {
-      console.error("Error searching TV shows:", error);
-      return [];
-    }
-  }
+  searchContent,
+  getTrendingMovies,
+  getTrendingTvShows,
+  getPopularMovies,
+  getPopularTvShows,
+  getAnime,
+  getContentDetails,
+  getSimilarContent,
+  getContentByCategory,
 };

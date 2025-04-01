@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Play, Pause, Volume2, VolumeX, Maximize, SkipForward, SkipBack } from "lucide-react";
 import { trackStreamingActivity, markContentAsComplete } from "@/utils/videoUtils";
+import { toast } from "sonner";
 
 interface VideoPlayerProps {
   src: string;
@@ -11,6 +12,7 @@ interface VideoPlayerProps {
   episodeId?: string;
   autoPlay?: boolean;
   onEnded?: () => void;
+  poster?: string;
 }
 
 const VideoPlayer: React.FC<VideoPlayerProps> = ({ 
@@ -19,7 +21,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   userId,
   episodeId,
   autoPlay = false,
-  onEnded
+  onEnded,
+  poster
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(autoPlay);
@@ -27,6 +30,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const playerRef = useRef<HTMLDivElement>(null);
   
   // Initialize video player
@@ -39,32 +44,59 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       setCurrentTime(video.currentTime);
       
       // Track every 15 seconds
-      if (Math.floor(video.currentTime) % 15 === 0) {
+      if (Math.floor(video.currentTime) % 15 === 0 && userId) {
         trackStreamingActivity(contentId, userId, Math.floor(video.currentTime), episodeId);
       }
     };
     
     const onLoadedMetadata = () => {
       setDuration(video.duration);
+      setIsLoading(false);
     };
     
     const onVideoEnded = () => {
       setIsPlaying(false);
       if (onEnded) onEnded();
-      markContentAsComplete(contentId, userId, episodeId);
+      if (userId) {
+        markContentAsComplete(contentId, userId, episodeId);
+      }
+    };
+
+    const onError = () => {
+      setError("Error loading video. Please try again later.");
+      setIsLoading(false);
+      toast.error("Error loading video. Please try again later.");
+    };
+
+    const onWaiting = () => {
+      setIsLoading(true);
+    };
+
+    const onPlaying = () => {
+      setIsLoading(false);
+      setError(null);
     };
     
     video.addEventListener('timeupdate', onTimeUpdate);
     video.addEventListener('loadedmetadata', onLoadedMetadata);
     video.addEventListener('ended', onVideoEnded);
+    video.addEventListener('error', onError);
+    video.addEventListener('waiting', onWaiting);
+    video.addEventListener('playing', onPlaying);
+    
+    // Start loading
+    video.load();
     
     // Cleanup
     return () => {
       video.removeEventListener('timeupdate', onTimeUpdate);
       video.removeEventListener('loadedmetadata', onLoadedMetadata);
       video.removeEventListener('ended', onVideoEnded);
+      video.removeEventListener('error', onError);
+      video.removeEventListener('waiting', onWaiting);
+      video.removeEventListener('playing', onPlaying);
     };
-  }, [contentId, userId, episodeId, onEnded]);
+  }, [contentId, userId, episodeId, onEnded, src]);
   
   // Controls
   const togglePlay = () => {
@@ -74,7 +106,17 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     if (isPlaying) {
       video.pause();
     } else {
-      video.play();
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            // Auto-play started
+          })
+          .catch(error => {
+            // Auto-play was prevented
+            toast.error("Playback was blocked by your browser. Please interact with the player first.");
+          });
+      }
     }
     
     setIsPlaying(!isPlaying);
@@ -139,9 +181,33 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       ref={playerRef}
       className="relative group bg-black rounded-lg overflow-hidden w-full aspect-video"
     >
+      {isLoading && !error && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-10">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cinemax-500"></div>
+        </div>
+      )}
+      
+      {error && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-10 p-4 text-center">
+          <span className="text-red-500 mb-2">{error}</span>
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              if (videoRef.current) {
+                setError(null);
+                videoRef.current.load();
+              }
+            }}
+          >
+            Try Again
+          </Button>
+        </div>
+      )}
+      
       <video
         ref={videoRef}
         src={src}
+        poster={poster}
         className="w-full h-full"
         autoPlay={autoPlay}
         muted={isMuted}

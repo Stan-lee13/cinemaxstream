@@ -1,11 +1,12 @@
 
 import { useState, useEffect, createContext, useContext } from 'react';
 import { supabase } from "@/integrations/supabase/client";
-import type { User } from '@supabase/supabase-js';
+import type { User, Session } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 
 interface AuthContextType {
   user: User | null;
+  session: Session | null; // Added session to the context
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
@@ -17,19 +18,23 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setUser(session?.user ?? null);
+      (event, currentSession) => {
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
         setIsLoading(false);
       }
     );
 
-    // Initial session check
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
       setIsLoading(false);
     });
 
@@ -41,7 +46,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signIn = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error, data } = await supabase.auth.signInWithPassword({ 
+        email: email.trim().toLowerCase(), 
+        password 
+      });
       
       if (error) {
         throw error;
@@ -49,6 +57,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       toast.success('Signed in successfully');
     } catch (error: any) {
+      console.error("Login error:", error);
       toast.error(error.message || 'Error signing in');
       throw error;
     } finally {
@@ -59,7 +68,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signUp = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      const { error } = await supabase.auth.signUp({ email, password });
+      const { error, data } = await supabase.auth.signUp({ 
+        email: email.trim().toLowerCase(), 
+        password,
+        options: {
+          emailRedirectTo: window.location.origin
+        }
+      });
       
       if (error) {
         throw error;
@@ -67,6 +82,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       toast.success('Account created! Check your email for confirmation');
     } catch (error: any) {
+      console.error("Signup error:", error);
       toast.error(error.message || 'Error creating account');
       throw error;
     } finally {
@@ -77,9 +93,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signOut = async () => {
     try {
       setIsLoading(true);
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        throw error;
+      }
+      
       toast.success('Signed out successfully');
     } catch (error: any) {
+      console.error("Signout error:", error);
       toast.error(error.message || 'Error signing out');
     } finally {
       setIsLoading(false);
@@ -88,6 +110,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const value = {
     user,
+    session,
     isLoading,
     signIn,
     signUp,

@@ -1,7 +1,6 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuthState";
 import { toast } from "sonner";
 import { Eye, EyeOff, Mail, Lock, LogIn, UserPlus } from "lucide-react";
@@ -38,11 +37,12 @@ const Auth = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Redirect if already authenticated
-  if (isAuthenticated) {
-    navigate('/');
-    return null;
-  }
+  useEffect(() => {
+    // Redirect if already authenticated
+    if (isAuthenticated) {
+      navigate('/');
+    }
+  }, [isAuthenticated, navigate]);
 
   // Login form
   const loginForm = useForm<LoginFormValues>({
@@ -70,6 +70,7 @@ const Auth = () => {
       navigate('/');
     } catch (error) {
       console.error("Login error:", error);
+      // Error handling is done in the signIn function
     } finally {
       setIsLoading(false);
     }
@@ -79,10 +80,11 @@ const Auth = () => {
     try {
       setIsLoading(true);
       await signUp(values.email, values.password);
-      toast.success("Account created! Check your email for confirmation");
+      // Don't navigate immediately after signup since user needs to confirm email
       setIsLogin(true);
     } catch (error) {
       console.error("Signup error:", error);
+      // Error handling is done in the signUp function
     } finally {
       setIsLoading(false);
     }
@@ -91,6 +93,11 @@ const Auth = () => {
   const toggleForm = () => {
     setIsLogin(!isLogin);
   };
+
+  // If already authenticated, don't render the form
+  if (isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
