@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import ContentRow from "@/components/ContentRow";
@@ -7,6 +7,8 @@ import Footer from "@/components/Footer";
 import { tmdbApi } from "@/services/tmdbApi";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const Index = () => {
   // Scroll to top on page load
@@ -97,12 +99,14 @@ const Index = () => {
                   Watch on any device or download for offline viewing.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <button className="bg-cinemax-500 hover:bg-cinemax-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">
-                    Start Free Trial
-                  </button>
-                  <button className="bg-transparent border border-gray-600 hover:border-white text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                  <Link to="/auth">
+                    <Button className="bg-cinemax-500 hover:bg-cinemax-600 text-white px-6 py-3 rounded-lg font-medium transition-colors w-full">
+                      Start Free Trial
+                    </Button>
+                  </Link>
+                  <Button className="bg-transparent border border-gray-600 hover:border-white text-white px-6 py-3 rounded-lg font-medium transition-colors">
                     Learn More
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>

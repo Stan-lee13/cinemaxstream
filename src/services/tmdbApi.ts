@@ -1,11 +1,10 @@
-
 /**
  * The Movie Database (TMDB) API Service
  * Handles fetching movie, TV, and related data from TMDB
  */
 
 // TMDB API Configuration
-const TMDB_API_KEY = "YOUR_TMDB_API_KEY"; // Replace with your actual API key
+const TMDB_API_KEY = "4626200399b08f9d04b72348e3625f15";
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 const TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p";
 

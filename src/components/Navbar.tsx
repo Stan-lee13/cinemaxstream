@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { 
   Search, 
@@ -10,10 +10,13 @@ import {
   Play, 
   Heart, 
   Download,
-  X
+  X,
+  LogOut,
+  User
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/hooks/useAuthState";
 
 const NavItem = ({ href, children }: { href: string; children: React.ReactNode }) => (
   <Link 
@@ -26,10 +29,21 @@ const NavItem = ({ href, children }: { href: string; children: React.ReactNode }
 );
 
 const Navbar = () => {
+  const navigate = useNavigate();
+  const { user, signOut, isAuthenticated } = useAuth();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const toggleSearch = () => {
     setIsSearchOpen(!isSearchOpen);
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
+
+  const handleSignIn = () => {
+    navigate('/auth');
   };
 
   return (
@@ -79,14 +93,17 @@ const Navbar = () => {
               </Button>
             )}
             
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="hidden md:flex items-center gap-1 text-gray-300 hover:text-white"
-            >
-              <Heart size={16} />
-              <span>Favorites</span>
-            </Button>
+            {isAuthenticated && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="hidden md:flex items-center gap-1 text-gray-300 hover:text-white"
+                onClick={() => navigate('/favorites')}
+              >
+                <Heart size={16} />
+                <span>Favorites</span>
+              </Button>
+            )}
             
             <Sheet>
               <SheetTrigger asChild>
@@ -121,21 +138,61 @@ const Navbar = () => {
                     <Play size={18} />
                     <span>Sports</span>
                   </Link>
-                  <Link to="/favorites" className="flex items-center gap-2 text-white hover:text-cinemax-400">
-                    <Heart size={18} />
-                    <span>Favorites</span>
-                  </Link>
-                  <Link to="/downloads" className="flex items-center gap-2 text-white hover:text-cinemax-400">
-                    <Download size={18} />
-                    <span>Downloads</span>
-                  </Link>
+                  
+                  {isAuthenticated ? (
+                    <>
+                      <Link to="/favorites" className="flex items-center gap-2 text-white hover:text-cinemax-400">
+                        <Heart size={18} />
+                        <span>Favorites</span>
+                      </Link>
+                      <Link to="/downloads" className="flex items-center gap-2 text-white hover:text-cinemax-400">
+                        <Download size={18} />
+                        <span>Downloads</span>
+                      </Link>
+                      <button 
+                        onClick={handleSignOut}
+                        className="flex items-center gap-2 text-white hover:text-cinemax-400"
+                      >
+                        <LogOut size={18} />
+                        <span>Sign Out</span>
+                      </button>
+                    </>
+                  ) : (
+                    <button 
+                      onClick={handleSignIn}
+                      className="flex items-center gap-2 text-white hover:text-cinemax-400"
+                    >
+                      <User size={18} />
+                      <span>Sign In</span>
+                    </button>
+                  )}
                 </nav>
               </SheetContent>
             </Sheet>
             
-            <Button className="hidden md:flex bg-cinemax-500 hover:bg-cinemax-600">
-              Sign In
-            </Button>
+            {isAuthenticated ? (
+              <div className="hidden md:flex items-center gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  className="text-gray-300 hover:text-white"
+                  onClick={handleSignOut}
+                >
+                  <LogOut size={16} className="mr-1" />
+                  <span>Sign Out</span>
+                </Button>
+                <div className="h-8 w-8 rounded-full bg-cinemax-500 flex items-center justify-center text-white">
+                  {user?.email?.charAt(0).toUpperCase() || 'U'}
+                </div>
+              </div>
+            ) : (
+              <Button 
+                className="hidden md:flex bg-cinemax-500 hover:bg-cinemax-600"
+                onClick={handleSignIn}
+              >
+                Sign In
+              </Button>
+            )}
           </div>
         </div>
       </div>
