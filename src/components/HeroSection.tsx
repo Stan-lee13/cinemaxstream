@@ -3,8 +3,23 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Play, Download, Heart } from "lucide-react";
 
-// Featured content
-const featuredContent = [
+interface FeaturedContent {
+  id: number;
+  title: string;
+  description: string;
+  image: string;
+  category: string;
+  year: string;
+  duration: string;
+  rating: string;
+}
+
+interface HeroSectionProps {
+  featuredContent?: FeaturedContent[];
+}
+
+// Default featured content in case API fails
+const defaultFeaturedContent = [
   {
     id: 1,
     title: "Inception",
@@ -37,7 +52,7 @@ const featuredContent = [
   }
 ];
 
-const HeroSection = () => {
+const HeroSection = ({ featuredContent = defaultFeaturedContent }: HeroSectionProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   
   // Auto slide change
@@ -49,7 +64,7 @@ const HeroSection = () => {
     }, 6000);
     
     return () => clearTimeout(timer);
-  }, [currentIndex]);
+  }, [currentIndex, featuredContent.length]);
   
   const currentContent = featuredContent[currentIndex];
 
