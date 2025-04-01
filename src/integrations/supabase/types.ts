@@ -36,6 +36,246 @@ export type Database = {
         }
         Relationships: []
       }
+      content: {
+        Row: {
+          category_id: string | null
+          content_type: string
+          created_at: string
+          description: string | null
+          duration: string | null
+          featured: boolean | null
+          id: string
+          image_url: string | null
+          popular: boolean | null
+          rating: string | null
+          title: string
+          trending: boolean | null
+          updated_at: string
+          year: string | null
+        }
+        Insert: {
+          category_id?: string | null
+          content_type: string
+          created_at?: string
+          description?: string | null
+          duration?: string | null
+          featured?: boolean | null
+          id?: string
+          image_url?: string | null
+          popular?: boolean | null
+          rating?: string | null
+          title: string
+          trending?: boolean | null
+          updated_at?: string
+          year?: string | null
+        }
+        Update: {
+          category_id?: string | null
+          content_type?: string
+          created_at?: string
+          description?: string | null
+          duration?: string | null
+          featured?: boolean | null
+          id?: string
+          image_url?: string | null
+          popular?: boolean | null
+          rating?: string | null
+          title?: string
+          trending?: boolean | null
+          updated_at?: string
+          year?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "content_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+      episodes: {
+        Row: {
+          content_id: string | null
+          created_at: string
+          description: string | null
+          duration: string | null
+          episode_number: number | null
+          id: string
+          release_date: string | null
+          season_number: number | null
+          thumbnail_url: string | null
+          title: string
+          video_url: string | null
+        }
+        Insert: {
+          content_id?: string | null
+          created_at?: string
+          description?: string | null
+          duration?: string | null
+          episode_number?: number | null
+          id?: string
+          release_date?: string | null
+          season_number?: number | null
+          thumbnail_url?: string | null
+          title: string
+          video_url?: string | null
+        }
+        Update: {
+          content_id?: string | null
+          created_at?: string
+          description?: string | null
+          duration?: string | null
+          episode_number?: number | null
+          id?: string
+          release_date?: string | null
+          season_number?: number | null
+          thumbnail_url?: string | null
+          title?: string
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "episodes_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_favorites: {
+        Row: {
+          content_id: string | null
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          content_id?: string | null
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          content_id?: string | null
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_favorites_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          id: string
+          subscription_expires_at: string | null
+          subscription_tier: string | null
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          id: string
+          subscription_expires_at?: string | null
+          subscription_tier?: string | null
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          subscription_expires_at?: string | null
+          subscription_tier?: string | null
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
+      user_watch_history: {
+        Row: {
+          completed: boolean | null
+          content_id: string | null
+          created_at: string
+          episode_id: string | null
+          id: string
+          last_watched: string
+          user_id: string
+          watch_position: number | null
+        }
+        Insert: {
+          completed?: boolean | null
+          content_id?: string | null
+          created_at?: string
+          episode_id?: string | null
+          id?: string
+          last_watched?: string
+          user_id: string
+          watch_position?: number | null
+        }
+        Update: {
+          completed?: boolean | null
+          content_id?: string | null
+          created_at?: string
+          episode_id?: string | null
+          id?: string
+          last_watched?: string
+          user_id?: string
+          watch_position?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_watch_history_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_watch_history_episode_id_fkey"
+            columns: ["episode_id"]
+            isOneToOne: false
+            referencedRelation: "episodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
