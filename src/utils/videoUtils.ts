@@ -82,16 +82,27 @@ export const trackStreamingActivity = async (
     const { supabase } = await import('@/integrations/supabase/client');
     
     // Update or insert watch history
-    await supabase
-      .from('user_watch_history')
-      .upsert({
-        user_id: userId,
-        content_id: contentId,
-        episode_id: episodeId || null,
-        watch_position: position,
-        last_watched: new Date().toISOString(),
-        completed: false
-      }, {
+    // Using a more type-safe approach with explicitly defined object
+    const watchHistoryData: {
+      user_id: string;
+      content_id: string;
+      episode_id: string | null;
+      watch_position: number;
+      last_watched: string;
+      completed: boolean;
+    } = {
+      user_id: userId,
+      content_id: contentId,
+      episode_id: episodeId || null,
+      watch_position: position,
+      last_watched: new Date().toISOString(),
+      completed: false
+    };
+    
+    // Use type assertion for the Supabase query
+    await (supabase
+      .from('user_watch_history') as any)
+      .upsert(watchHistoryData, {
         onConflict: 'user_id,content_id,episode_id'
       });
       
@@ -116,15 +127,25 @@ export const markContentAsComplete = async (
   try {
     const { supabase } = await import('@/integrations/supabase/client');
     
-    await supabase
-      .from('user_watch_history')
-      .upsert({
-        user_id: userId,
-        content_id: contentId,
-        episode_id: episodeId || null,
-        completed: true,
-        last_watched: new Date().toISOString()
-      }, {
+    // Using a more type-safe approach with explicitly defined object
+    const completedData: {
+      user_id: string;
+      content_id: string;
+      episode_id: string | null;
+      completed: boolean;
+      last_watched: string;
+    } = {
+      user_id: userId,
+      content_id: contentId,
+      episode_id: episodeId || null,
+      completed: true,
+      last_watched: new Date().toISOString()
+    };
+    
+    // Use type assertion for the Supabase query
+    await (supabase
+      .from('user_watch_history') as any)
+      .upsert(completedData, {
         onConflict: 'user_id,content_id,episode_id'
       });
       

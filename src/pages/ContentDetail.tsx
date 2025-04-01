@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -16,9 +15,31 @@ import {
   QUALITY_OPTIONS 
 } from "@/utils/videoUtils";
 
+// Type definition for our content data
+interface ContentData {
+  id: string;
+  title: string;
+  description: string | null;
+  image_url: string | null;
+  category_id: string | null;
+  content_type: string;
+  year: string | null;
+  duration: string | null;
+  rating: string | null;
+  featured: boolean | null;
+  trending: boolean | null;
+  popular: boolean | null;
+  content_categories?: {
+    id: string;
+    name: string;
+    slug: string;
+    description: string | null;
+  } | null;
+}
+
 const ContentDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const [content, setContent] = useState<any>(null);
+  const [content, setContent] = useState<ContentData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [liked, setLiked] = useState(false);
   const [relatedContent, setRelatedContent] = useState<any[]>([]);
@@ -33,9 +54,11 @@ const ContentDetail = () => {
     
     const fetchContent = async () => {
       try {
-        // Fetch content details
-        const { data: contentData, error: contentError } = await supabase
-          .from('content')
+        if (!id) return;
+        
+        // Fetch content details with type assertion
+        const { data: contentData, error: contentError } = await (supabase
+          .from('content') as any)
           .select('*, content_categories(*)')
           .eq('id', id)
           .single();
@@ -46,8 +69,8 @@ const ContentDetail = () => {
         
         // Check if user has liked this content
         if (isAuthenticated && user) {
-          const { data: favoriteData } = await supabase
-            .from('user_favorites')
+          const { data: favoriteData } = await (supabase
+            .from('user_favorites') as any)
             .select('*')
             .eq('user_id', user.id)
             .eq('content_id', id)
@@ -58,8 +81,8 @@ const ContentDetail = () => {
         
         // Fetch related content from the same category
         if (contentData.category_id) {
-          const { data: relatedData } = await supabase
-            .from('content')
+          const { data: relatedData } = await (supabase
+            .from('content') as any)
             .select('*')
             .eq('category_id', contentData.category_id)
             .neq('id', id)
@@ -85,24 +108,28 @@ const ContentDetail = () => {
       return;
     }
     
+    if (!id || !user) return;
+    
     try {
       if (liked) {
         // Remove from favorites
-        await supabase
-          .from('user_favorites')
+        await (supabase
+          .from('user_favorites') as any)
           .delete()
-          .eq('user_id', user?.id)
+          .eq('user_id', user.id)
           .eq('content_id', id);
         
         toast.success("Removed from favorites");
       } else {
         // Add to favorites
-        await supabase
-          .from('user_favorites')
-          .insert({
-            user_id: user?.id,
-            content_id: id
-          });
+        const favoriteData = {
+          user_id: user.id,
+          content_id: id
+        };
+        
+        await (supabase
+          .from('user_favorites') as any)
+          .insert(favoriteData);
         
         toast.success("Added to favorites");
       }
