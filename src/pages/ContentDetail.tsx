@@ -1,19 +1,38 @@
+
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Play, Download, Heart, ArrowLeft, Plus } from "lucide-react";
+import { 
+  Play, 
+  Download, 
+  Heart, 
+  ArrowLeft, 
+  Plus, 
+  Film, 
+  Tv, 
+  Info,
+  Crown,
+  FastForward 
+} from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ContentRow from "@/components/ContentRow";
 import VideoPlayer from "@/components/VideoPlayer";
+import TrailerModal from "@/components/TrailerModal";
+import EpisodeSelector from "@/components/EpisodeSelector";
+import PremiumBadge from "@/components/PremiumBadge";
+import PremiumCodeModal from "@/components/PremiumCodeModal";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuthState";
 import { toast } from "sonner";
 import { 
   getStreamingUrl, 
   getDownloadUrl, 
+  getAvailableProviders,
+  hasPremiumAccess,
   QUALITY_OPTIONS 
 } from "@/utils/videoUtils";
+import { tmdbApi } from "@/services/tmdbApi";
 
 // Type definition for our content data
 interface ContentData {
@@ -29,6 +48,8 @@ interface ContentData {
   featured: boolean | null;
   trending: boolean | null;
   popular: boolean | null;
+  trailer_key?: string | null;
+  is_premium?: boolean | null;
   content_categories?: {
     id: string;
     name: string;
@@ -39,12 +60,24 @@ interface ContentData {
 
 const ContentDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [content, setContent] = useState<ContentData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [liked, setLiked] = useState(false);
   const [relatedContent, setRelatedContent] = useState<any[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [showTrailer, setShowTrailer] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [activeProvider, setActiveProvider] = useState<string>('vidsrc_xyz');
+  const [seasons, setSeasons] = useState<Season[]>([]);
+  const [currentSeason, setCurrentSeason] = useState<number | undefined>();
+  const [currentEpisode, setCurrentEpisode] = useState<number | undefined>();
   const { user, isAuthenticated } = useAuth();
+  
+  const availableProviders = id ? getAvailableProviders(id, content?.content_type || 'movie') : [];
+  
+  const isPremiumContent = content?.is_premium || (content?.rating && parseFloat(content.rating) > 8.0);
+  const canAccessPremium = hasPremiumAccess();
 
   // Fetch content details
   useEffect(() => {
@@ -63,7 +96,67 @@ const ContentDetail = () => {
           .eq('id', id)
           .single();
         
-        if (contentError) throw contentError;
+        if (contentError) {
+          // If the content is not in our database, fetch from TMDB
+          const tmdbContent = await tmdbApi.getContentDetails(id);
+          if (tmdbContent) {
+            setContent({
+              id: tmdbContent.id,
+              title: tmdbContent.title,
+              description: tmdbContent.description,
+              image_url: tmdbContent.image,
+              category_id: null,
+              content_type: tmdbContent.type || 'movie',
+              year: tmdbContent.year,
+              duration: tmdbContent.duration,
+              rating: tmdbContent.rating,
+              featured: false,
+              trending: true,
+              popular: true,
+              trailer_key: id, // Using ID as a placeholder for trailer key
+              is_premium: parseFloat(tmdbContent.rating) > 8.0,
+              content_categories: {
+                id: '1',
+                name: tmdbContent.category,
+                slug: tmdbContent.category.toLowerCase(),
+                description: null
+              }
+            });
+            
+            // Fetch related content from TMDB
+            const similar = await tmdbApi.getSimilarContent(id, tmdbContent.type || 'movie');
+            setRelatedContent(similar);
+            
+            // If it's a TV show, fetch seasons and episodes
+            if (tmdbContent.type === 'series' || tmdbContent.type === 'anime') {
+              // Simulate seasons and episodes with mock data
+              const mockSeasons: Season[] = Array.from({ length: 3 }, (_, i) => ({
+                id: `season-${i+1}`,
+                season_number: i+1,
+                title: `Season ${i+1}`,
+                episode_count: 10,
+                episodes: Array.from({ length: 10 }, (_, j) => ({
+                  id: `ep-${i+1}-${j+1}`,
+                  title: `Episode ${j+1}: ${tmdbContent.title} Part ${j+1}`,
+                  episode_number: j+1,
+                  season_number: i+1,
+                  description: `This is episode ${j+1} of season ${i+1} of ${tmdbContent.title}`,
+                  duration: "45 min",
+                  air_date: new Date().toISOString()
+                })),
+                poster: tmdbContent.image,
+                air_date: new Date().toISOString()
+              }));
+              
+              setSeasons(mockSeasons);
+            }
+            
+            setIsLoading(false);
+            return;
+          }
+          
+          throw contentError;
+        }
         
         setContent(contentData);
         
@@ -89,6 +182,35 @@ const ContentDetail = () => {
             .limit(10);
           
           setRelatedContent(relatedData || []);
+        } else {
+          // If no category ID, fetch related content from TMDB
+          const similar = await tmdbApi.getSimilarContent(id, contentData.content_type);
+          setRelatedContent(similar);
+        }
+        
+        // If it's a TV show or anime, fetch seasons and episodes
+        if (contentData.content_type === 'series' || contentData.content_type === 'anime') {
+          // In a real app, fetch actual seasons and episodes
+          // For now, creating mock data
+          const mockSeasons: Season[] = Array.from({ length: 3 }, (_, i) => ({
+            id: `season-${i+1}`,
+            season_number: i+1,
+            title: `Season ${i+1}`,
+            episode_count: 10,
+            episodes: Array.from({ length: 10 }, (_, j) => ({
+              id: `ep-${i+1}-${j+1}`,
+              title: `Episode ${j+1}: ${contentData.title} Part ${j+1}`,
+              episode_number: j+1,
+              season_number: i+1,
+              description: `This is episode ${j+1} of season ${i+1} of ${contentData.title}`,
+              duration: "45 min",
+              air_date: new Date().toISOString()
+            })),
+            poster: contentData.image_url,
+            air_date: new Date().toISOString()
+          }));
+          
+          setSeasons(mockSeasons);
         }
       } catch (error) {
         console.error("Error fetching content:", error);
@@ -143,12 +265,13 @@ const ContentDetail = () => {
 
   // Handle download
   const handleDownload = (quality: string) => {
-    if (!isAuthenticated) {
-      toast.error("Please sign in to download content");
+    if (!content) return;
+    
+    if (isPremiumContent && !canAccessPremium) {
+      toast.error("Premium content requires subscription or premium code");
+      setShowPremiumModal(true);
       return;
     }
-    
-    if (!content) return;
     
     const downloadUrl = getDownloadUrl(content.id, content.content_type, quality);
     window.open(downloadUrl, '_blank');
@@ -158,7 +281,35 @@ const ContentDetail = () => {
 
   // Start watching
   const startWatching = () => {
+    if (isPremiumContent && !canAccessPremium) {
+      toast.error("Premium content requires subscription or premium code");
+      setShowPremiumModal(true);
+      return;
+    }
+    
     setIsPlaying(true);
+  };
+  
+  // Handle episode selection
+  const handleEpisodeSelect = (seasonNumber: number, episodeNumber: number) => {
+    if (isPremiumContent && !canAccessPremium) {
+      toast.error("Premium content requires subscription or premium code");
+      setShowPremiumModal(true);
+      return;
+    }
+    
+    setCurrentSeason(seasonNumber);
+    setCurrentEpisode(episodeNumber);
+    setIsPlaying(true);
+  };
+
+  // Handle back navigation
+  const handleGoBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
   };
 
   if (isLoading) {
@@ -177,12 +328,10 @@ const ContentDetail = () => {
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
         <h1 className="text-3xl font-bold mb-4">Content Not Found</h1>
         <p className="text-gray-400 mb-8">The content you're looking for doesn't exist or has been removed.</p>
-        <Link to="/">
-          <Button className="gap-2">
-            <ArrowLeft size={16} />
-            <span>Back to Home</span>
-          </Button>
-        </Link>
+        <Button className="gap-2" onClick={handleGoBack}>
+          <ArrowLeft size={16} />
+          <span>Back</span>
+        </Button>
       </div>
     );
   }
@@ -196,28 +345,80 @@ const ContentDetail = () => {
         {isPlaying ? (
           <div className="container mx-auto px-4 py-8">
             <div className="max-w-5xl mx-auto">
-              <h1 className="text-2xl font-bold mb-4">{content.title}</h1>
+              <h1 className="text-2xl font-bold mb-4">
+                {content.title}
+                {currentSeason && currentEpisode && 
+                  ` - S${currentSeason}:E${currentEpisode}`
+                }
+              </h1>
               <VideoPlayer 
-                src={getStreamingUrl(content.id, content.content_type)}
+                src={getStreamingUrl(
+                  content.id, 
+                  content.content_type, 
+                  activeProvider as any,
+                  undefined,
+                  currentSeason,
+                  currentEpisode
+                )}
                 contentId={content.id}
                 userId={user?.id}
                 autoPlay={true}
                 onEnded={() => setIsPlaying(false)}
               />
-              <Button 
-                variant="outline" 
-                className="mt-4"
-                onClick={() => setIsPlaying(false)}
-              >
-                <ArrowLeft size={16} className="mr-2" />
-                Back to details
-              </Button>
+              
+              <div className="mt-4 flex flex-wrap gap-3">
+                <Button 
+                  variant="outline" 
+                  className="gap-2"
+                  onClick={() => setIsPlaying(false)}
+                >
+                  <ArrowLeft size={16} />
+                  <span>Back to details</span>
+                </Button>
+                
+                <div className="flex-1"></div>
+                
+                {/* Source selector */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-400">Source:</span>
+                  {availableProviders.map(provider => (
+                    <Button
+                      key={provider.id}
+                      variant={activeProvider === provider.id ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setActiveProvider(provider.id)}
+                      className={activeProvider === provider.id ? "bg-cinemax-500" : ""}
+                    >
+                      {provider.name}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Episode selector for series/anime */}
+              {(content.content_type === 'series' || content.content_type === 'anime') && seasons.length > 0 && (
+                <div className="mt-8">
+                  <EpisodeSelector
+                    seasons={seasons}
+                    onEpisodeSelect={handleEpisodeSelect}
+                  />
+                </div>
+              )}
             </div>
           </div>
         ) : (
           <>
             {/* Hero Banner */}
             <div className="relative h-[70vh]">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                className="fixed top-20 left-4 z-30 bg-black/30 hover:bg-black/50 rounded-full"
+                onClick={handleGoBack}
+              >
+                <ArrowLeft size={20} />
+              </Button>
+              
               <div 
                 className="absolute inset-0 bg-cover bg-center"
                 style={{ backgroundImage: `url(${content.image_url})` }}
@@ -229,8 +430,14 @@ const ContentDetail = () => {
                 <div className="w-full lg:w-2/3 animate-fade-in">
                   <div className="flex flex-wrap gap-3 mb-4">
                     <span className="px-2 py-1 rounded-md bg-cinemax-500/20 text-cinemax-400 text-xs font-semibold">
+                      {content.content_type === 'movie' ? <Film size={12} className="inline mr-1" /> : <Tv size={12} className="inline mr-1" />}
                       {content.content_type}
                     </span>
+                    
+                    {isPremiumContent && (
+                      <PremiumBadge showLock={true} />
+                    )}
+                    
                     <span className="text-gray-400 text-sm">{content.year}</span>
                     <span className="text-gray-400 text-sm">{content.duration}</span>
                     <span className="flex items-center gap-1 bg-yellow-500/20 px-2 py-1 rounded-md">
@@ -255,6 +462,19 @@ const ContentDetail = () => {
                       <Play size={18} />
                       <span>Watch Now</span>
                     </Button>
+                    
+                    {content.trailer_key && (
+                      <Button 
+                        variant="outline" 
+                        className="gap-2 border-gray-600 hover:bg-secondary hover:text-white px-6" 
+                        size="lg"
+                        onClick={() => setShowTrailer(true)}
+                      >
+                        <Film size={18} />
+                        <span>Watch Trailer</span>
+                      </Button>
+                    )}
+                    
                     <Button 
                       variant="outline" 
                       className="gap-2 border-gray-600 hover:bg-secondary hover:text-white px-6" 
@@ -264,6 +484,7 @@ const ContentDetail = () => {
                       <Download size={18} />
                       <span>Download</span>
                     </Button>
+                    
                     <Button 
                       variant="ghost" 
                       size="icon" 
@@ -277,6 +498,7 @@ const ContentDetail = () => {
                     >
                       <Heart size={18} fill={liked ? "currentColor" : "none"} />
                     </Button>
+                    
                     <Button 
                       variant="ghost" 
                       size="icon" 
@@ -329,6 +551,16 @@ const ContentDetail = () => {
                         </Button>
                       </div>
                     </div>
+                    
+                    {/* Episode selector for series/anime */}
+                    {(content.content_type === 'series' || content.content_type === 'anime') && seasons.length > 0 && (
+                      <div className="mt-8">
+                        <EpisodeSelector
+                          seasons={seasons}
+                          onEpisodeSelect={handleEpisodeSelect}
+                        />
+                      </div>
+                    )}
                   </div>
                   
                   <div>
@@ -364,6 +596,47 @@ const ContentDetail = () => {
                         {content.content_categories?.name || 'Uncategorized'}
                       </Link>
                     </div>
+                    
+                    {isPremiumContent && !canAccessPremium && (
+                      <div className="mt-6 p-4 bg-cinemax-500/10 border border-cinemax-500/30 rounded-lg">
+                        <div className="flex items-start gap-3">
+                          <Crown size={24} className="text-yellow-500 shrink-0 mt-1" />
+                          <div>
+                            <h3 className="text-lg font-bold text-yellow-500 mb-2">Premium Content</h3>
+                            <p className="text-gray-300 text-sm mb-3">
+                              This is premium content. Subscribe or enter premium code to watch.
+                            </p>
+                            <Button 
+                              className="bg-yellow-600 hover:bg-yellow-700 text-white w-full"
+                              onClick={() => setShowPremiumModal(true)}
+                            >
+                              Enter Premium Code
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="mt-6">
+                      <h3 className="text-lg font-bold mb-4">Available Sources</h3>
+                      <div className="grid grid-cols-2 gap-2">
+                        {availableProviders.map(provider => (
+                          <Button
+                            key={provider.id}
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setActiveProvider(provider.id);
+                              toast.info(`Selected ${provider.name} as source`);
+                            }}
+                            className={`justify-start ${activeProvider === provider.id ? "border-cinemax-500 text-cinemax-500" : ""}`}
+                          >
+                            <FastForward size={14} className="mr-2" />
+                            {provider.name}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -378,8 +651,8 @@ const ContentDetail = () => {
             items={relatedContent.map(item => ({
               id: item.id,
               title: item.title,
-              image: item.image_url,
-              poster: item.image_url,
+              image: item.image_url || item.image,
+              poster: item.image_url || item.image,
               description: item.description || '',
               year: item.year || '',
               rating: item.rating || '',
@@ -390,6 +663,21 @@ const ContentDetail = () => {
           />
         )}
       </main>
+      
+      {/* Modals */}
+      {content.trailer_key && (
+        <TrailerModal
+          isOpen={showTrailer}
+          onClose={() => setShowTrailer(false)}
+          trailerKey={content.trailer_key}
+          title={content.title}
+        />
+      )}
+      
+      <PremiumCodeModal 
+        isOpen={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+      />
       
       <Footer />
     </div>

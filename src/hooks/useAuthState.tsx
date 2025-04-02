@@ -6,9 +6,10 @@ import { toast } from 'sonner';
 
 interface AuthContextType {
   user: User | null;
-  session: Session | null; // Added session to the context
+  session: Session | null;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   isAuthenticated: boolean;
@@ -65,6 +66,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const signInWithGoogle = async () => {
+    try {
+      setIsLoading(true);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin
+        }
+      });
+      
+      if (error) {
+        throw error;
+      }
+    } catch (error: any) {
+      console.error("Google login error:", error);
+      toast.error(error.message || 'Error signing in with Google');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const signUp = async (email: string, password: string) => {
     try {
       setIsLoading(true);
@@ -113,6 +136,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     session,
     isLoading,
     signIn,
+    signInWithGoogle,
     signUp,
     signOut,
     isAuthenticated: !!user

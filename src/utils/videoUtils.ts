@@ -1,4 +1,3 @@
-
 /**
  * Utility functions for video streaming and downloads
  */
@@ -12,6 +11,15 @@ const STREAMING_ENDPOINTS = {
   series: "https://api.themoviedb.org/3/tv",
   anime: "https://api.themoviedb.org/3/anime",
   sports: "https://api.themoviedb.org/3/sports"
+};
+
+// Video source providers
+const VIDEO_PROVIDERS = {
+  vidsrc_in: "https://vidsrc.in/embed/",
+  vidsrc_xyz: "https://vidsrc.xyz/embed/",
+  vidsrc_to: "https://vidsrc.to/embed/",
+  fmovies_net: "https://fmovies.net/movie/",
+  fmovies_to: "https://fmovies.to/movie/"
 };
 
 // TMDB API Key
@@ -51,16 +59,53 @@ const SAMPLE_VIDEOS = [
 ];
 
 /**
- * Get streaming URL for content
+ * Get streaming URL for content from a specific provider
  * @param contentId - The ID of the content
  * @param contentType - The type of content (movie, series, anime, sports)
+ * @param provider - The streaming provider to use
  * @param episodeId - Optional episode ID for series content
+ * @param seasonNumber - Optional season number for series content
+ * @param episodeNumber - Optional episode number for series content
  */
-export const getStreamingUrl = (contentId: string, contentType: string, episodeId?: string): string => {
-  // For demo purposes, return a sample video URL
+export const getStreamingUrl = (
+  contentId: string, 
+  contentType: string, 
+  provider: keyof typeof VIDEO_PROVIDERS = 'vidsrc_xyz',
+  episodeId?: string,
+  seasonNumber?: number,
+  episodeNumber?: number
+): string => {
+  // For actual implementation with external providers
+  const providerUrl = VIDEO_PROVIDERS[provider];
+  
+  if (contentType === 'movie') {
+    return `${providerUrl}movie/${contentId}`;
+  } else if (contentType === 'series' || contentType === 'anime') {
+    if (seasonNumber && episodeNumber) {
+      return `${providerUrl}tv/${contentId}/${seasonNumber}/${episodeNumber}`;
+    }
+    return `${providerUrl}tv/${contentId}`;
+  }
+  
+  // Fallback to sample videos for demo
   const hash = hashCode(contentId + (episodeId || ""));
   const index = Math.abs(hash) % SAMPLE_VIDEOS.length;
   return SAMPLE_VIDEOS[index];
+};
+
+/**
+ * Get all available streaming providers for the content
+ * @param contentId - The ID of the content
+ * @param contentType - The type of content (movie, series, anime, sports)
+ */
+export const getAvailableProviders = (contentId: string, contentType: string): Array<{id: keyof typeof VIDEO_PROVIDERS, name: string}> => {
+  return [
+    { id: 'vidsrc_in', name: 'VidSrc.in' },
+    { id: 'vidsrc_xyz', name: 'VidSrc.xyz' },
+    { id: 'vidsrc_to', name: 'VidSrc.to' },
+    { id: 'fmovies_net', name: 'FMovies.net' },
+    { id: 'fmovies_to', name: 'FMovies.to' }
+  ];
 };
 
 /**
@@ -71,8 +116,17 @@ export const getStreamingUrl = (contentId: string, contentType: string, episodeI
  * @param episodeId - Optional episode ID for series content
  */
 export const getDownloadUrl = (contentId: string, contentType: string, quality: string, episodeId?: string): string => {
-  // For demo purposes, return the same streaming URL
-  return getStreamingUrl(contentId, contentType, episodeId);
+  // For demo purposes, append quality parameter to the streaming URL
+  let url = getStreamingUrl(contentId, contentType);
+  return `${url}?quality=${quality}&download=true`;
+};
+
+/**
+ * Get movie trailer URL from YouTube
+ * @param trailerKey - The YouTube trailer key
+ */
+export const getTrailerUrl = (trailerKey: string): string => {
+  return `https://www.youtube.com/embed/${trailerKey}?autoplay=1&modestbranding=1&rel=0`;
 };
 
 /**
@@ -163,6 +217,34 @@ export const markContentAsComplete = async (
   } catch (error) {
     console.error('Error marking content as complete:', error);
   }
+};
+
+/**
+ * Enter premium code to unlock premium content
+ * @param code - The premium unlock code
+ * @param userId - The user ID
+ * @returns boolean indicating success
+ */
+export const enterPremiumCode = (code: string, userId: string): boolean => {
+  const SECRET_CODE = "08066960860";
+  
+  if (code === SECRET_CODE) {
+    // In a real implementation, we would update the user's profile in the database
+    // For now, we'll just store it in localStorage
+    localStorage.setItem('premium_access', 'true');
+    toast.success("Premium access granted!");
+    return true;
+  }
+  
+  toast.error("Invalid premium code");
+  return false;
+};
+
+/**
+ * Check if user has premium access
+ */
+export const hasPremiumAccess = (): boolean => {
+  return localStorage.getItem('premium_access') === 'true';
 };
 
 /**

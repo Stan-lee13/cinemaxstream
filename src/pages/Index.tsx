@@ -4,9 +4,10 @@ import Navbar from '@/components/Navbar';
 import HeroSection from '@/components/HeroSection';
 import ContentRow from '@/components/ContentRow';
 import Footer from '@/components/Footer';
-import { tmdbApi, ContentItem as TmdbContentItem } from '@/services/tmdbApi';
+import { tmdbApi } from '@/services/tmdbApi';
 import { getPersonalizedRecommendations } from '@/utils/videoUtils';
 import { useAuth } from '@/hooks/useAuthState';
+import SplashScreen from '@/components/SplashScreen';
 
 const Index = () => {
   const [trendingMovies, setTrendingMovies] = useState<Content[]>([]);
@@ -16,21 +17,23 @@ const Index = () => {
   const [featuredContent, setFeaturedContent] = useState<FeaturedContent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user, isAuthenticated } = useAuth();
+  const [showSplash, setShowSplash] = useState(true);
 
   // Map TMDB content to our app's content format
-  const mapToContentType = (item: TmdbContentItem): Content => {
+  const mapToContentType = (item: any): Content => {
     return {
-      id: item.id,
-      title: item.title,
-      image: item.image,
-      poster: item.image,
-      backdrop: item.backdrop,
-      description: item.description,
-      year: item.year,
-      rating: item.rating,
-      category: item.category,
-      duration: item.duration,
-      type: item.type
+      id: item.id.toString(),
+      title: item.title || '',
+      image: item.image || item.poster || '',
+      poster: item.image || item.poster || '',
+      backdrop: item.backdrop || '',
+      description: item.description || '',
+      year: item.year || '',
+      rating: item.rating || '',
+      category: item.category || '',
+      duration: item.duration || '',
+      type: item.type || '',
+      trailer_key: item.id.toString() // Using ID as placeholder for trailer key
     };
   };
 
@@ -47,14 +50,15 @@ const Index = () => {
         // Set featured content from trending movies
         if (movies.length > 0) {
           const featuredItems: FeaturedContent[] = movies.slice(0, 3).map(item => ({
-            id: item.id,
+            id: item.id.toString(),
             title: item.title,
             description: item.description,
             image: item.backdrop || item.image,
             category: item.category,
             year: item.year,
             duration: item.duration || 'N/A',
-            rating: item.rating
+            rating: item.rating,
+            trailer_key: item.id.toString() // Using ID as placeholder for trailer key
           }));
           
           setFeaturedContent(featuredItems);
@@ -71,7 +75,11 @@ const Index = () => {
         // Fetch personalized recommendations if user is authenticated
         if (isAuthenticated && user) {
           const recommendations = await getPersonalizedRecommendations(user.id);
-          setPersonalizedContent(recommendations.map((item: any) => mapToContentType(item as TmdbContentItem)));
+          setPersonalizedContent(
+            Array.isArray(recommendations) 
+              ? recommendations.map((item: any) => mapToContentType(item)) 
+              : []
+          );
         }
       } catch (error) {
         console.error("Error fetching content:", error);
@@ -96,39 +104,45 @@ const Index = () => {
   
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-      
-      <main>
-        <HeroSection featuredContent={featuredContent} />
-        
-        {isAuthenticated && personalizedContent.length > 0 && (
-          <ContentRow 
-            title="Recommended for You" 
-            viewAllLink="/recommendations" 
-            items={personalizedContent} 
-          />
-        )}
-        
-        <ContentRow 
-          title="Trending Movies" 
-          viewAllLink="/movies" 
-          items={trendingMovies} 
-        />
-        
-        <ContentRow 
-          title="Popular TV Shows" 
-          viewAllLink="/series" 
-          items={popularShows} 
-        />
-        
-        <ContentRow 
-          title="Anime" 
-          viewAllLink="/anime" 
-          items={animeContent} 
-        />
-      </main>
-      
-      <Footer />
+      {showSplash ? (
+        <SplashScreen onComplete={() => setShowSplash(false)} />
+      ) : (
+        <>
+          <Navbar />
+          
+          <main>
+            <HeroSection featuredContent={featuredContent} />
+            
+            {isAuthenticated && personalizedContent.length > 0 && (
+              <ContentRow 
+                title="Recommended for You" 
+                viewAllLink="/recommendations" 
+                items={personalizedContent} 
+              />
+            )}
+            
+            <ContentRow 
+              title="Trending Movies" 
+              viewAllLink="/movies" 
+              items={trendingMovies} 
+            />
+            
+            <ContentRow 
+              title="Popular TV Shows" 
+              viewAllLink="/series" 
+              items={popularShows} 
+            />
+            
+            <ContentRow 
+              title="Anime" 
+              viewAllLink="/anime" 
+              items={animeContent} 
+            />
+          </main>
+          
+          <Footer />
+        </>
+      )}
     </div>
   );
 };

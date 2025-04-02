@@ -25,6 +25,7 @@ export interface ContentItem {
   rating: string;
   category: string;
   type?: string;
+  trailer_key?: string;
 }
 
 // Function to format content item
@@ -40,6 +41,7 @@ const formatContentItem = (item: any, type: string = 'movie'): ContentItem => {
     duration: isMovie ? '120 min' : 'Seasons: ' + (item.number_of_seasons || 'N/A'),
     rating: (item.vote_average / 2).toFixed(1),
     category: type,
+    trailer_key: item.id.toString() // Using ID as a placeholder for trailer key
   };
 };
 
@@ -57,7 +59,7 @@ const searchContent = async (query: string): Promise<ContentItem[]> => {
     
     return data.results
       .filter((item: any) => item.media_type === 'movie' || item.media_type === 'tv')
-      .map((item: any) => formatContentItem(item, item.media_type));
+      .map((item: any) => formatContentItem(item, item.media_type === 'tv' ? 'series' : item.media_type));
   } catch (error) {
     console.error("Error searching content:", error);
     toast.error("Failed to search content");
@@ -161,6 +163,7 @@ const getAnime = async (): Promise<ContentItem[]> => {
     return data.results.map((item: any) => {
       const formattedItem = formatContentItem(item, 'series');
       formattedItem.category = 'anime';
+      formattedItem.type = 'anime';
       return formattedItem;
     });
   } catch (error) {
@@ -173,19 +176,47 @@ const getAnime = async (): Promise<ContentItem[]> => {
 // Function to get content details
 const getContentDetails = async (id: string, type: string = 'movie'): Promise<ContentItem | null> => {
   try {
-    const url = `${TMDB_BASE_URL}/${type}/${id}?api_key=${API_KEY}`;
+    // For TV shows, we need to adjust the endpoint
+    const endpoint = type === 'series' || type === 'anime' ? 'tv' : type;
+    const url = `${TMDB_BASE_URL}/${endpoint}/${id}?api_key=${API_KEY}`;
+    
     const response = await fetch(url);
     
     if (!response.ok) {
+      // If we can't find it as the specified type, try the alternative
+      if (type === 'movie') {
+        return getContentDetails(id, 'series');
+      } else if (type === 'series') {
+        return getContentDetails(id, 'movie');
+      }
       throw new Error(`Failed to fetch content details: ${response.status}`);
     }
     
     const data = await response.json();
     
+    // Also try to fetch videos to get trailers
+    try {
+      const videosUrl = `${TMDB_BASE_URL}/${endpoint}/${id}/videos?api_key=${API_KEY}`;
+      const videosResponse = await fetch(videosUrl);
+      if (videosResponse.ok) {
+        const videosData = await videosResponse.json();
+        // Find a trailer, teaser, or any video
+        const trailer = videosData.results.find((v: any) => 
+          v.type === 'Trailer' || v.type === 'Teaser'
+        );
+        if (trailer) {
+          const formattedItem = formatContentItem(data, type);
+          formattedItem.trailer_key = trailer.key;
+          return formattedItem;
+        }
+      }
+    } catch (e) {
+      console.error("Error fetching video details:", e);
+    }
+    
     return formatContentItem(data, type);
   } catch (error) {
     console.error("Error fetching content details:", error);
-    toast.error("Failed to load content details");
     return null;
   }
 };
@@ -193,7 +224,9 @@ const getContentDetails = async (id: string, type: string = 'movie'): Promise<Co
 // Function to get similar content
 const getSimilarContent = async (id: string, type: string = 'movie'): Promise<ContentItem[]> => {
   try {
-    const url = `${TMDB_BASE_URL}/${type}/${id}/similar?api_key=${API_KEY}`;
+    // For TV shows, we need to adjust the endpoint
+    const endpoint = type === 'series' || type === 'anime' ? 'tv' : type;
+    const url = `${TMDB_BASE_URL}/${endpoint}/${id}/similar?api_key=${API_KEY}`;
     const response = await fetch(url);
     
     if (!response.ok) {

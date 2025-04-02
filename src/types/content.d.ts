@@ -11,10 +11,11 @@ interface ContentItem {
   rating: string;
   category: string;
   type?: string;
+  trailer_key?: string;
 }
 
 interface Content {
-  id: string; // Changed from number to string
+  id: string;
   title: string;
   image: string;
   poster?: string;
@@ -25,10 +26,11 @@ interface Content {
   type?: string;
   description?: string;
   duration?: string;
+  trailer_key?: string;
 }
 
 interface FeaturedContent {
-  id: string; // Changed from number to string
+  id: string;
   title: string;
   description: string;
   image: string;
@@ -36,4 +38,26 @@ interface FeaturedContent {
   year: string;
   duration: string;
   rating: string;
+  trailer_key?: string;
+}
+
+interface Episode {
+  id: string;
+  title: string;
+  episode_number: number;
+  season_number: number;
+  description?: string;
+  image?: string;
+  duration?: string;
+  air_date?: string;
+}
+
+interface Season {
+  id: string;
+  season_number: number;
+  title: string;
+  episode_count: number;
+  episodes: Episode[];
+  poster?: string;
+  air_date?: string;
 }
