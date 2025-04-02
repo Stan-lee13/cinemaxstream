@@ -2,10 +2,10 @@
 interface UserProfileData {
   id: string;
   username: string;
-  avatar_url: string;
-  subscription_tier: string;
-  subscription_expires_at: string;
-  created_at: string;
-  updated_at: string;
+  avatar_url: string | null;
+  created_at?: string;
+  updated_at?: string;
+  subscription_tier: 'free' | 'premium';
+  subscription_expires_at?: string;
   hide_activity: boolean;
 }

@@ -379,8 +379,12 @@ const ContentDetail = () => {
               id: item.id,
               title: item.title,
               image: item.image_url,
-              year: item.year,
-              rating: item.rating,
+              poster: item.image_url,
+              description: item.description || '',
+              year: item.year || '',
+              rating: item.rating || '',
+              category: item.content_type || '',
+              duration: item.duration || '',
               type: item.content_type
             }))} 
           />

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Play, Download, Heart } from "lucide-react";
@@ -7,7 +8,7 @@ interface HeroSectionProps {
 }
 
 // Default featured content in case API fails
-const defaultFeaturedContent = [
+const defaultFeaturedContent: FeaturedContent[] = [
   {
     id: "1",
     title: "Inception",
