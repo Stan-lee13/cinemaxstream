@@ -244,7 +244,7 @@ export const enterPremiumCode = (code: string, userId: string): boolean => {
  * Check if user has premium access
  */
 export const hasPremiumAccess = (): boolean => {
-  return localStorage.getItem('premium_access') === 'true';
+  return localStorage.getItem('premium_access') === 'true' || localStorage.getItem('guest_access') === 'true';
 };
 
 /**
