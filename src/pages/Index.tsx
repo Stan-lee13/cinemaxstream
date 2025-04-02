@@ -39,7 +39,7 @@ const Index = () => {
 
   // Create a combined trending list for the hero section
   const featuredContent: FeaturedContent[] = trendingMovies?.slice(0, 3).map(item => ({
-    id: item.id,
+    id: String(item.id), // Convert ID to string
     title: item.title,
     description: item.description,
     image: item.backdrop,
@@ -48,6 +48,22 @@ const Index = () => {
     duration: item.duration,
     rating: item.rating
   })) || [];
+
+  // Map API content to Content type for rendering
+  const mapToContentType = (items: any[] | undefined): Content[] => {
+    if (!items) return [];
+    return items.map(item => ({
+      id: String(item.id), // Convert ID to string
+      title: item.title,
+      description: item.description,
+      poster: item.poster,
+      backdrop: item.backdrop,
+      category: item.category,
+      year: item.year,
+      duration: item.duration,
+      rating: item.rating
+    }));
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -65,7 +81,7 @@ const Index = () => {
           <ContentRow 
             title="Trending Now" 
             viewAllLink="/trending" 
-            items={[...trendingMovies || [], ...trendingTvShows || []].slice(0, 8) as Content[]} 
+            items={mapToContentType([...(trendingMovies || []), ...(trendingTvShows || [])].slice(0, 8))} 
           />
         )}
         
@@ -75,7 +91,7 @@ const Index = () => {
           <ContentRow 
             title="Popular Movies" 
             viewAllLink="/movies" 
-            items={popularMovies || [] as Content[]} 
+            items={mapToContentType(popularMovies || [])} 
           />
         )}
         
@@ -85,7 +101,7 @@ const Index = () => {
           <ContentRow 
             title="TV Series" 
             viewAllLink="/series" 
-            items={popularTvShows || [] as Content[]} 
+            items={mapToContentType(popularTvShows || [])} 
           />
         )}
         

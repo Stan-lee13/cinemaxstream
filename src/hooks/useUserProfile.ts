@@ -51,12 +51,11 @@ export const useUserProfile = () => {
 
         setProfileData(createdProfile as UserProfileData);
       } else {
-        // Handle existing profiles that might not have hide_activity field
-        const profile = {
+        // Handle existing profiles and ensure hide_activity is included
+        setProfileData({
           ...data,
-          hide_activity: data.hide_activity === undefined ? false : data.hide_activity
-        };
-        setProfileData(profile as UserProfileData);
+          hide_activity: data.hide_activity !== undefined ? data.hide_activity : false
+        } as UserProfileData);
       }
     } catch (error) {
       console.error('Unexpected error:', error);

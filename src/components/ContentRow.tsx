@@ -4,15 +4,6 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Play, Download, ArrowRight, ArrowLeft } from "lucide-react";
 
-interface Content {
-  id: number;
-  title: string;
-  image: string;
-  year: string;
-  rating: string;
-  type?: string;
-}
-
 interface ContentRowProps {
   title: string;
   viewAllLink: string;
@@ -112,7 +103,7 @@ const ContentRow: React.FC<ContentRowProps> = ({ title, viewAllLink, items }) =>
                 <Link to={`/content/${item.id}`}>
                   <div className="movie-card h-[260px] sm:h-[300px]">
                     <img 
-                      src={item.image} 
+                      src={item.poster} 
                       alt={item.title} 
                       className="w-full h-full object-cover rounded-lg"
                     />

@@ -1,18 +1,6 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Play, Download, Heart } from "lucide-react";
-
-interface FeaturedContent {
-  id: number;
-  title: string;
-  description: string;
-  image: string;
-  category: string;
-  year: string;
-  duration: string;
-  rating: string;
-}
 
 interface HeroSectionProps {
   featuredContent?: FeaturedContent[];
@@ -21,7 +9,7 @@ interface HeroSectionProps {
 // Default featured content in case API fails
 const defaultFeaturedContent = [
   {
-    id: 1,
+    id: "1",
     title: "Inception",
     description: "A thief who enters the dreams of others to steal their secrets gets a final mission that could give him his life back.",
     image: "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1920&q=80",
@@ -31,7 +19,7 @@ const defaultFeaturedContent = [
     rating: "8.8"
   },
   {
-    id: 2,
+    id: "2",
     title: "The Matrix",
     description: "A computer hacker learns about the true nature of reality and his role in the war against its controllers.",
     image: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=1920&q=80",
@@ -41,7 +29,7 @@ const defaultFeaturedContent = [
     rating: "8.7"
   },
   {
-    id: 3,
+    id: "3",
     title: "Interstellar",
     description: "A team of explorers travel through a wormhole in space in an attempt to ensure humanity's survival.",
     image: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=1920&q=80",
