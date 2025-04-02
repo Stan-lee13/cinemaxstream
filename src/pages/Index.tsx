@@ -38,7 +38,7 @@ const Index = () => {
   });
 
   // Create a combined trending list for the hero section
-  const featuredContent = trendingMovies?.slice(0, 3).map(item => ({
+  const featuredContent: FeaturedContent[] = trendingMovies?.slice(0, 3).map(item => ({
     id: item.id,
     title: item.title,
     description: item.description,
@@ -47,7 +47,7 @@ const Index = () => {
     year: item.year,
     duration: item.duration,
     rating: item.rating
-  }));
+  })) || [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -65,7 +65,7 @@ const Index = () => {
           <ContentRow 
             title="Trending Now" 
             viewAllLink="/trending" 
-            items={[...trendingMovies || [], ...trendingTvShows || []].slice(0, 8)} 
+            items={[...trendingMovies || [], ...trendingTvShows || []].slice(0, 8) as Content[]} 
           />
         )}
         
@@ -75,7 +75,7 @@ const Index = () => {
           <ContentRow 
             title="Popular Movies" 
             viewAllLink="/movies" 
-            items={popularMovies || []} 
+            items={popularMovies || [] as Content[]} 
           />
         )}
         
@@ -85,7 +85,7 @@ const Index = () => {
           <ContentRow 
             title="TV Series" 
             viewAllLink="/series" 
-            items={popularTvShows || []} 
+            items={popularTvShows || [] as Content[]} 
           />
         )}
         
