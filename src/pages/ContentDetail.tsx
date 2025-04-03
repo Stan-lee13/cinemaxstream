@@ -13,7 +13,7 @@ import MovieDetail from "@/components/MovieDetail";
 import BackButton from "@/components/BackButton";
 import DownloadOptions from "@/components/DownloadOptions";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FastForward, Crown, Info } from "lucide-react";
+import { ArrowLeft, FastForward, Crown, Info, Play } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuthState";
 import { toast } from "sonner";

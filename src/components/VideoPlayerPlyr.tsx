@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Play, Pause, Volume2, VolumeX, Maximize, SkipForward, SkipBack, Download, Video } from "lucide-react";
+import { Volume2, VolumeX, Maximize, SkipForward, SkipBack, Download, Video } from "lucide-react";
 import { trackStreamingActivity, markContentAsComplete, startRecording } from "@/utils/videoUtils";
 import { toast } from "sonner";
 import Plyr from 'plyr';
@@ -134,7 +134,9 @@ const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({
       if (autoPlay) {
         const playPromise = playerRef.current.play();
         if (playPromise !== undefined) {
-          playPromise.catch(() => {
+          playPromise.then(() => {
+            // Auto-play started successfully
+          }).catch(() => {
             toast.error("Autoplay blocked. Please interact with the player to enable playback.");
           });
         }

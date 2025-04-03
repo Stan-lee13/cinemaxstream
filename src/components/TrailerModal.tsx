@@ -3,6 +3,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getTrailerUrl } from "@/utils/videoUtils";
+import { useEffect, useState } from "react";
 
 interface TrailerModalProps {
   isOpen: boolean;
@@ -12,6 +13,26 @@ interface TrailerModalProps {
 }
 
 const TrailerModal = ({ isOpen, onClose, trailerKey, title }: TrailerModalProps) => {
+  const [trailerSrc, setTrailerSrc] = useState<string>("");
+  
+  useEffect(() => {
+    // Only fetch trailer when modal is open and we have a key
+    if (isOpen && trailerKey) {
+      // Since getTrailerUrl might be async, handle it appropriately
+      const fetchTrailer = async () => {
+        try {
+          const url = await getTrailerUrl(trailerKey, "movie");
+          setTrailerSrc(url);
+        } catch (error) {
+          console.error("Error fetching trailer URL:", error);
+          setTrailerSrc("");
+        }
+      };
+      
+      fetchTrailer();
+    }
+  }, [isOpen, trailerKey]);
+
   if (!trailerKey) {
     return null;
   }
@@ -30,13 +51,19 @@ const TrailerModal = ({ isOpen, onClose, trailerKey, title }: TrailerModalProps)
           </Button>
           
           <div className="aspect-video w-full">
-            <iframe
-              src={getTrailerUrl(trailerKey)}
-              title={`${title} Trailer`}
-              className="w-full h-full"
-              allowFullScreen
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            ></iframe>
+            {trailerSrc ? (
+              <iframe
+                src={trailerSrc}
+                title={`${title} Trailer`}
+                className="w-full h-full"
+                allowFullScreen
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              ></iframe>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-black">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cinemax-500"></div>
+              </div>
+            )}
           </div>
         </div>
       </DialogContent>
