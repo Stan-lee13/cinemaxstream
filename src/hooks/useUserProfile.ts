@@ -34,8 +34,7 @@ export const useUserProfile = () => {
           id: user.id,
           username: user.email?.split('@')[0] || 'User',
           avatar_url: null,
-          subscription_tier: 'free',
-          hide_activity: false
+          subscription_tier: 'free'
         };
 
         const { data: createdProfile, error: createError } = await supabase
@@ -51,22 +50,7 @@ export const useUserProfile = () => {
 
         setProfileData(createdProfile as UserProfile);
       } else {
-        // Handle existing profiles and ensure hide_activity is included
-        const profile = {
-          ...data,
-          // Ensure hide_activity is a boolean, default to false if undefined or null
-          hide_activity: data.hide_activity === true
-        } as UserProfile;
-        
-        // If hide_activity field doesn't exist in the database, update it
-        if (data.hide_activity === undefined || data.hide_activity === null) {
-          await supabase
-            .from('user_profiles')
-            .update({ hide_activity: false })
-            .eq('id', user.id);
-        }
-        
-        setProfileData(profile);
+        setProfileData(data as UserProfile);
       }
     } catch (error) {
       console.error('Unexpected error:', error);

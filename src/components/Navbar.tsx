@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { 
   Search, 
@@ -12,29 +12,49 @@ import {
   Download,
   X,
   LogOut,
-  User
+  User,
+  Settings
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuthState";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
 
-const NavItem = ({ href, children }: { href: string; children: React.ReactNode }) => (
+const NavItem = ({ href, children, isActive = false }: { href: string; children: React.ReactNode; isActive?: boolean }) => (
   <Link 
     to={href} 
-    className="text-gray-300 hover:text-white transition-colors relative group"
+    className={`text-gray-300 hover:text-white transition-colors relative group ${isActive ? 'text-white' : ''}`}
   >
     <span>{children}</span>
-    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-cinemax-500 transition-all duration-300 group-hover:w-full"></span>
+    <span className={`absolute -bottom-1 left-0 h-0.5 bg-cinemax-500 transition-all duration-300 ${isActive ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
   </Link>
 );
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, signOut, isAuthenticated } = useAuth();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const toggleSearch = () => {
     setIsSearchOpen(!isSearchOpen);
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      setIsSearchOpen(false);
+    }
   };
 
   const handleSignOut = async () => {
@@ -44,6 +64,10 @@ const Navbar = () => {
 
   const handleSignIn = () => {
     navigate('/auth');
+  };
+
+  const isActive = (path: string) => {
+    return location.pathname === path || location.pathname.startsWith(`${path}/`);
   };
 
   return (
@@ -56,31 +80,34 @@ const Navbar = () => {
             </Link>
             
             <nav className="hidden md:flex items-center space-x-6">
-              <NavItem href="/">Home</NavItem>
-              <NavItem href="/movies">Movies</NavItem>
-              <NavItem href="/series">TV Series</NavItem>
-              <NavItem href="/anime">Anime</NavItem>
-              <NavItem href="/sports">Sports</NavItem>
+              <NavItem href="/" isActive={isActive('/')}>Home</NavItem>
+              <NavItem href="/movies" isActive={isActive('/movies')}>Movies</NavItem>
+              <NavItem href="/series" isActive={isActive('/series')}>TV Series</NavItem>
+              <NavItem href="/anime" isActive={isActive('/anime')}>Anime</NavItem>
+              <NavItem href="/sports" isActive={isActive('/sports')}>Sports</NavItem>
             </nav>
           </div>
           
           <div className="flex items-center space-x-4">
             {isSearchOpen ? (
-              <div className="relative animate-fade-in">
+              <form onSubmit={handleSearch} className="relative animate-fade-in">
                 <Input 
                   placeholder="Search for movies, series..." 
                   className="w-60 bg-secondary/70 border-gray-700 focus:border-cinemax-500 text-white"
                   autoFocus
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                 />
                 <Button 
                   variant="ghost" 
                   size="icon" 
                   onClick={toggleSearch}
+                  type="button"
                   className="absolute right-1 top-1/2 -translate-y-1/2"
                 >
                   <X size={18} />
                 </Button>
-              </div>
+              </form>
             ) : (
               <Button 
                 variant="ghost" 
@@ -149,6 +176,10 @@ const Navbar = () => {
                         <Download size={18} />
                         <span>Downloads</span>
                       </Link>
+                      <Link to="/profile" className="flex items-center gap-2 text-white hover:text-cinemax-400">
+                        <Settings size={18} />
+                        <span>Profile Settings</span>
+                      </Link>
                       <button 
                         onClick={handleSignOut}
                         className="flex items-center gap-2 text-white hover:text-cinemax-400"
@@ -171,19 +202,42 @@ const Navbar = () => {
             </Sheet>
             
             {isAuthenticated ? (
-              <div className="hidden md:flex items-center gap-2">
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  className="text-gray-300 hover:text-white"
-                  onClick={handleSignOut}
-                >
-                  <LogOut size={16} className="mr-1" />
-                  <span>Sign Out</span>
-                </Button>
-                <div className="h-8 w-8 rounded-full bg-cinemax-500 flex items-center justify-center text-white">
-                  {user?.email?.charAt(0).toUpperCase() || 'U'}
-                </div>
+              <div className="hidden md:block">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Avatar className="h-8 w-8 cursor-pointer hover:opacity-80 transition-opacity">
+                      <AvatarImage src={user?.user_metadata?.avatar_url || ''} />
+                      <AvatarFallback className="bg-cinemax-500 text-sm">
+                        {user?.email?.charAt(0).toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56 bg-background border-gray-700">
+                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate('/profile')}>
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Profile Settings</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/favorites')}>
+                      <Heart className="mr-2 h-4 w-4" />
+                      <span>Favorites</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/downloads')}>
+                      <Download className="mr-2 h-4 w-4" />
+                      <span>Downloads</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/subscription')}>
+                      <Play className="mr-2 h-4 w-4" />
+                      <span>Subscription</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleSignOut} className="text-red-500 hover:text-red-400">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Sign Out</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             ) : (
               <Button 

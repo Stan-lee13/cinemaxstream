@@ -3,33 +3,37 @@ import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuthState';
 import { toast } from 'sonner';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useNavigate } from 'react-router-dom';
 
 const UserProfile = () => {
-  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  const { user, signOut, isAuthenticated } = useAuth();
   const { profileData, isLoading, updateProfile } = useUserProfile();
   const [username, setUsername] = useState('');
-  const [hideActivity, setHideActivity] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/auth');
+    }
+  }, [isAuthenticated, navigate]);
 
   useEffect(() => {
     if (profileData) {
       setUsername(profileData.username || '');
-      setHideActivity(profileData.hide_activity || false);
     }
   }, [profileData]);
 
   const handleSaveProfile = async () => {
     await updateProfile({
-      username,
-      hide_activity: hideActivity
+      username
     });
     setIsEditing(false);
   };
@@ -110,21 +114,16 @@ const UserProfile = () => {
                   <div>
                     <Label htmlFor="subscription">Subscription</Label>
                     <p className="text-gray-300 capitalize">{profileData?.subscription_tier || 'Free'}</p>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="privacy">Hide Viewing Activity</Label>
-                      <p className="text-sm text-gray-400">
-                        When enabled, your viewing history will be hidden from recommendations
-                      </p>
-                    </div>
-                    <Switch
-                      id="privacy"
-                      checked={hideActivity}
-                      onCheckedChange={setHideActivity}
-                      disabled={!isEditing}
-                    />
+                    {profileData?.subscription_tier === 'free' && (
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="mt-2 text-cinemax-400 border-cinemax-400 hover:bg-cinemax-500/20"
+                        onClick={() => navigate('/subscription')}
+                      >
+                        Upgrade to Premium
+                      </Button>
+                    )}
                   </div>
                 </div>
 
@@ -133,6 +132,7 @@ const UserProfile = () => {
                     variant="destructive"
                     onClick={async () => {
                       await signOut();
+                      navigate('/');
                     }}
                   >
                     Sign Out

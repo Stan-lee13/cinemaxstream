@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,9 +13,16 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, signUp, signInWithGoogle } = useAuth();
+  const { signIn, signUp, signInWithGoogle, isAuthenticated } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
   const navigate = useNavigate();
+  
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/");
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,8 +38,13 @@ const Auth = () => {
       if (isSignUp) {
         await signUp(email, password);
         toast.success("Account created successfully! Please check your email for verification.");
+        // Auto switch to sign in mode after successful signup
+        setIsSignUp(false);
+        // Pre-fill the email field
+        // Don't clear the password to make it easier to sign in immediately
       } else {
         await signIn(email, password);
+        toast.success("Signed in successfully!");
         navigate("/");
       }
     } catch (error: any) {
@@ -59,6 +71,13 @@ const Auth = () => {
     localStorage.setItem('guest_access', 'true');
     toast.success("Logged in as guest. You have access to premium content.");
     navigate("/");
+  };
+  
+  // Auto-fill the test account
+  const fillTestAccount = () => {
+    setEmail("stanleyvic13@gmail.com");
+    setPassword("Stanley123");
+    setIsSignUp(false);
   };
 
   return (
@@ -124,8 +143,16 @@ const Auth = () => {
               </div>
               
               {!isSignUp && (
-                <div className="flex justify-end">
-                  <Link to="#" className="text-sm text-cinemax-500 hover:underline">
+                <div className="flex justify-between">
+                  <Button 
+                    type="button" 
+                    variant="link" 
+                    className="text-sm text-cinemax-500 hover:underline px-0 h-auto"
+                    onClick={fillTestAccount}
+                  >
+                    Use Test Account
+                  </Button>
+                  <Link to="/reset-password" className="text-sm text-cinemax-500 hover:underline">
                     Forgot password?
                   </Link>
                 </div>
