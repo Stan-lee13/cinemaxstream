@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Volume2, VolumeX, Maximize, SkipForward, SkipBack, Download, Video } from "lucide-react";
@@ -130,13 +131,17 @@ const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({
       };
       
       // Attempt to play if autoplay is enabled
-      if (autoPlay) {
-        const playPromise = playerRef.current.play();
-        // Check if playPromise is actually a Promise before calling then/catch
-        if (playPromise !== undefined && typeof playPromise.then === 'function') {
-          playPromise.catch(() => {
-            toast.error("Autoplay blocked. Please interact with the player to enable playback.");
-          });
+      if (autoPlay && playerRef.current) {
+        try {
+          const playPromise = playerRef.current.play();
+          // Only handle as a promise if it returns one
+          if (playPromise !== undefined && typeof playPromise === 'object' && typeof playPromise.catch === 'function') {
+            playPromise.catch(() => {
+              toast.error("Autoplay blocked. Please interact with the player to enable playback.");
+            });
+          }
+        } catch (error) {
+          console.error("Error attempting to autoplay:", error);
         }
       }
     }

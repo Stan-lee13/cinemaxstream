@@ -28,7 +28,7 @@ export const useUserProfile = () => {
         return;
       }
 
-      // If profile doesn't exist yet or is missing hide_activity field, create it
+      // If profile doesn't exist yet, create it
       if (!data) {
         const newProfile = {
           id: user.id,
@@ -52,9 +52,11 @@ export const useUserProfile = () => {
         setProfileData(createdProfile as UserProfile);
       } else {
         // Handle existing profiles and ensure hide_activity is included
+        const hideActivity = typeof data.hide_activity === 'boolean' ? data.hide_activity : false;
+        
         const profile = {
           ...data,
-          hide_activity: data.hide_activity !== undefined ? data.hide_activity : false
+          hide_activity: hideActivity
         } as UserProfile;
         
         // If hide_activity field doesn't exist in the database, update it
