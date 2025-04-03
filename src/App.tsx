@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuthState";
+import { Button } from "@/components/ui/button"; // Add this import
 import Index from "./pages/Index";
 import ContentDetail from "./pages/ContentDetail";
 import Category from "./pages/Category";
