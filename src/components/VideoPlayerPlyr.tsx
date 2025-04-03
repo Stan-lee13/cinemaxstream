@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Volume2, VolumeX, Maximize, SkipForward, SkipBack, Download, Video } from "lucide-react";
@@ -68,7 +67,6 @@ const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({
     
     playerRef.current = player;
     
-    // Set up event listeners
     player.on('ready', () => {
       setIsLoading(false);
     });
@@ -147,7 +145,6 @@ const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({
     }
   }, [src, poster, autoPlay]);
   
-  // Start/stop recording
   const toggleRecording = () => {
     if (!videoRef.current) return;
     
