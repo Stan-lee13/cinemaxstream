@@ -52,10 +52,20 @@ export const useUserProfile = () => {
         setProfileData(createdProfile as UserProfile);
       } else {
         // Handle existing profiles and ensure hide_activity is included
-        setProfileData({
+        const profile = {
           ...data,
           hide_activity: data.hide_activity !== undefined ? data.hide_activity : false
-        } as UserProfile);
+        } as UserProfile;
+        
+        // If hide_activity field doesn't exist in the database, update it
+        if (data.hide_activity === undefined) {
+          await supabase
+            .from('user_profiles')
+            .update({ hide_activity: false })
+            .eq('id', user.id);
+        }
+        
+        setProfileData(profile);
       }
     } catch (error) {
       console.error('Unexpected error:', error);
