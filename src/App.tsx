@@ -6,7 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuthState";
-import { Button } from "@/components/ui/button"; // Add this import
+import { ThemeProvider } from "@/hooks/useTheme"; // Add this import
+import { Button } from "@/components/ui/button";
 import Index from "./pages/Index";
 import ContentDetail from "./pages/ContentDetail";
 import Category from "./pages/Category";
@@ -15,6 +16,7 @@ import Auth from "./pages/Auth";
 import UserProfile from "./pages/UserProfile";
 import SplashScreen from "./components/SplashScreen";
 import ResetPassword from "./pages/ResetPassword";
+import WatchHistory from "./pages/WatchHistory"; // Add this import
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,6 +40,7 @@ const AppRoutes = () => {
       <Route path="/sports" element={<Category />} />
       <Route path="/profile" element={<UserProfile />} />
       <Route path="/favorites" element={<Category />} />
+      <Route path="/watch-history" element={<WatchHistory />} /> {/* Add this route */}
       <Route path="/downloads" element={
         <div className="min-h-screen pt-20 px-4 container mx-auto">
           <h1 className="text-3xl font-bold mb-4">Downloads</h1>
@@ -132,17 +135,19 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            {showSplash ? (
-              <SplashScreen onComplete={() => setShowSplash(false)} />
-            ) : (
-              <AppRoutes />
-            )}
-          </BrowserRouter>
-        </TooltipProvider>
+        <ThemeProvider> {/* Add this provider */}
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              {showSplash ? (
+                <SplashScreen onComplete={() => setShowSplash(false)} />
+              ) : (
+                <AppRoutes />
+              )}
+            </BrowserRouter>
+          </TooltipProvider>
+        </ThemeProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

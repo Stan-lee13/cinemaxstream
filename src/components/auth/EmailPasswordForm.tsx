@@ -1,35 +1,32 @@
 
 import React from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Eye, EyeOff, Mail, Lock, UserPlus, LogIn } from "lucide-react";
+import { useAuthForm } from "@/hooks/useAuthForm";
+import { useAuth } from "@/hooks/useAuthState";
 
 interface EmailPasswordFormProps {
-  email: string;
-  setEmail: (email: string) => void;
-  password: string;
-  setPassword: (password: string) => void;
-  showPassword: boolean;
-  setShowPassword: (show: boolean) => void;
-  isLoading: boolean;
   isSignUp: boolean;
-  handleSubmit: (e: React.FormEvent) => Promise<void>;
-  fillTestAccount: () => void;
 }
 
-const EmailPasswordForm: React.FC<EmailPasswordFormProps> = ({
-  email,
-  setEmail,
-  password,
-  setPassword,
-  showPassword,
-  setShowPassword,
-  isLoading,
-  isSignUp,
-  handleSubmit,
-  fillTestAccount,
-}) => {
+const EmailPasswordForm: React.FC<EmailPasswordFormProps> = ({ isSignUp }) => {
+  const { 
+    email, 
+    setEmail, 
+    password, 
+    setPassword, 
+    showPassword, 
+    setShowPassword, 
+    isLoading,
+    handleSubmit,
+    fillTestAccount
+  } = useAuthForm();
+  
+  const { signInAsTestUser } = useAuth(); // Add this
+  const navigate = useNavigate();
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
@@ -51,15 +48,26 @@ const EmailPasswordForm: React.FC<EmailPasswordFormProps> = ({
       </div>
       
       <div>
-        <label htmlFor="password" className="block text-sm font-medium mb-1">
-          Password
-        </label>
+        <div className="flex items-center justify-between mb-1">
+          <label htmlFor="password" className="block text-sm font-medium">
+            Password
+          </label>
+          {!isSignUp && (
+            <button
+              type="button"
+              onClick={() => navigate('/reset-password')}
+              className="text-xs text-cinemax-400 hover:text-cinemax-300 focus:underline"
+            >
+              Forgot password?
+            </button>
+          )}
+        </div>
         <div className="relative">
           <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 h-4 w-4" />
           <Input
             id="password"
             type={showPassword ? "text" : "password"}
-            placeholder="Enter your password"
+            placeholder={isSignUp ? "Create a password" : "Enter your password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="pl-10"
@@ -70,46 +78,46 @@ const EmailPasswordForm: React.FC<EmailPasswordFormProps> = ({
             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
             onClick={() => setShowPassword(!showPassword)}
           >
-            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
       </div>
       
-      {!isSignUp && (
-        <div className="flex justify-between">
-          <Button 
-            type="button" 
-            variant="link" 
-            className="text-sm text-cinemax-500 hover:underline px-0 h-auto"
-            onClick={fillTestAccount}
-          >
-            Use Test Account
-          </Button>
-          <Link to="/reset-password" className="text-sm text-cinemax-500 hover:underline">
-            Forgot password?
-          </Link>
-        </div>
-      )}
-      
       <Button 
         type="submit" 
-        className="w-full bg-cinemax-500 hover:bg-cinemax-600 gap-2"
+        className="w-full bg-cinemax-500 hover:bg-cinemax-600"
         disabled={isLoading}
       >
         {isLoading ? (
           <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full"></div>
         ) : isSignUp ? (
-          <>
-            <UserPlus size={16} />
-            <span>Sign Up</span>
-          </>
+          "Create Account"
         ) : (
-          <>
-            <LogIn size={16} />
-            <span>Sign In</span>
-          </>
+          "Sign In"
         )}
       </Button>
+      
+      {!isSignUp && (
+        <div className="space-y-3">
+          <Button 
+            type="button" 
+            variant="outline" 
+            className="w-full"
+            onClick={() => fillTestAccount()}
+          >
+            Use Test Account
+          </Button>
+          
+          <Button 
+            type="button" 
+            variant="secondary" 
+            className="w-full"
+            onClick={() => signInAsTestUser()} // Add this button
+          >
+            Quick Login as Test User
+          </Button>
+        </div>
+      )}
     </form>
   );
 };

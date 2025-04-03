@@ -1,77 +1,106 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
-import { Heart, Download, Play, User, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuthState";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ChevronDown, LogOut, Settings, User as UserIcon, History } from "lucide-react";
+import ThemeSwitcher from "../ThemeSwitcher"; // Import ThemeSwitcher
 
-const UserMenu: React.FC = () => {
-  const navigate = useNavigate();
+export const UserMenu = () => {
   const { user, signOut, isAuthenticated } = useAuth();
-  
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
-  };
+  const navigate = useNavigate();
+  const [isOpen, setIsOpen] = useState(false);
 
-  const handleSignIn = () => {
-    navigate('/auth');
-  };
-  
   if (!isAuthenticated) {
     return (
-      <Button 
-        className="hidden md:flex bg-cinemax-500 hover:bg-cinemax-600"
-        onClick={handleSignIn}
-      >
-        Sign In
-      </Button>
+      <div className="flex items-center gap-4">
+        <ThemeSwitcher /> {/* Add ThemeSwitcher for non-authenticated users */}
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => navigate('/auth')}
+          className="hidden md:flex"
+        >
+          Sign In
+        </Button>
+        <Button 
+          size="sm"
+          onClick={() => navigate('/auth')}
+          className="bg-cinemax-500 hover:bg-cinemax-600"
+        >
+          Sign Up
+        </Button>
+      </div>
     );
   }
-  
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
+
+  const userInitials = user?.email 
+    ? user.email.substring(0, 2).toUpperCase() 
+    : "U";
+
   return (
-    <div className="hidden md:block">
-      <DropdownMenu>
+    <div className="flex items-center gap-3">
+      <ThemeSwitcher /> {/* Add ThemeSwitcher for authenticated users */}
+      <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
         <DropdownMenuTrigger asChild>
-          <Avatar className="h-8 w-8 cursor-pointer hover:opacity-80 transition-opacity">
-            <AvatarImage src={user?.user_metadata?.avatar_url || ''} />
-            <AvatarFallback className="bg-cinemax-500 text-sm">
-              {user?.email?.charAt(0).toUpperCase() || 'U'}
-            </AvatarFallback>
-          </Avatar>
+          <Button 
+            variant="ghost" 
+            className="relative flex items-center gap-2 h-8 rounded-full pr-1 bg-secondary/50 hover:bg-secondary/70"
+          >
+            <Avatar className="h-7 w-7 border border-primary/10">
+              <AvatarImage src={user?.user_metadata?.avatar_url} alt="User avatar" />
+              <AvatarFallback>{userInitials}</AvatarFallback>
+            </Avatar>
+            <span className="hidden md:inline-block font-medium text-sm max-w-[100px] truncate mr-1">
+              {user?.email?.split('@')[0]}
+            </span>
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56 bg-background border-gray-700">
-          <DropdownMenuLabel>My Account</DropdownMenuLabel>
+        <DropdownMenuContent className="w-56" align="end" forceMount>
+          <DropdownMenuLabel className="font-normal">
+            <div className="flex flex-col space-y-1">
+              <p className="text-sm font-medium leading-none">{user?.email?.split('@')[0]}</p>
+              <p className="text-xs leading-none text-muted-foreground">
+                {user?.email}
+              </p>
+            </div>
+          </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => navigate('/profile')}>
-            <User className="mr-2 h-4 w-4" />
-            <span>Profile Settings</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate('/favorites')}>
-            <Heart className="mr-2 h-4 w-4" />
-            <span>Favorites</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate('/downloads')}>
-            <Download className="mr-2 h-4 w-4" />
-            <span>Downloads</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => navigate('/subscription')}>
-            <Play className="mr-2 h-4 w-4" />
-            <span>Subscription</span>
-          </DropdownMenuItem>
+          <DropdownMenuGroup>
+            <DropdownMenuItem onClick={() => navigate('/profile')}>
+              <UserIcon className="mr-2 h-4 w-4" />
+              <span>Profile</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate('/watch-history')}>
+              <History className="mr-2 h-4 w-4" />
+              <span>Watch History</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate('/settings')}>
+              <Settings className="mr-2 h-4 w-4" />
+              <span>Settings</span>
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleSignOut} className="text-red-500 hover:text-red-400">
+          <DropdownMenuItem onClick={handleSignOut}>
             <LogOut className="mr-2 h-4 w-4" />
-            <span>Sign Out</span>
+            <span>Log out</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

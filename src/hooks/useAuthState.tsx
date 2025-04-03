@@ -13,6 +13,8 @@ interface AuthContextType {
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   isAuthenticated: boolean;
+  // Add a signInAsTestUser function
+  signInAsTestUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -60,6 +62,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } catch (error: any) {
       console.error("Login error:", error);
       toast.error(error.message || 'Error signing in');
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Add a function to sign in with the test user
+  const signInAsTestUser = async () => {
+    try {
+      setIsLoading(true);
+      const { error } = await supabase.auth.signInWithPassword({ 
+        email: "stanleyvic13@gmail.com", 
+        password: "Stanley123" 
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast.success('Signed in as test user successfully');
+    } catch (error: any) {
+      console.error("Test user login error:", error);
+      toast.error(error.message || 'Error signing in as test user');
       throw error;
     } finally {
       setIsLoading(false);
@@ -139,7 +164,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     signInWithGoogle,
     signUp,
     signOut,
-    isAuthenticated: !!user
+    isAuthenticated: !!user,
+    signInAsTestUser // Add the test user function to the context
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
