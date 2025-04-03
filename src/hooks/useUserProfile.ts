@@ -5,7 +5,7 @@ import { useAuth } from './useAuthState';
 import { toast } from 'sonner';
 
 export const useUserProfile = () => {
-  const [profileData, setProfileData] = useState<UserProfileData | null>(null);
+  const [profileData, setProfileData] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
 
@@ -49,13 +49,13 @@ export const useUserProfile = () => {
           return;
         }
 
-        setProfileData(createdProfile as UserProfileData);
+        setProfileData(createdProfile as UserProfile);
       } else {
         // Handle existing profiles and ensure hide_activity is included
         setProfileData({
           ...data,
           hide_activity: data.hide_activity !== undefined ? data.hide_activity : false
-        } as UserProfileData);
+        } as UserProfile);
       }
     } catch (error) {
       console.error('Unexpected error:', error);
@@ -64,7 +64,7 @@ export const useUserProfile = () => {
     }
   };
 
-  const updateProfile = async (updates: Partial<UserProfileData>) => {
+  const updateProfile = async (updates: Partial<UserProfile>) => {
     if (!user) return;
 
     try {

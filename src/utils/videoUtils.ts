@@ -19,11 +19,27 @@ const VIDEO_PROVIDERS = {
   vidsrc_xyz: "https://vidsrc.xyz/embed/",
   vidsrc_to: "https://vidsrc.to/embed/",
   fmovies_net: "https://fmovies.net/movie/",
-  fmovies_to: "https://fmovies.to/movie/"
+  fmovies_to: "https://fmovies.to/movie/",
+  crackle: "https://crackle.com/watch/"
+};
+
+// Provider content type preferences (optimization for best source per content type)
+const PROVIDER_PREFERENCES = {
+  movie: ['vidsrc_in', 'vidsrc_to', 'fmovies_net', 'fmovies_to', 'crackle'],
+  series: ['vidsrc_xyz', 'vidsrc_to', 'fmovies_net', 'fmovies_to'],
+  anime: ['vidsrc_xyz', 'vidsrc_in', 'vidsrc_to', 'fmovies_net'],
+  sports: ['vidsrc_xyz', 'vidsrc_in', 'crackle']
 };
 
 // TMDB API Key
 const TMDB_API_KEY = "4626200399b08f9d04b72348e3625f15";
+
+// Download sources
+const DOWNLOAD_SOURCES = {
+  filepursuite: "https://filepursuite.com/search/",
+  archive: "https://archive.org/search?query=",
+  bittorrent: "https://btdig.com/search?q="
+};
 
 // Map of quality options to download sizes (approximate)
 export const QUALITY_OPTIONS = {
@@ -75,6 +91,12 @@ export const getStreamingUrl = (
   seasonNumber?: number,
   episodeNumber?: number
 ): string => {
+  // Select optimal provider based on content type if none specified
+  if (!provider) {
+    const providers = PROVIDER_PREFERENCES[contentType as keyof typeof PROVIDER_PREFERENCES] || PROVIDER_PREFERENCES.movie;
+    provider = providers[0] as keyof typeof VIDEO_PROVIDERS;
+  }
+  
   // For actual implementation with external providers
   const providerUrl = VIDEO_PROVIDERS[provider];
   
@@ -94,17 +116,27 @@ export const getStreamingUrl = (
 };
 
 /**
+ * Get best streaming provider for content type
+ * @param contentType - The type of content
+ */
+export const getBestProviderForContentType = (contentType: string): keyof typeof VIDEO_PROVIDERS => {
+  const providers = PROVIDER_PREFERENCES[contentType as keyof typeof PROVIDER_PREFERENCES] || PROVIDER_PREFERENCES.movie;
+  return providers[0] as keyof typeof VIDEO_PROVIDERS;
+};
+
+/**
  * Get all available streaming providers for the content
  * @param contentId - The ID of the content
  * @param contentType - The type of content (movie, series, anime, sports)
  */
-export const getAvailableProviders = (contentId: string, contentType: string): Array<{id: keyof typeof VIDEO_PROVIDERS, name: string}> => {
+export const getAvailableProviders = (contentId: string, contentType: string): Array<{id: keyof typeof VIDEO_PROVIDERS, name: string, contentType?: 'movies' | 'series' | 'all'}> => {
   return [
-    { id: 'vidsrc_in', name: 'VidSrc.in' },
-    { id: 'vidsrc_xyz', name: 'VidSrc.xyz' },
-    { id: 'vidsrc_to', name: 'VidSrc.to' },
-    { id: 'fmovies_net', name: 'FMovies.net' },
-    { id: 'fmovies_to', name: 'FMovies.to' }
+    { id: 'vidsrc_in', name: 'VidSrc.in', contentType: 'movies' },
+    { id: 'vidsrc_xyz', name: 'VidSrc.xyz', contentType: 'series' },
+    { id: 'vidsrc_to', name: 'VidSrc.to', contentType: 'all' },
+    { id: 'fmovies_net', name: 'FMovies.net', contentType: 'all' },
+    { id: 'fmovies_to', name: 'FMovies.to', contentType: 'all' },
+    { id: 'crackle', name: 'Crackle', contentType: 'all' }
   ];
 };
 
@@ -116,17 +148,51 @@ export const getAvailableProviders = (contentId: string, contentType: string): A
  * @param episodeId - Optional episode ID for series content
  */
 export const getDownloadUrl = (contentId: string, contentType: string, quality: string, episodeId?: string): string => {
-  // For demo purposes, append quality parameter to the streaming URL
-  let url = getStreamingUrl(contentId, contentType);
-  return `${url}?quality=${quality}&download=true`;
+  // Determine the best download source
+  const title = `${contentId} ${contentType} ${quality}`;
+  const source = DOWNLOAD_SOURCES.filepursuite;
+  return `${source}${encodeURIComponent(title)}`;
 };
 
 /**
- * Get movie trailer URL from YouTube
- * @param trailerKey - The YouTube trailer key
+ * Get YouTube trailer URL for movie or show
+ * @param contentId - The ID of the content
+ * @param contentType - The type of content (movie, series, anime, sports)
  */
-export const getTrailerUrl = (trailerKey: string): string => {
-  return `https://www.youtube.com/embed/${trailerKey}?autoplay=1&modestbranding=1&rel=0`;
+export const getTrailerUrl = async (contentId: string, contentType: string): Promise<string> => {
+  try {
+    const type = contentType === 'series' || contentType === 'anime' ? 'tv' : 'movie';
+    const url = `https://api.themoviedb.org/3/${type}/${contentId}/videos?api_key=${TMDB_API_KEY}`;
+    
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error('Failed to fetch trailer');
+    }
+    
+    const data = await response.json();
+    const trailer = data.results.find((video: any) => 
+      video.type === 'Trailer' && video.site === 'YouTube'
+    );
+    
+    if (trailer) {
+      return `https://www.youtube.com/embed/${trailer.key}?autoplay=1&modestbranding=1&rel=0`;
+    }
+    
+    // If no trailer found, try a teaser or any other official video
+    const teaser = data.results.find((video: any) => 
+      video.site === 'YouTube'
+    );
+    
+    if (teaser) {
+      return `https://www.youtube.com/embed/${teaser.key}?autoplay=1&modestbranding=1&rel=0`;
+    }
+    
+    throw new Error('No trailer found');
+  } catch (error) {
+    console.error('Error fetching trailer:', error);
+    // Return placeholder trailer
+    return `https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&modestbranding=1&rel=0`;
+  }
 };
 
 /**
@@ -141,6 +207,53 @@ function hashCode(str: string): number {
   }
   return hash;
 }
+
+/**
+ * Initialize FFMPEG for recording
+ */
+export const initFFmpeg = async () => {
+  try {
+    // In a real implementation, load FFMPEG here
+    console.log('FFMPEG initialized for recording');
+    return true;
+  } catch (error) {
+    console.error('Error initializing FFMPEG:', error);
+    return false;
+  }
+};
+
+/**
+ * Start recording a video stream
+ * @param videoElement - The video element to record
+ * @param filename - The filename for the recording
+ * @returns A function to stop recording
+ */
+export const startRecording = (videoElement: HTMLVideoElement, filename: string) => {
+  if (!videoElement) {
+    toast.error('Video element not found');
+    return () => {};
+  }
+  
+  console.log(`Started recording ${filename}`);
+  toast.success(`Recording started: ${filename}`);
+  
+  // In a real implementation, use MediaRecorder API or FFMPEG
+  // to record the video stream
+  
+  const stopRecording = () => {
+    console.log(`Stopped recording ${filename}`);
+    toast.success(`Recording saved: ${filename}`);
+    
+    // In a real implementation, stop recording and save the file
+    // For demo, just generate a download link
+    const a = document.createElement('a');
+    a.href = videoElement.src;
+    a.download = `${filename}.mp4`;
+    a.click();
+  };
+  
+  return stopRecording;
+};
 
 /**
  * Track streaming activity

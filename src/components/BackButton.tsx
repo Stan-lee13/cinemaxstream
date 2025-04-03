@@ -6,12 +6,18 @@ import { ArrowLeft } from 'lucide-react';
 interface BackButtonProps {
   className?: string;
   fixed?: boolean;
+  onClick?: () => void;
 }
 
-const BackButton = ({ className = "", fixed = false }: BackButtonProps) => {
+const BackButton = ({ className = "", fixed = false, onClick }: BackButtonProps) => {
   const navigate = useNavigate();
   
   const handleGoBack = () => {
+    if (onClick) {
+      onClick();
+      return;
+    }
+    
     if (window.history.length > 1) {
       navigate(-1);
     } else {
