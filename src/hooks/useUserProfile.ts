@@ -59,7 +59,7 @@ export const useUserProfile = () => {
         } as UserProfile;
         
         // If hide_activity field doesn't exist in the database, update it
-        if (data.hide_activity === undefined) {
+        if (data.hide_activity === undefined || data.hide_activity === null) {
           await supabase
             .from('user_profiles')
             .update({ hide_activity: false })
