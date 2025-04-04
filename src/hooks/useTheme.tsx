@@ -1,7 +1,7 @@
 
 import { createContext, useContext, useState, useEffect } from "react";
 
-type Theme = "default" | "midnight" | "neon";
+type Theme = "default" | "midnight" | "neon" | "sunrise" | "forest";
 
 interface ThemeContextType {
   theme: Theme;

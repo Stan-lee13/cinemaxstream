@@ -21,6 +21,10 @@ const FavoritesButton: React.FC = () => {
         return "text-purple-400 hover:text-purple-300";
       case "neon":
         return "text-green-400 hover:text-green-300 neon-text";
+      case "sunrise":
+        return "text-amber-400 hover:text-amber-300";
+      case "forest":
+        return "text-emerald-400 hover:text-emerald-300";
       default:
         return "text-gray-300 hover:text-white";
     }

@@ -1,176 +1,107 @@
 
-// Mock provider data
-const PROVIDERS = [
-  { id: "provider1", name: "Secure Stream", contentType: "all" },
-  { id: "provider2", name: "Premium CDN", contentType: "movies" },
-  { id: "provider3", name: "Series Stream", contentType: "series" },
+// Mock data for videos
+const VIDEO_SOURCES = {
+  movies: {
+    "movie-1": "https://example.com/movie1.mp4",
+    "movie-2": "https://example.com/movie2.mp4",
+    "movie-3": "https://example.com/movie3.mp4"
+  },
+  series: {
+    "series-1": {
+      s1e1: "https://example.com/series1-s1e1.mp4",
+      s1e2: "https://example.com/series1-s1e2.mp4"
+    },
+    "series-2": {
+      s1e1: "https://example.com/series2-s1e1.mp4",
+      s1e2: "https://example.com/series2-s1e2.mp4"
+    }
+  }
+};
+
+// Quality options for downloads
+export const QUALITY_OPTIONS = [
+  { quality: "480p", label: "SD (480p)", size: "400MB" },
+  { quality: "720p", label: "HD (720p)", size: "800MB" },
+  { quality: "1080p", label: "Full HD (1080p)", size: "1.5GB", premium: true },
+  { quality: "4k", label: "4K Ultra HD", size: "4GB", premium: true }
 ];
 
-// Mock streaming URLs for different providers
-const STREAMING_URLS = {
-  provider1: {
-    movies: {
-      "movie-1": "https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.mp4/.m3u8",
-      "movie-2": "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-      "movie-3": "https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
-    },
-    series: {
-      "series-1": {
-        "s1e1": "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-        "s1e2": "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4"
-      },
-      "series-2": {
-        "s1e1": "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
-        "s1e2": "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4"
-      }
+// Check if user has premium access
+export const hasPremiumAccess = (): boolean => {
+  // In a real app, this would check user subscription status
+  const hasPremium = localStorage.getItem('guest_access') === 'true' || 
+                     localStorage.getItem('premium_access') === 'true';
+  return hasPremium;
+};
+
+// Generate a mock trailer URL based on content ID
+export const getTrailerUrl = (contentId: string): string => {
+  return `https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=0&controls=1`;
+};
+
+// Generate download URLs based on content ID and quality
+export const getDownloadUrl = (contentId: string, quality: string): string => {
+  return `https://example.com/download/${contentId}_${quality}.mp4`;
+};
+
+// Enter a premium code to get premium access
+export const enterPremiumCode = (code: string): boolean => {
+  if (code === "PREMIUM123" || code === "NETFLIX2025" || code === "CINEMAX2025") {
+    localStorage.setItem('premium_access', 'true');
+    return true;
+  }
+  return false;
+};
+
+// Get personalized recommendations based on user viewing history
+export const getPersonalizedRecommendations = (category?: string) => {
+  // In a real app, this would use an algorithm to suggest content
+  return [
+    { id: "1", title: "Inception", posterPath: "/placeholder.svg", type: "movie" },
+    { id: "2", title: "Stranger Things", posterPath: "/placeholder.svg", type: "series" },
+    { id: "3", title: "The Matrix", posterPath: "/placeholder.svg", type: "movie" },
+    { id: "4", title: "Breaking Bad", posterPath: "/placeholder.svg", type: "series" },
+  ];
+};
+
+// Get video source URL
+export const getVideoSource = (contentId: string, episodeId?: string): string => {
+  if (contentId.startsWith('movie-')) {
+    // Check if the content exists in the movies object
+    if (VIDEO_SOURCES.movies && VIDEO_SOURCES.movies[contentId as keyof typeof VIDEO_SOURCES.movies]) {
+      return VIDEO_SOURCES.movies[contentId as keyof typeof VIDEO_SOURCES.movies];
     }
-  },
-  provider2: {
-    movies: {
-      "movie-1": "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-      "movie-2": "https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-      "movie-3": "https://storage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4"
-    }
-  },
-  provider3: {
-    series: {
-      "series-1": {
-        "s1e1": "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-        "s1e2": "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4"
-      },
-      "series-2": {
-        "s1e1": "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
-        "s1e2": "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4"
+  } else if (contentId.startsWith('series-') && episodeId) {
+    // Check if the content exists in the series object
+    if (VIDEO_SOURCES.series && VIDEO_SOURCES.series[contentId as keyof typeof VIDEO_SOURCES.series]) {
+      const series = VIDEO_SOURCES.series[contentId as keyof typeof VIDEO_SOURCES.series];
+      if (series && episodeId in series) {
+        return series[episodeId as keyof typeof series];
       }
     }
   }
+  
+  // Return a default video if the content is not found
+  return "https://example.com/default.mp4";
 };
 
-// Fallback URLs if specific content is not found
-const FALLBACK_URLS = {
-  movies: "https://storage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
-  series: "https://storage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4"
-};
-
-// Get available streaming providers for a content
-export const getAvailableProviders = (contentId: string, contentType: string) => {
-  // Return all applicable providers for this content type
-  return PROVIDERS.filter(provider => 
-    provider.contentType === 'all' || provider.contentType === contentType
-  );
-};
-
-// Determine best provider based on content type
-export const getBestProviderForContentType = (contentType: string) => {
-  // Default to first provider
-  if (contentType === 'movies') {
-    return "provider2";  // Premium CDN optimized for movies
-  } else if (contentType === 'series') {
-    return "provider3";  // Series Stream optimized for series
+// Generate a secure random password for reset
+export const generateSecurePassword = (length: number = 12): string => {
+  const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_-+=";
+  let password = "";
+  
+  // Ensure we have at least one of each type of character
+  password += charset.substring(0, 26).charAt(Math.floor(Math.random() * 26)); // lowercase
+  password += charset.substring(26, 52).charAt(Math.floor(Math.random() * 26)); // uppercase
+  password += charset.substring(52, 62).charAt(Math.floor(Math.random() * 10)); // digit
+  password += charset.substring(62).charAt(Math.floor(Math.random() * (charset.length - 62))); // special
+  
+  // Fill the rest with random characters
+  for (let i = 4; i < length; i++) {
+    const randomIndex = Math.floor(Math.random() * charset.length);
+    password += charset[randomIndex];
   }
-  return "provider1";    // Default secure stream for all content
-};
-
-// Get streaming URL based on content info and provider
-export const getStreamingUrl = (
-  contentId: string,
-  contentType: string,
-  providerId: string,
-  episodeId?: string,
-  seasonNumber?: number,
-  episodeNumber?: number
-) => {
-  try {
-    const providerUrls = STREAMING_URLS[providerId as keyof typeof STREAMING_URLS];
-    
-    if (!providerUrls) {
-      console.error(`Provider ${providerId} not found, using fallback`);
-      return FALLBACK_URLS[contentType as keyof typeof FALLBACK_URLS];
-    }
-    
-    if (contentType === 'movie' || contentType === 'movies') {
-      const movieUrl = providerUrls.movies?.[contentId];
-      if (movieUrl) return movieUrl;
-    } else if (contentType === 'series' || contentType === 'tv') {
-      if (episodeId) {
-        const episodeUrl = providerUrls.series?.[contentId]?.[episodeId];
-        if (episodeUrl) return episodeUrl;
-      } else if (seasonNumber && episodeNumber) {
-        // Try to construct episode ID from season and episode numbers
-        const constructedEpisodeId = `s${seasonNumber}e${episodeNumber}`;
-        const episodeUrl = providerUrls.series?.[contentId]?.[constructedEpisodeId];
-        if (episodeUrl) return episodeUrl;
-      }
-    }
-    
-    // If we didn't find a matching URL, use the fallback
-    console.error(`Content not found for ${contentId} with provider ${providerId}, using fallback`);
-    return FALLBACK_URLS[contentType as keyof typeof FALLBACK_URLS];
-    
-  } catch (error) {
-    console.error("Error getting streaming URL:", error);
-    return FALLBACK_URLS[contentType as keyof typeof FALLBACK_URLS];
-  }
-};
-
-// Track streaming activity for analytics
-export const trackStreamingActivity = (
-  contentId: string,
-  userId: string,
-  timestamp: number,
-  episodeId?: string
-) => {
-  console.log(`Tracking: user ${userId} watched ${contentId} ${episodeId ? `episode ${episodeId}` : ''} at ${timestamp}s`);
-  // In a real app this would make an API call to record the activity
-};
-
-// Mark content as complete
-export const markContentAsComplete = (
-  contentId: string,
-  userId: string,
-  episodeId?: string
-) => {
-  console.log(`Marking as complete: user ${userId} finished ${contentId} ${episodeId ? `episode ${episodeId}` : ''}`);
-  // In a real app this would make an API call to mark as complete
-};
-
-// Function to start screen recording
-export const startRecording = (videoElement: HTMLVideoElement, fileName: string) => {
-  // Using MediaRecorder API to record video
-  try {
-    // Create a new MediaStream from the video element
-    const stream = (videoElement as any).captureStream();
-    const recorder = new MediaRecorder(stream);
-    const chunks: BlobPart[] = [];
-    
-    recorder.ondataavailable = (e) => {
-      if (e.data.size > 0) {
-        chunks.push(e.data);
-      }
-    };
-    
-    recorder.onstop = () => {
-      const blob = new Blob(chunks, { type: 'video/mp4' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      document.body.appendChild(a);
-      a.style.display = 'none';
-      a.href = url;
-      a.download = `${fileName}.mp4`;
-      a.click();
-      window.URL.revokeObjectURL(url);
-    };
-    
-    recorder.start();
-    console.log('Recording started');
-    
-    // Return function to stop recording
-    return () => {
-      recorder.stop();
-      console.log('Recording stopped');
-    };
-  } catch (error) {
-    console.error('Error starting recording:', error);
-    return () => {}; // Return empty function if recording fails
-  }
+  
+  // Shuffle the password characters
+  return password.split('').sort(() => 0.5 - Math.random()).join('');
 };

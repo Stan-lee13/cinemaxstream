@@ -7,6 +7,7 @@ import { Mail, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import BackButton from "@/components/BackButton";
+import { generateSecurePassword } from "@/utils/videoUtils";
 
 const ResetPassword = () => {
   const [email, setEmail] = useState("");
@@ -25,6 +26,15 @@ const ResetPassword = () => {
     try {
       setIsLoading(true);
       
+      // Generate a secure password
+      const newPassword = generateSecurePassword(12);
+      
+      // In a real production app, you would:
+      // 1. Store the hashed password in the database
+      // 2. Send an email with the new password
+      // 3. Ask the user to change the password after logging in
+      
+      // For this demo, we'll just use Supabase's built-in password reset
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/password-update`,
       });
@@ -32,6 +42,9 @@ const ResetPassword = () => {
       if (error) {
         throw error;
       }
+      
+      // In a real implementation, this is where you would send the generated password to the user's email
+      console.log("Generated password (would be emailed):", newPassword);
       
       setIsSubmitted(true);
       toast.success("Password reset email sent! Please check your inbox.");
@@ -95,7 +108,7 @@ const ResetPassword = () => {
               <div className="text-center space-y-4">
                 <div className="bg-gray-800 p-4 rounded-lg text-gray-300 mb-4">
                   A password reset link has been sent to <span className="font-medium text-white">{email}</span>. 
-                  Please check your email inbox and click the link to reset your password.
+                  Please check your email inbox and click the link to set up your new password.
                 </div>
                 
                 <Button 

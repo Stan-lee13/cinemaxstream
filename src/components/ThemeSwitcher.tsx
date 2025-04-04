@@ -42,6 +42,20 @@ const ThemeSwitcher = () => {
           Neon Cyberpunk
           {theme === "neon" && <Check className="h-4 w-4 ml-2" />}
         </DropdownMenuItem>
+        <DropdownMenuItem 
+          onClick={() => setTheme("sunrise")}
+          className="flex items-center justify-between"
+        >
+          Sunrise Horizon
+          {theme === "sunrise" && <Check className="h-4 w-4 ml-2" />}
+        </DropdownMenuItem>
+        <DropdownMenuItem 
+          onClick={() => setTheme("forest")}
+          className="flex items-center justify-between"
+        >
+          Forest Deep
+          {theme === "forest" && <Check className="h-4 w-4 ml-2" />}
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

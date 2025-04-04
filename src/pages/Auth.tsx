@@ -12,19 +12,12 @@ const Auth = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const {
-    email,
-    setEmail,
-    password,
-    setPassword,
-    showPassword,
-    setShowPassword,
     isLoading,
     isSignUp,
     setIsSignUp,
     handleSubmit,
     handleGoogleSignIn,
-    handleGuestAccess,
-    fillTestAccount
+    handleGuestAccess
   } = useAuthForm();
   
   // Redirect if already authenticated
@@ -52,18 +45,7 @@ const Auth = () => {
           </div>
           
           <div className="bg-card rounded-lg p-6 shadow-lg">
-            <EmailPasswordForm
-              email={email}
-              setEmail={setEmail}
-              password={password}
-              setPassword={setPassword}
-              showPassword={showPassword}
-              setShowPassword={setShowPassword}
-              isLoading={isLoading}
-              isSignUp={isSignUp}
-              handleSubmit={handleSubmit}
-              fillTestAccount={fillTestAccount}
-            />
+            <EmailPasswordForm isSignUp={isSignUp} />
             
             <AlternateLoginOptions
               isLoading={isLoading}

@@ -25,6 +25,16 @@ const NavItem: React.FC<NavItemProps> = ({ href, children, isActive = false }) =
           active: "text-green-400 neon-text border-b-2 border-green-400",
           hover: "hover:text-green-400 after:bg-green-400"
         };
+      case "sunrise":
+        return {
+          active: "text-amber-400 border-b-2 border-amber-400",
+          hover: "hover:text-amber-400 after:bg-amber-400"
+        };
+      case "forest":
+        return {
+          active: "text-emerald-400 border-b-2 border-emerald-400",
+          hover: "hover:text-emerald-400 after:bg-emerald-400"
+        };
       default: // default theme
         return {
           active: "text-white border-b-2 border-cinemax-500",

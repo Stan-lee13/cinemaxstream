@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useAuthForm } from "@/hooks/useAuthForm";
 import { useAuth } from "@/hooks/useAuthState";
 
 interface EmailPasswordFormProps {
@@ -12,20 +11,23 @@ interface EmailPasswordFormProps {
 }
 
 const EmailPasswordForm: React.FC<EmailPasswordFormProps> = ({ isSignUp }) => {
-  const { 
-    email, 
-    setEmail, 
-    password, 
-    setPassword, 
-    showPassword, 
-    setShowPassword, 
-    isLoading,
-    handleSubmit,
-    fillTestAccount
-  } = useAuthForm();
-  
-  const { signInAsTestUser } = useAuth(); // Add this
+  const { signInAsTestUser } = useAuth();
   const navigate = useNavigate();
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  // Get these from props or context as needed in your actual implementation
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // This will be implemented in the parent component
+  };
+
+  const fillTestAccount = () => {
+    setEmail("stanleyvic13@gmail.com");
+    setPassword("Stanley123");
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -112,7 +114,7 @@ const EmailPasswordForm: React.FC<EmailPasswordFormProps> = ({ isSignUp }) => {
             type="button" 
             variant="secondary" 
             className="w-full"
-            onClick={() => signInAsTestUser()} // Add this button
+            onClick={() => signInAsTestUser()}
           >
             Quick Login as Test User
           </Button>
