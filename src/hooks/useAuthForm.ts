@@ -10,7 +10,7 @@ export const useAuthForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
-  const { signIn, signUp, signInWithGoogle } = useAuth();
+  const { signIn, signUp, signInWithGoogle, signInAsTestUser } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -29,8 +29,6 @@ export const useAuthForm = () => {
         toast.success("Account created successfully! Please check your email for verification.");
         // Auto switch to sign in mode after successful signup
         setIsSignUp(false);
-        // Pre-fill the email field
-        // Don't clear the password to make it easier to sign in immediately
       } else {
         await signIn(email, password);
         toast.success("Signed in successfully!");
@@ -38,7 +36,20 @@ export const useAuthForm = () => {
       }
     } catch (error: any) {
       console.error("Auth error:", error);
-      toast.error(error.message || "Authentication failed");
+      
+      // Provide more user-friendly error messages
+      if (error.message.includes("invalid login credentials")) {
+        toast.error("Invalid email or password. Please try again.");
+      } else if (error.message.includes("already registered")) {
+        toast.error("This email is already registered. Please sign in instead.");
+        setIsSignUp(false); // Switch to sign in mode
+      } else if (error.message.includes("email format is invalid")) {
+        toast.error("Please enter a valid email address.");
+      } else if (error.message.includes("longer than 6 characters")) {
+        toast.error("Password should be at least 6 characters long.");
+      } else {
+        toast.error(error.message || "Authentication failed");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -85,3 +96,5 @@ export const useAuthForm = () => {
     fillTestAccount
   };
 };
+
+export default useAuthForm;

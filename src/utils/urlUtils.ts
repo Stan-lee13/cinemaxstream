@@ -1,37 +1,16 @@
 
 /**
- * Utility functions for handling URLs and content IDs
+ * Utility functions for handling URLs and image paths
  */
 
-// Extract content ID from URL
-export const extractContentIdFromUrl = (url: string): string | null => {
-  // Tries to extract content ID from various URL formats
-  const patterns = [
-    /\/content\/([^/]+)/, // /content/12345
-    /movie\/([^/]+)/,     // /movie/12345
-    /series\/([^/]+)/,    // /series/12345
-    /\?id=([^&]+)/        // ?id=12345
-  ];
-  
-  for (const pattern of patterns) {
-    const match = url.match(pattern);
-    if (match && match[1]) {
-      return match[1];
-    }
-  }
-  
-  return null;
-};
-
-// Generate consistent content URL
-export const generateContentUrl = (id: string): string => {
-  return `/content/${id}`;
-};
-
-// Get correct image URL with fallback
-export const getImageUrl = (path: string | undefined | null, size: 'poster' | 'backdrop' = 'poster'): string => {
+/**
+ * Get image URL with proper fallback
+ */
+export const getImageUrl = (path: string | null | undefined, type: 'poster' | 'backdrop' = 'poster'): string => {
   if (!path) {
-    return '/placeholder.svg';
+    return type === 'poster' 
+      ? '/placeholder-poster.jpg' 
+      : '/placeholder-backdrop.jpg';
   }
   
   // If it's already a full URL, return it
@@ -39,53 +18,82 @@ export const getImageUrl = (path: string | undefined | null, size: 'poster' | 'b
     return path;
   }
   
-  // Get appropriate TMDB image size
-  const baseUrl = 'https://image.tmdb.org/t/p/';
-  const imageSize = size === 'poster' ? 'w500' : 'original';
-  
-  // Handle paths that already include the base URL
-  if (path.includes('tmdb') && path.includes('/t/p/')) {
-    return path;
-  }
-  
-  // Handle paths that start with slash
+  // TMDB image path format
   if (path.startsWith('/')) {
-    return `${baseUrl}${imageSize}${path}`;
+    const size = type === 'poster' ? 'w500' : 'original';
+    return `https://image.tmdb.org/t/p/${size}${path}`;
   }
   
-  // Handle other paths
-  return `${baseUrl}${imageSize}/${path}`;
+  // Default fallback
+  return path;
 };
 
-// Ensure consistent content type naming
-export const normalizeContentType = (type: string | undefined): string => {
-  if (!type) return 'movie';
+/**
+ * Normalize content type
+ */
+export const normalizeContentType = (type: string): string => {
+  type = type.toLowerCase();
   
-  const typeLower = type.toLowerCase();
-  
-  if (typeLower.includes('tv') || typeLower.includes('series') || typeLower === 'show') {
-    return 'series';
-  } else if (typeLower.includes('anime')) {
-    return 'anime';
-  } else {
+  if (type === 'movie' || type === 'film') {
     return 'movie';
+  } 
+  else if (type === 'tv' || type === 'show' || type === 'series') {
+    return 'series';
+  }
+  else if (type === 'anime') {
+    return 'anime';
+  }
+  
+  return type;
+};
+
+/**
+ * Get streaming provider icon
+ */
+export const getProviderIcon = (providerId: string): string => {
+  switch (providerId) {
+    case 'netflix':
+      return '/icons/netflix.png';
+    case 'prime_video':
+      return '/icons/prime.png';
+    case 'disney_plus':
+      return '/icons/disney.png';
+    case 'hbo_max':
+      return '/icons/hbo.png';
+    case 'hulu':
+      return '/icons/hulu.png';
+    case 'aniwatch':
+      return '/icons/aniwatch.png';
+    case 'fmovies':
+      return '/icons/fmovies.png';
+    default:
+      return '/icons/play.png';
   }
 };
 
-// Format duration in minutes to human readable format
-export const formatDuration = (minutes: number | string | undefined): string => {
-  if (!minutes) return 'N/A';
+/**
+ * Format watch time from seconds to MM:SS
+ */
+export const formatWatchTime = (seconds: number): string => {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.floor(seconds % 60);
+  return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+};
+
+/**
+ * Format minutes to hours and minutes (1h 30m)
+ */
+export const formatDuration = (minutes: number): string => {
+  if (!minutes || isNaN(minutes)) return 'Unknown';
   
-  const mins = typeof minutes === 'string' ? parseInt(minutes, 10) : minutes;
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
   
-  if (isNaN(mins)) return 'N/A';
-  
-  const hours = Math.floor(mins / 60);
-  const remainingMinutes = mins % 60;
-  
-  if (hours > 0) {
-    return `${hours}h ${remainingMinutes > 0 ? `${remainingMinutes}m` : ''}`;
+  if (hours === 0) {
+    return `${remainingMinutes}m`;
+  } else if (remainingMinutes === 0) {
+    return `${hours}h`;
+  } else {
+    return `${hours}h ${remainingMinutes}m`;
   }
-  
-  return `${mins}m`;
 };

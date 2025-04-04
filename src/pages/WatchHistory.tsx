@@ -1,252 +1,296 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Clock, X, Filter, Play } from "lucide-react";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuthState";
-import { supabase } from "@/integrations/supabase/client";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import BackButton from "@/components/BackButton";
+import { Button } from "@/components/ui/button";
+import { Play, Trash2, Clock } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client"; 
+import LoadingState from "@/components/LoadingState";
 
-interface WatchHistoryItem {
+type WatchHistoryItem = {
   id: string;
-  content_id: string;
-  title: string;
-  poster_path: string;
-  watch_time: number;
-  duration: number;
-  type: string;
-  watched_at: string;
-  progress: number;
-  episode_id?: string;
-  season_number?: number;
-  episode_number?: number;
-}
+  contentId: string;
+  title?: string;
+  image?: string;
+  episodeId?: string;
+  lastWatched: string;
+  watchPosition?: number;
+  seasonNumber?: number;
+  episodeNumber?: number;
+};
 
 const WatchHistory = () => {
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [history, setHistory] = useState<WatchHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState<string>("all");
 
+  // Redirect if not authenticated
   useEffect(() => {
     if (!isAuthenticated) {
-      navigate("/auth");
-      return;
+      navigate('/auth');
     }
+  }, [isAuthenticated, navigate]);
 
-    // Simulating fetching watch history from an API
-    const fetchWatchHistory = async () => {
+  // Fetch watch history
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchHistory = async () => {
       setIsLoading(true);
-      
       try {
-        // Here we would fetch from a real API, for now using mock data
-        const mockHistory: WatchHistoryItem[] = [
-          {
-            id: "1",
-            content_id: "movie-1",
-            title: "The Dark Knight",
-            poster_path: "https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg",
-            watch_time: 7800, // seconds
-            duration: 9000, // seconds
-            type: "movie",
-            watched_at: "2023-10-01T12:00:00Z",
-            progress: 87, // percent
-          },
-          {
-            id: "2",
-            content_id: "series-1",
-            title: "Stranger Things",
-            poster_path: "https://image.tmdb.org/t/p/w500/49WJfeN0moxb9IPfGn8AIqMGskD.jpg",
-            watch_time: 2400,
-            duration: 3600,
-            type: "series",
-            watched_at: "2023-09-28T18:30:00Z",
-            progress: 67,
-            episode_id: "s1e1",
-            season_number: 1,
-            episode_number: 1,
-          },
-          {
-            id: "3",
-            content_id: "movie-2",
-            title: "Inception",
-            poster_path: "https://image.tmdb.org/t/p/w500/edv5CZvWj09upOsy2Y6IwDhK8bt.jpg",
-            watch_time: 8100,
-            duration: 8800,
-            type: "movie",
-            watched_at: "2023-09-25T21:15:00Z",
-            progress: 92,
-          },
-        ];
-        
-        setHistory(mockHistory);
+        // First try to fetch from Supabase
+        const { data: dbHistory, error } = await supabase
+          .from('user_watch_history')
+          .select('*, content:content_id(*)')
+          .eq('user_id', user.id)
+          .order('last_watched', { ascending: false })
+          .limit(50);
+
+        if (dbHistory && dbHistory.length > 0) {
+          const formattedHistory = dbHistory.map((item: any) => ({
+            id: item.id,
+            contentId: item.content_id,
+            title: item.content?.title || 'Unknown title',
+            image: item.content?.image_url || item.content?.image || '/placeholder.jpg',
+            episodeId: item.episode_id,
+            lastWatched: item.last_watched,
+            watchPosition: item.watch_position,
+            seasonNumber: item.episode_id ? parseInt(item.episode_id.split('-')[1]) : undefined,
+            episodeNumber: item.episode_id ? parseInt(item.episode_id.split('-')[2]) : undefined
+          }));
+          
+          setHistory(formattedHistory);
+        } else {
+          // Fallback to localStorage if no DB history or error
+          const localHistory = JSON.parse(localStorage.getItem('watch_history') || '[]');
+          
+          // If we have local history, format it
+          if (localHistory.length > 0) {
+            // Map local history to a consistent format
+            const formattedLocalHistory = await Promise.all(localHistory.map(async (item: any) => {
+              // Try to get content details
+              try {
+                const { data: content } = await supabase
+                  .from('content')
+                  .select('*')
+                  .eq('id', item.contentId)
+                  .single();
+                  
+                return {
+                  id: crypto.randomUUID(),
+                  contentId: item.contentId,
+                  title: content?.title || 'Unknown title',
+                  image: content?.image_url || content?.image || '/placeholder.jpg',
+                  episodeId: item.episodeId,
+                  lastWatched: item.lastWatched,
+                  watchPosition: item.currentTime,
+                  seasonNumber: item.episodeId ? parseInt(item.episodeId.split('-')[1]) : undefined,
+                  episodeNumber: item.episodeId ? parseInt(item.episodeId.split('-')[2]) : undefined
+                };
+              } catch (err) {
+                return {
+                  id: crypto.randomUUID(),
+                  contentId: item.contentId,
+                  lastWatched: item.lastWatched,
+                  watchPosition: item.currentTime,
+                  episodeId: item.episodeId
+                };
+              }
+            }));
+            
+            setHistory(formattedLocalHistory);
+          }
+        }
       } catch (error) {
-        console.error("Error fetching watch history:", error);
+        console.error('Error fetching watch history:', error);
+        toast.error('Failed to load watch history');
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchWatchHistory();
-  }, [isAuthenticated, navigate]);
+    fetchHistory();
+  }, [user]);
 
-  const filteredHistory = filter === "all" 
-    ? history 
-    : history.filter(item => item.type === filter);
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString(undefined, { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
+  // Handle continue watching
+  const handleContinueWatching = (item: WatchHistoryItem) => {
+    navigate(`/content/${item.contentId}`, { 
+      state: { 
+        autoPlay: true,
+        seasonNumber: item.seasonNumber,
+        episodeNumber: item.episodeNumber,
+        startPosition: item.watchPosition
+      }
     });
   };
 
-  const formatWatchTime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    return `${hours > 0 ? `${hours}h ` : ''}${minutes}m`;
+  // Handle remove from history
+  const handleRemoveFromHistory = async (item: WatchHistoryItem) => {
+    try {
+      // Remove from Supabase if available
+      if (user) {
+        await supabase
+          .from('user_watch_history')
+          .delete()
+          .eq('id', item.id);
+      }
+      
+      // Also remove from local storage
+      try {
+        const localHistory = JSON.parse(localStorage.getItem('watch_history') || '[]');
+        const updatedHistory = localHistory.filter((historyItem: any) => 
+          historyItem.contentId !== item.contentId || historyItem.episodeId !== item.episodeId
+        );
+        localStorage.setItem('watch_history', JSON.stringify(updatedHistory));
+      } catch (e) {
+        // Ignore localStorage errors
+      }
+      
+      // Update state
+      setHistory(prev => prev.filter(historyItem => historyItem.id !== item.id));
+      
+      toast.success('Removed from watch history');
+    } catch (error) {
+      console.error('Error removing from history:', error);
+      toast.error('Failed to remove from history');
+    }
   };
 
-  const clearHistory = () => {
-    // In a real app this would call an API to clear history
-    setHistory([]);
+  // Format date
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) {
+      return 'Just now';
+    } else if (diffInSeconds < 3600) {
+      const minutes = Math.floor(diffInSeconds / 60);
+      return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+    } else if (diffInSeconds < 86400) {
+      const hours = Math.floor(diffInSeconds / 3600);
+      return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+    } else if (diffInSeconds < 172800) {
+      return 'Yesterday';
+    } else {
+      return date.toLocaleDateString();
+    }
   };
 
-  const removeHistoryItem = (id: string) => {
-    // In a real app this would call an API to remove specific item
-    setHistory(history.filter(item => item.id !== id));
-  };
+  if (isLoading) {
+    return <LoadingState message="Loading watch history..." />;
+  }
 
   return (
-    <div className="min-h-screen bg-background pt-20 px-4 container mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center">
-          <BackButton className="mr-4" />
-          <h1 className="text-3xl font-bold">Watch History</h1>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="flex items-center gap-2">
-                <Filter size={14} />
-                <span>{filter === "all" ? "All Content" : filter === "movie" ? "Movies" : "TV Shows"}</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setFilter("all")}>
-                All Content
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setFilter("movie")}>
-                Movies
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setFilter("series")}>
-                TV Shows
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          
-          <Button 
-            variant="destructive" 
-            size="sm"
-            onClick={clearHistory}
-            disabled={history.length === 0}
-          >
-            Clear History
-          </Button>
-        </div>
-      </div>
+    <div className="min-h-screen bg-background">
+      <Navbar />
       
-      {isLoading ? (
-        <div className="flex justify-center py-16">
-          <div className="animate-spin h-10 w-10 border-4 border-cinemax-500 rounded-full border-t-transparent"></div>
-        </div>
-      ) : history.length === 0 ? (
-        <div className="text-center py-16">
-          <Clock className="mx-auto h-16 w-16 text-gray-400 mb-4" />
-          <h2 className="text-xl font-medium mb-2">No watch history yet</h2>
-          <p className="text-gray-400 mb-6">Your watch history will appear here once you start watching content</p>
-          <Button 
-            onClick={() => navigate("/")}
-            className="bg-cinemax-500 hover:bg-cinemax-600"
-          >
-            Discover Content
-          </Button>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {filteredHistory.map(item => (
-            <div key={item.id} className="bg-card rounded-lg overflow-hidden shadow-lg">
-              <div className="flex flex-col md:flex-row">
-                <div className="relative md:w-48 h-36 md:h-auto">
-                  <img 
-                    src={item.poster_path} 
-                    alt={item.title}
-                    className="w-full h-full object-cover"
+      <div className="container mx-auto px-4 pt-24 pb-12">
+        <h1 className="text-3xl font-bold mb-8">Watch History</h1>
+        
+        {history.length === 0 ? (
+          <div className="text-center py-12">
+            <Clock className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold mb-2">No watch history yet</h2>
+            <p className="text-gray-400 mb-6">Start watching content to build your history</p>
+            <Button 
+              className="bg-cinemax-500 hover:bg-cinemax-600"
+              onClick={() => navigate('/')}
+            >
+              Browse Content
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {history.map((item) => (
+              <div key={item.id} className="bg-card rounded-lg overflow-hidden flex flex-col md:flex-row">
+                <div className="w-full md:w-48 h-32 flex-shrink-0">
+                  <div 
+                    className="h-full w-full bg-cover bg-center"
+                    style={{ 
+                      backgroundImage: `url(${item.image || '/placeholder.jpg'})`,
+                      backgroundSize: 'cover'
+                    }}
                   />
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                    <Button 
-                      variant="secondary" 
-                      size="icon"
-                      className="rounded-full bg-white/20 backdrop-blur-sm"
-                      onClick={() => navigate(`/content/${item.content_id}`)}
-                    >
-                      <Play className="h-6 w-6 text-white" />
-                    </Button>
-                  </div>
                 </div>
                 
                 <div className="p-4 flex-grow flex flex-col justify-between">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold">{item.title}</h3>
-                      <p className="text-sm text-gray-400">
-                        {item.type === 'series' && `S${item.season_number} E${item.episode_number}`}
-                      </p>
-                      <div className="flex items-center mt-2 text-xs text-gray-400">
-                        <Clock className="mr-1 h-3 w-3" />
-                        <span>{formatDate(item.watched_at)}</span>
-                        <span className="mx-2">•</span>
-                        <span>Watched {formatWatchTime(item.watch_time)}</span>
-                      </div>
+                  <div>
+                    <div className="flex justify-between">
+                      <h3 className="font-semibold text-lg truncate">{item.title || 'Unknown title'}</h3>
+                      <span className="text-xs text-gray-400">{formatDate(item.lastWatched)}</span>
                     </div>
                     
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      className="text-gray-400 hover:text-white"
-                      onClick={() => removeHistoryItem(item.id)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+                    {item.seasonNumber && item.episodeNumber && (
+                      <p className="text-gray-400 text-sm">
+                        Season {item.seasonNumber} • Episode {item.episodeNumber}
+                      </p>
+                    )}
+                    
+                    {item.watchPosition && (
+                      <div className="mt-2">
+                        <div className="bg-gray-700 h-1 rounded-full w-full overflow-hidden">
+                          <div 
+                            className="bg-cinemax-500 h-full"
+                            style={{ width: `${Math.min((item.watchPosition / 600) * 100, 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                   
-                  <div className="mt-4">
-                    <p className="text-xs text-gray-400 mb-1">{item.progress}% completed</p>
-                    <div className="w-full bg-gray-700 rounded-full h-2">
-                      <div 
-                        className="bg-cinemax-500 h-2 rounded-full" 
-                        style={{ width: `${item.progress}%` }}
-                      ></div>
-                    </div>
+                  <div className="flex justify-between items-center mt-4">
+                    <Button 
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                      onClick={() => handleContinueWatching(item)}
+                    >
+                      <Play size={16} />
+                      <span>Continue</span>
+                    </Button>
+                    
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemoveFromHistory(item)}
+                      className="text-gray-400 hover:text-red-500"
+                    >
+                      <Trash2 size={16} />
+                    </Button>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+            
+            {history.length > 5 && (
+              <div className="text-center mt-6">
+                <Button
+                  variant="outline"
+                  className="border-gray-700"
+                  onClick={() => {
+                    try {
+                      localStorage.removeItem('watch_history');
+                      setHistory([]);
+                      toast.success('Watch history cleared');
+                    } catch (e) {
+                      toast.error('Failed to clear history');
+                    }
+                  }}
+                >
+                  Clear All History
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      
+      <Footer />
     </div>
   );
 };

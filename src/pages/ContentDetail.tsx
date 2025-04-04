@@ -1,275 +1,50 @@
 
-import { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ContentRow from "@/components/ContentRow";
 import VideoPlayerWrapper from "@/components/VideoPlayerWrapper";
 import TrailerModal from "@/components/TrailerModal";
 import EpisodeSelector from "@/components/EpisodeSelector";
-import PremiumBadge from "@/components/PremiumBadge";
 import PremiumCodeModal from "@/components/PremiumCodeModal";
 import MovieDetail from "@/components/MovieDetail";
-import BackButton from "@/components/BackButton";
-import DownloadOptions from "@/components/DownloadOptions";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FastForward, Crown, Info, Play } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { ArrowLeft } from "lucide-react";
 import { useAuth } from "@/hooks/useAuthState";
-import { toast } from "sonner";
-import { 
-  getTrailerUrl,
-  getAvailableProviders,
-  hasPremiumAccess
-} from "@/utils/videoUtils";
-import { tmdbApi } from "@/services/tmdbApi";
+import { useContentDetail } from "@/hooks/useContentDetail";
+import LoadingState from "@/components/LoadingState";
 
 const ContentDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [content, setContent] = useState<any | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [liked, setLiked] = useState(false);
-  const [relatedContent, setRelatedContent] = useState<any[]>([]);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [showTrailer, setShowTrailer] = useState(false);
-  const [showPremiumModal, setShowPremiumModal] = useState(false);
-  const [activeProvider, setActiveProvider] = useState<string>('vidsrc_xyz');
-  const [seasons, setSeasons] = useState<Season[]>([]);
-  const [currentSeason, setCurrentSeason] = useState<number | undefined>();
-  const [currentEpisode, setCurrentEpisode] = useState<number | undefined>();
-  const [trailerUrl, setTrailerUrl] = useState<string | null>(null);
-  const { user, isAuthenticated } = useAuth();
+  const { user } = useAuth();
   
-  const availableProviders = id ? getAvailableProviders(id, content?.content_type || 'movie') : [];
-  
-  const isPremiumContent = content?.is_premium || (content?.rating && parseFloat(content.rating) > 8.0);
-  const canAccessPremium = hasPremiumAccess();
-
-  // Fetch content details
-  useEffect(() => {
-    // Scroll to top on page load
-    window.scrollTo(0, 0);
-    setIsLoading(true);
-    
-    const fetchContent = async () => {
-      try {
-        if (!id) return;
-        
-        // Fetch content details with type assertion
-        const { data: contentData, error: contentError } = await (supabase
-          .from('content') as any)
-          .select('*, content_categories(*)')
-          .eq('id', id)
-          .single();
-        
-        if (contentError) {
-          // If the content is not in our database, fetch from TMDB
-          const tmdbContent = await tmdbApi.getContentDetails(id);
-          if (tmdbContent) {
-            setContent({
-              id: tmdbContent.id,
-              title: tmdbContent.title,
-              description: tmdbContent.description,
-              image_url: tmdbContent.image,
-              image: tmdbContent.image,
-              category_id: null,
-              content_type: tmdbContent.type || 'movie',
-              year: tmdbContent.year,
-              duration: tmdbContent.duration,
-              rating: tmdbContent.rating,
-              featured: false,
-              trending: true,
-              popular: true,
-              trailer_key: tmdbContent.trailer_key || id, // Using provided trailer key or ID as a placeholder
-              is_premium: parseFloat(tmdbContent.rating) > 8.0,
-              content_categories: {
-                id: '1',
-                name: tmdbContent.category,
-                slug: tmdbContent.category.toLowerCase(),
-                description: null
-              }
-            });
-            
-            // Try to get trailer URL
-            try {
-              const trailer = await getTrailerUrl(id, tmdbContent.type || 'movie');
-              setTrailerUrl(trailer);
-            } catch (e) {
-              console.error('Error fetching trailer:', e);
-            }
-            
-            // Fetch related content from TMDB
-            const similar = await tmdbApi.getSimilarContent(id, tmdbContent.type || 'movie');
-            setRelatedContent(similar);
-            
-            // If it's a TV show, fetch seasons and episodes
-            if (tmdbContent.type === 'series' || tmdbContent.type === 'anime') {
-              // Simulate seasons and episodes with mock data
-              const mockSeasons: Season[] = Array.from({ length: 3 }, (_, i) => ({
-                id: `season-${i+1}`,
-                season_number: i+1,
-                title: `Season ${i+1}`,
-                episode_count: 10,
-                episodes: Array.from({ length: 10 }, (_, j) => ({
-                  id: `ep-${i+1}-${j+1}`,
-                  title: `Episode ${j+1}: ${tmdbContent.title} Part ${j+1}`,
-                  episode_number: j+1,
-                  season_number: i+1,
-                  description: `This is episode ${j+1} of season ${i+1} of ${tmdbContent.title}`,
-                  duration: "45 min",
-                  air_date: new Date().toISOString()
-                })),
-                poster: tmdbContent.image,
-                air_date: new Date().toISOString()
-              }));
-              
-              setSeasons(mockSeasons);
-            }
-            
-            setIsLoading(false);
-            return;
-          }
-          
-          throw contentError;
-        }
-        
-        setContent(contentData);
-        
-        // Try to get trailer URL
-        try {
-          const trailer = await getTrailerUrl(id, contentData.content_type || 'movie');
-          setTrailerUrl(trailer);
-        } catch (e) {
-          console.error('Error fetching trailer:', e);
-        }
-        
-        // Check if user has liked this content
-        if (isAuthenticated && user) {
-          const { data: favoriteData } = await (supabase
-            .from('user_favorites') as any)
-            .select('*')
-            .eq('user_id', user.id)
-            .eq('content_id', id)
-            .single();
-          
-          setLiked(!!favoriteData);
-        }
-        
-        // Fetch related content from the same category
-        if (contentData.category_id) {
-          const { data: relatedData } = await (supabase
-            .from('content') as any)
-            .select('*')
-            .eq('category_id', contentData.category_id)
-            .neq('id', id)
-            .limit(10);
-          
-          setRelatedContent(relatedData || []);
-        } else {
-          // If no category ID, fetch related content from TMDB
-          const similar = await tmdbApi.getSimilarContent(id, contentData.content_type);
-          setRelatedContent(similar);
-        }
-        
-        // If it's a TV show or anime, fetch seasons and episodes
-        if (contentData.content_type === 'series' || contentData.content_type === 'anime') {
-          // In a real app, fetch actual seasons and episodes
-          // For now, creating mock data
-          const mockSeasons: Season[] = Array.from({ length: 3 }, (_, i) => ({
-            id: `season-${i+1}`,
-            season_number: i+1,
-            title: `Season ${i+1}`,
-            episode_count: 10,
-            episodes: Array.from({ length: 10 }, (_, j) => ({
-              id: `ep-${i+1}-${j+1}`,
-              title: `Episode ${j+1}: ${contentData.title} Part ${j+1}`,
-              episode_number: j+1,
-              season_number: i+1,
-              description: `This is episode ${j+1} of season ${i+1} of ${contentData.title}`,
-              duration: "45 min",
-              air_date: new Date().toISOString()
-            })),
-            poster: contentData.image_url,
-            air_date: new Date().toISOString()
-          }));
-          
-          setSeasons(mockSeasons);
-        }
-      } catch (error) {
-        console.error("Error fetching content:", error);
-        setContent(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchContent();
-  }, [id, isAuthenticated, user]);
-
-  // Handle favorite toggle
-  const toggleFavorite = async () => {
-    if (!isAuthenticated) {
-      toast.error("Please sign in to add favorites");
-      return;
-    }
-    
-    if (!id || !user) return;
-    
-    try {
-      if (liked) {
-        // Remove from favorites
-        await (supabase
-          .from('user_favorites') as any)
-          .delete()
-          .eq('user_id', user.id)
-          .eq('content_id', id);
-        
-        toast.success("Removed from favorites");
-      } else {
-        // Add to favorites
-        const favoriteData = {
-          user_id: user.id,
-          content_id: id
-        };
-        
-        await (supabase
-          .from('user_favorites') as any)
-          .insert(favoriteData);
-        
-        toast.success("Added to favorites");
-      }
-      
-      setLiked(!liked);
-    } catch (error) {
-      toast.error("Error updating favorites");
-      console.error(error);
-    }
-  };
-
-  // Start watching
-  const startWatching = () => {
-    if (isPremiumContent && !canAccessPremium) {
-      toast.error("Premium content requires subscription or premium code");
-      setShowPremiumModal(true);
-      return;
-    }
-    
-    setIsPlaying(true);
-  };
-  
-  // Handle episode selection
-  const handleEpisodeSelect = (seasonNumber: number, episodeNumber: number) => {
-    if (isPremiumContent && !canAccessPremium) {
-      toast.error("Premium content requires subscription or premium code");
-      setShowPremiumModal(true);
-      return;
-    }
-    
-    setCurrentSeason(seasonNumber);
-    setCurrentEpisode(episodeNumber);
-    setIsPlaying(true);
-  };
+  const {
+    content,
+    isLoading,
+    liked,
+    toggleFavorite,
+    relatedContent,
+    isPlaying,
+    setIsPlaying,
+    showTrailer,
+    setShowTrailer,
+    showPremiumModal,
+    setShowPremiumModal,
+    activeProvider,
+    setActiveProvider,
+    seasons,
+    currentSeason,
+    currentEpisode,
+    trailerUrl,
+    isPremiumContent,
+    canAccessPremium,
+    availableProviders,
+    startWatching,
+    handleEpisodeSelect,
+    loadEpisodesForSeason
+  } = useContentDetail(id);
 
   // Handle back navigation
   const handleGoBack = () => {
@@ -285,15 +60,15 @@ const ContentDetail = () => {
     }
   };
 
+  // Load episodes for first season when seasons change
+  useEffect(() => {
+    if (seasons.length > 0) {
+      loadEpisodesForSeason(seasons[0].season_number);
+    }
+  }, [seasons.length]);
+
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse flex flex-col items-center">
-          <div className="w-24 h-24 rounded-full bg-gray-700 mb-4"></div>
-          <div className="h-4 w-32 bg-gray-700 rounded"></div>
-        </div>
-      </div>
-    );
+    return <LoadingState message="Loading content details..." />;
   }
 
   if (!content) {
@@ -326,7 +101,14 @@ const ContentDetail = () => {
                   }
                 </h1>
                 
-                <BackButton onClick={() => setIsPlaying(false)} />
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setIsPlaying(false)}
+                  className="flex items-center gap-2"
+                >
+                  <ArrowLeft size={16} />
+                  <span>Back</span>
+                </Button>
               </div>
               
               <VideoPlayerWrapper 
@@ -365,9 +147,10 @@ const ContentDetail = () => {
               startWatching={startWatching}
             />
             
-            {/* Content Details Tabs */}
+            {/* Content Details */}
             <div className="py-8">
               <div className="container mx-auto px-4">
+                {/* Content Details Tabs */}
                 <div className="flex border-b border-gray-800 mb-6 overflow-x-auto scrollbar-none">
                   <button className="px-4 py-2 border-b-2 border-cinemax-500 text-white font-medium whitespace-nowrap">
                     Overview
@@ -383,13 +166,16 @@ const ContentDetail = () => {
                   </button>
                 </div>
                 
+                {/* Content layout with two columns */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                   <div className="lg:col-span-2">
+                    {/* Synopsis */}
                     <h2 className="text-xl font-bold mb-4">Synopsis</h2>
                     <p className="text-gray-300 mb-8">
                       {content.description}
                     </p>
                     
+                    {/* Preview thumbnail */}
                     <div 
                       className="aspect-video bg-gray-900 rounded-lg overflow-hidden mb-6 cursor-pointer"
                       onClick={startWatching}
@@ -400,7 +186,7 @@ const ContentDetail = () => {
                       >
                         <div className="absolute inset-0 bg-black/40"></div>
                         <Button className="relative z-10 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full w-16 h-16 flex items-center justify-center">
-                          <Play size={24} className="ml-1" />
+                          <div className="ml-1 w-0 h-0 border-t-[12px] border-t-transparent border-l-[20px] border-l-white border-b-[12px] border-b-transparent"></div>
                         </Button>
                       </div>
                     </div>
@@ -416,28 +202,35 @@ const ContentDetail = () => {
                     )}
                   </div>
                   
+                  {/* Right sidebar - download options, providers, premium info */}
                   <div>
-                    <DownloadOptions 
-                      contentId={content.id}
-                      contentType={content.content_type}
-                      isPremium={isPremiumContent}
-                      episodeId={currentEpisode ? `ep-${currentSeason}-${currentEpisode}` : undefined}
-                    />
-                    
                     <div className="mt-6">
-                      <h3 className="text-lg font-bold mb-4">Category</h3>
-                      <Link 
-                        to={`/${content.content_categories?.slug || 'category'}`}
-                        className="inline-block px-3 py-1 bg-gray-800 rounded-md text-sm hover:bg-gray-700 transition-colors"
-                      >
-                        {content.content_categories?.name || content.category || 'Uncategorized'}
-                      </Link>
+                      <h3 className="text-lg font-bold mb-4">Available Sources</h3>
+                      <div className="grid grid-cols-2 gap-2">
+                        {availableProviders.map(provider => (
+                          <Button
+                            key={provider.id}
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setActiveProvider(provider.id)}
+                            className={`justify-start ${activeProvider === provider.id ? "border-cinemax-500 text-cinemax-500" : ""}`}
+                          >
+                            {provider.name}
+                            {provider.isTorrent && <span className="text-xs ml-1 text-yellow-500">(Torrent)</span>}
+                          </Button>
+                        ))}
+                      </div>
                     </div>
                     
+                    {/* Premium content notice */}
                     {isPremiumContent && !canAccessPremium && (
                       <div className="mt-6 p-4 bg-cinemax-500/10 border border-cinemax-500/30 rounded-lg">
                         <div className="flex items-start gap-3">
-                          <Crown size={24} className="text-yellow-500 shrink-0 mt-1" />
+                          <div className="text-yellow-500 shrink-0 mt-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M6 3h12l4 8-10 13L2 11l4-8z"></path>
+                            </svg>
+                          </div>
                           <div>
                             <h3 className="text-lg font-bold text-yellow-500 mb-2">Premium Content</h3>
                             <p className="text-gray-300 text-sm mb-3">
@@ -454,25 +247,16 @@ const ContentDetail = () => {
                       </div>
                     )}
                     
+                    {/* Category */}
                     <div className="mt-6">
-                      <h3 className="text-lg font-bold mb-4">Available Sources</h3>
-                      <div className="grid grid-cols-2 gap-2">
-                        {availableProviders.map(provider => (
-                          <Button
-                            key={provider.id}
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setActiveProvider(provider.id);
-                              toast.info(`Selected ${provider.name} as source`);
-                            }}
-                            className={`justify-start ${activeProvider === provider.id ? "border-cinemax-500 text-cinemax-500" : ""}`}
-                          >
-                            <FastForward size={14} className="mr-2" />
-                            {provider.name}
-                          </Button>
-                        ))}
-                      </div>
+                      <h3 className="text-lg font-bold mb-4">Category</h3>
+                      <Button 
+                        variant="outline"
+                        onClick={() => navigate(`/${content.content_categories?.slug || content.content_type || 'category'}`)}
+                        className="px-3 py-1 bg-gray-800 rounded-md text-sm hover:bg-gray-700 transition-colors"
+                      >
+                        {content.content_categories?.name || content.category || content.content_type || 'Uncategorized'}
+                      </Button>
                     </div>
                   </div>
                 </div>

@@ -153,10 +153,12 @@ const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({
       const stopFn = startRecording(videoRef.current, `${title || 'video'}-recording`);
       setStopRecordingFn(() => stopFn);
       setIsRecording(true);
+      toast.success("Recording started");
     } else if (stopRecordingFn) {
       stopRecordingFn();
       setIsRecording(false);
       setStopRecordingFn(null);
+      toast.success("Recording saved");
     }
   };
   
