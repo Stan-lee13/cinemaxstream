@@ -1,132 +1,105 @@
 
 /**
- * Streaming related utility functions
+ * Streaming utility functions
  */
-import { hasPremiumAccess } from './authUtils';
 
-// Quality options for downloads
+// Define quality options for streaming and downloading
 export const QUALITY_OPTIONS = [
-  { quality: '2160p', label: '4K Ultra HD', size: '~8-10 GB', premium: true },
-  { quality: '1080p', label: 'Full HD', size: '~2-4 GB', premium: false },
-  { quality: '720p', label: 'HD', size: '~800 MB-1.5 GB', premium: false },
-  { quality: '480p', label: 'Standard Definition', size: '~400-700 MB', premium: false },
-  { quality: '360p', label: 'Low Definition', size: '~250-350 MB', premium: false }
+  { value: "4k", label: "4K (2160p)" },
+  { value: "1080p", label: "Full HD (1080p)" },
+  { value: "720p", label: "HD (720p)" },
+  { value: "480p", label: "SD (480p)" },
+  { value: "360p", label: "Low (360p)" }
 ];
 
 /**
- * Get streaming URL for content
+ * Get streaming URL for the content
  */
-export const getStreamingUrl = (
-  contentId: string,
-  contentType: string = 'movie',
-  provider: string = 'vidsrc_xyz',
-  episodeId?: string,
-  seasonNumber?: number,
-  episodeNumber?: number
-): string => {
-  let baseUrl;
-  
-  switch (provider) {
-    case 'vidsrc_xyz':
-      baseUrl = `https://vidsrc.xyz/embed/`;
-      break;
-    case 'netflix':
-      baseUrl = `https://example-netflix.com/watch/`;
-      break;
-    case 'prime_video':
-      baseUrl = `https://example-primevideo.com/watch/`;
-      break;
-    case 'disney_plus':
-      baseUrl = `https://example-disneyplus.com/watch/`;
-      break;
-    case 'hbo_max':
-      baseUrl = `https://example-hbomax.com/watch/`;
-      break;
-    case 'hulu':
-      baseUrl = `https://example-hulu.com/watch/`;
-      break;
-    case 'aniwatch':
-      baseUrl = `https://aniwatch.to/watch/`;
-      break;
-    case 'fmovies':
-      baseUrl = `https://fmovies.to/watch/`;
-      break;
-    case 'eztv':
-      return `magnet:?xt=urn:btih:${contentId}&dn=${contentType}`;
-    case 'yts':
-      return `magnet:?xt=urn:btih:${contentId}&dn=movie`;
-    default:
-      baseUrl = `https://vidsrc.to/embed/`;
-  }
-  
-  if (contentType === 'movie') {
-    return `${baseUrl}movie/${contentId}`;
-  } else {
-    // For series or anime, include season and episode if available
-    let url = `${baseUrl}${contentType}/${contentId}`;
-    if (seasonNumber !== undefined && episodeNumber !== undefined) {
-      url += `/season/${seasonNumber}/episode/${episodeNumber}`;
-    }
-    return url;
-  }
-};
+export const getStreamingUrl = (contentId: string, provider: string = 'vidsrc_xyz', options: any = {}): string => {
+  // Default providers
+  const providers: Record<string, (id: string, opts: any) => string> = {
+    vidsrc_xyz: (id, opts) => 
+      `https://vidsrc.xyz/embed/${id}?autoplay=${opts.autoplay ? '1' : '0'}`,
+    
+    aniwatch: (id, opts) => {
+      // Construct URL for anime content
+      let url = `https://aniwatch.to/watch/${id}`;
+      if (opts.episode) {
+        url += `/ep-${opts.episode}`;
+      }
+      return url;
+    },
+    
+    fmovies: (id, _) => 
+      `https://fmovies.to/watch/${id}`,
 
-/**
- * Get download URL for content
- */
-export const getDownloadUrl = (
-  contentId: string,
-  quality: string = '720p',
-  contentType: string = 'movie',
-  episodeId?: string,
-  provider: string = 'vidsrc_xyz'
-): string => {
-  let baseUrl;
-  
-  switch (provider) {
-    case 'vidsrc_xyz':
-      baseUrl = 'https://vidsrc.xyz/download/';
-      break;
-    case 'fmovies':
-      baseUrl = 'https://fmovies.to/download/';
-      break;
-    case 'eztv':
-      return `magnet:?xt=urn:btih:${contentId}&dn=${contentType}`;
-    case 'yts':
-      return `magnet:?xt=urn:btih:${contentId}&dn=movie&quality=${quality}`;
-    default:
-      baseUrl = 'https://example-download.com/download/';
-  }
-  
-  if (contentType === 'movie') {
-    return `${baseUrl}${contentType}/${contentId}/${quality}`;
-  } else {
-    return `${baseUrl}${contentType}/${contentId}/${episodeId || 'latest'}/${quality}`;
-  }
-};
+    prime_video: (id, _) => 
+      `https://www.amazon.com/gp/video/detail/${id}`,
 
-/**
- * Get trailer URL
- */
-export const getTrailerUrl = async (contentId: string, contentType: string = 'movie'): Promise<string | null> => {
-  // This would typically fetch from an API
-  // For now, return YouTube embed URLs based on content ID
-  return `https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1`;
-};
+    netflix: (id, _) => 
+      `https://www.netflix.com/title/${id}`,
+    
+    disney_plus: (id, _) => 
+      `https://www.disneyplus.com/video/${id}`,
+    
+    hbo_max: (id, _) => 
+      `https://play.hbomax.com/page/${id}`,
+    
+    hulu: (id, _) => 
+      `https://www.hulu.com/watch/${id}`,
 
-/**
- * Start screen recording
- */
-export const startRecording = (
-  videoElement: HTMLVideoElement,
-  filename: string
-): (() => void) => {
-  // This is just a mock implementation
-  // In a real app, you would use MediaRecorder API
-  console.log('Screen recording started', videoElement, filename);
-  
-  // Return a function to stop recording
-  return () => {
-    console.log('Screen recording stopped');
+    // Torrent providers
+    eztv: (id, opts) => 
+      `magnet:?xt=urn:btih:${id}&dn=${encodeURIComponent(opts.title || '')}&tr=udp://tracker.opentrackr.org:1337/announce`,
+    
+    yts: (id, opts) => 
+      `magnet:?xt=urn:btih:${id}&dn=${encodeURIComponent(opts.title || '')}&tr=udp://glotorrents.pw:6969/announce`
   };
+  
+  // Choose provider function or fallback
+  const providerFn = providers[provider] || providers.vidsrc_xyz;
+  
+  // Return URL
+  return providerFn(contentId, options);
+};
+
+/**
+ * Get download URL for the content
+ */
+export const getDownloadUrl = (contentId: string, quality: string = '1080p'): string => {
+  // In a real app, this would connect to a proper download service
+  return `https://api.example.com/download/${contentId}?quality=${quality}`;
+};
+
+/**
+ * Get trailer URL for the content 
+ */
+export const getTrailerUrl = async (contentId: string, contentType: string = 'movie'): Promise<string> => {
+  // For production, this would call a real API
+  const trailerKey = contentId;
+  return `https://www.youtube.com/watch?v=${trailerKey}`;
+};
+
+/**
+ * Start screen recording for live content
+ */
+export const startRecording = async (options = {}) => {
+  try {
+    if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: true
+      });
+      
+      // In a real implementation, we'd handle this stream
+      // and save it or stream it
+      console.log('Screen recording started:', stream);
+      return stream;
+    } else {
+      throw new Error('Screen recording not supported');
+    }
+  } catch (error) {
+    console.error('Error starting recording:', error);
+    throw error;
+  }
 };
