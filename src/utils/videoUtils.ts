@@ -1,235 +1,253 @@
-
-import { toast } from "sonner";
-
-// Mock data for videos
-const VIDEO_SOURCES = {
-  movies: {
-    "movie-1": "https://example.com/movie1.mp4",
-    "movie-2": "https://example.com/movie2.mp4",
-    "movie-3": "https://example.com/movie3.mp4"
-  },
-  series: {
-    "series-1": {
-      s1e1: "https://example.com/series1-s1e1.mp4",
-      s1e2: "https://example.com/series1-s1e2.mp4"
-    },
-    "series-2": {
-      s1e1: "https://example.com/series2-s1e1.mp4",
-      s1e2: "https://example.com/series2-s1e2.mp4"
-    }
-  }
-};
-
-// List of streaming providers
-const STREAMING_PROVIDERS = [
-  { id: "vidsrc_xyz", name: "VidSrc", quality: "HD" },
-  { id: "streamer_pro", name: "StreamerPro", quality: "Full HD" },
-  { id: "media_nest", name: "MediaNest", quality: "4K", isPremium: true },
-  { id: "cine_hub", name: "CineHub", quality: "HD" }
+// Mock data for streaming services
+const streamingProviders = [
+  { id: 'netflix', name: 'Netflix', contentType: 'all' },
+  { id: 'vidsrc_xyz', name: 'VidSrc', contentType: 'all' },
+  { id: 'prime_video', name: 'Prime Video', contentType: 'all' },
+  { id: 'disney_plus', name: 'Disney+', contentType: 'all' },
+  { id: 'hbo_max', name: 'HBO Max', contentType: 'all' },
+  { id: 'hulu', name: 'Hulu', contentType: 'series' }
 ];
 
-// Quality options for downloads
-export const QUALITY_OPTIONS = [
-  { quality: "480p", label: "SD (480p)", size: "400MB" },
-  { quality: "720p", label: "HD (720p)", size: "800MB" },
-  { quality: "1080p", label: "Full HD (1080p)", size: "1.5GB", premium: true },
-  { quality: "4k", label: "4K Ultra HD", size: "4GB", premium: true }
-];
+// Mock premium content check
+const premiumContentIds = ['1124620', '634649', '505642', '843794', '872585'];
 
-// Check if user has premium access
+// Storage key for premium access
+const PREMIUM_ACCESS_KEY = 'premium_access';
+const VALID_PREMIUM_CODES = ['PREMIUM123', 'NETFLIX2025', 'CINEMAX2025'];
+
+/**
+ * Check if user has premium access
+ */
 export const hasPremiumAccess = (): boolean => {
-  // In a real app, this would check user subscription status
-  const hasPremium = localStorage.getItem('guest_access') === 'true' || 
-                     localStorage.getItem('premium_access') === 'true';
-  return hasPremium;
+  const premiumAccess = localStorage.getItem(PREMIUM_ACCESS_KEY);
+  const guestAccess = localStorage.getItem('guest_access');
+  return premiumAccess === 'true' || guestAccess === 'true';
 };
 
-// Generate a mock trailer URL based on content ID
-export const getTrailerUrl = (contentId: string, contentType: string = 'movie'): string => {
-  return `https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=0&controls=1`;
-};
-
-// Generate download URLs based on content ID and quality
-export const getDownloadUrl = (contentId: string, quality: string, contentType: string = 'movie'): string => {
-  return `https://example.com/download/${contentId}_${quality}.mp4`;
-};
-
-// Enter a premium code to get premium access
+/**
+ * Validate and store premium code
+ */
 export const enterPremiumCode = (code: string): boolean => {
-  if (code === "PREMIUM123" || code === "NETFLIX2025" || code === "CINEMAX2025") {
-    localStorage.setItem('premium_access', 'true');
+  if (VALID_PREMIUM_CODES.includes(code.toUpperCase())) {
+    localStorage.setItem(PREMIUM_ACCESS_KEY, 'true');
     return true;
   }
   return false;
 };
 
-// Get personalized recommendations based on user viewing history
-export const getPersonalizedRecommendations = (userId?: string, category?: string) => {
-  // In a real app, this would use an algorithm to suggest content
-  return [
-    { id: "1", title: "Inception", posterPath: "/placeholder.svg", image: "/placeholder.svg", type: "movie", category: "movie", rating: "4.5", year: "2010", duration: "148 min" },
-    { id: "2", title: "Stranger Things", posterPath: "/placeholder.svg", image: "/placeholder.svg", type: "series", category: "series", rating: "4.8", year: "2016", duration: "Seasons: 4" },
-    { id: "3", title: "The Matrix", posterPath: "/placeholder.svg", image: "/placeholder.svg", type: "movie", category: "movie", rating: "4.7", year: "1999", duration: "136 min" },
-    { id: "4", title: "Breaking Bad", posterPath: "/placeholder.svg", image: "/placeholder.svg", type: "series", category: "series", rating: "4.9", year: "2008", duration: "Seasons: 5" },
-  ];
+/**
+ * Check if content is premium
+ */
+export const isPremiumContent = (contentId: string): boolean => {
+  return premiumContentIds.includes(contentId);
 };
 
-// Get video source URL
-export const getVideoSource = (contentId: string, episodeId?: string): string => {
-  if (contentId.startsWith('movie-')) {
-    // Check if the content exists in the movies object
-    if (VIDEO_SOURCES.movies && VIDEO_SOURCES.movies[contentId as keyof typeof VIDEO_SOURCES.movies]) {
-      return VIDEO_SOURCES.movies[contentId as keyof typeof VIDEO_SOURCES.movies];
-    }
-  } else if (contentId.startsWith('series-') && episodeId) {
-    // Check if the content exists in the series object
-    if (VIDEO_SOURCES.series && VIDEO_SOURCES.series[contentId as keyof typeof VIDEO_SOURCES.series]) {
-      const series = VIDEO_SOURCES.series[contentId as keyof typeof VIDEO_SOURCES.series];
-      if (series && episodeId in series) {
-        return series[episodeId as keyof typeof series];
-      }
-    }
+/**
+ * Get available streaming providers for content
+ */
+export const getAvailableProviders = (contentId: string, contentType: string = 'movie') => {
+  // Filter providers based on content type
+  return streamingProviders.filter(provider => 
+    provider.contentType === 'all' || provider.contentType === contentType
+  );
+};
+
+/**
+ * Get best provider based on content type
+ */
+export const getBestProviderForContentType = (contentType: string): string => {
+  switch (contentType) {
+    case 'series':
+      return 'netflix';
+    case 'anime':
+      return 'hulu';
+    default:
+      return 'vidsrc_xyz';
   }
-  
-  // Return a default video if the content is not found
-  return "https://example.com/default.mp4";
 };
 
-// Generate a secure random password for reset
-export const generateSecurePassword = (length: number = 12): string => {
-  const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_-+=";
-  let password = "";
-  
-  // Ensure we have at least one of each type of character
-  password += charset.substring(0, 26).charAt(Math.floor(Math.random() * 26)); // lowercase
-  password += charset.substring(26, 52).charAt(Math.floor(Math.random() * 26)); // uppercase
-  password += charset.substring(52, 62).charAt(Math.floor(Math.random() * 10)); // digit
-  password += charset.substring(62).charAt(Math.floor(Math.random() * (charset.length - 62))); // special
-  
-  // Fill the rest with random characters
-  for (let i = 4; i < length; i++) {
-    const randomIndex = Math.floor(Math.random() * charset.length);
-    password += charset[randomIndex];
-  }
-  
-  // Shuffle the password characters
-  return password.split('').sort(() => 0.5 - Math.random()).join('');
-};
-
-// Track user streaming activity
-export const trackStreamingActivity = (
-  contentId: string, 
-  userId: string, 
-  timePosition: number,
-  episodeId?: string
-): void => {
-  console.log(`Tracking: User ${userId} watched ${contentId} at position ${timePosition}s${episodeId ? `, episode ${episodeId}` : ''}`);
-  
-  // In a real app, this would send data to analytics or a database
-  const historyItem = {
-    contentId,
-    userId,
-    timePosition,
-    episodeId,
-    timestamp: new Date().toISOString()
-  };
-  
-  // Store in localStorage for demo purposes
-  const history = JSON.parse(localStorage.getItem('watch_history') || '[]');
-  history.push(historyItem);
-  localStorage.setItem('watch_history', JSON.stringify(history));
-};
-
-// Mark content as completed
-export const markContentAsComplete = (
-  contentId: string, 
-  userId: string,
-  episodeId?: string
-): void => {
-  console.log(`Marking as complete: User ${userId} finished ${contentId}${episodeId ? `, episode ${episodeId}` : ''}`);
-  
-  // In a real app, this would update the user's profile in a database
-  const completedItems = JSON.parse(localStorage.getItem('completed_content') || '[]');
-  completedItems.push({
-    contentId,
-    userId,
-    episodeId,
-    completedAt: new Date().toISOString()
-  });
-  localStorage.setItem('completed_content', JSON.stringify(completedItems));
-};
-
-// Start screen recording
-export const startRecording = (
-  videoElement: HTMLVideoElement, 
-  fileName: string = 'screen-recording'
-): (() => void) => {
-  console.log('Starting screen recording');
-  
-  // This is a mock implementation
-  // In a real app, this would use MediaRecorder API
-  const stopRecordingFn = () => {
-    console.log('Recording stopped');
-    toast('Recording saved as ' + fileName + '.mp4');
-  };
-  
-  return stopRecordingFn;
-};
-
-// Get available streaming providers for content
-export const getAvailableProviders = (
-  contentId: string, 
-  contentType: string
-): Array<{ id: string; name: string; quality: string; isPremium?: boolean }> => {
-  // In a real app, this would check which providers have this content
-  return STREAMING_PROVIDERS;
-};
-
-// Get the best streaming provider for content type
-export const getBestProviderForContentType = (
-  contentType: string
-): string => {
-  // In a real app, this would determine the best provider based on content type
-  if (contentType === 'movie') {
-    return 'vidsrc_xyz';
-  } else if (contentType === 'series') {
-    return 'streamer_pro';
-  } else if (contentType === 'anime') {
-    return 'media_nest';
-  }
-  
-  return 'vidsrc_xyz'; // default
-};
-
-// Get streaming URL for content
+/**
+ * Get streaming URL for content
+ */
 export const getStreamingUrl = (
   contentId: string,
-  contentType: string,
-  provider: string,
+  contentType: string = 'movie',
+  provider: string = 'vidsrc_xyz',
   episodeId?: string,
   seasonNumber?: number,
   episodeNumber?: number
 ): string => {
-  // In a real app, this would generate a proper streaming URL
-  let baseUrl = 'https://example.com/stream/';
+  let baseUrl;
   
-  if (provider === 'vidsrc_xyz') {
-    baseUrl = 'https://vidsrc.example.com/embed/';
-  } else if (provider === 'streamer_pro') {
-    baseUrl = 'https://streamerpro.example.com/watch/';
-  } else if (provider === 'media_nest') {
-    baseUrl = 'https://medianest.example.com/play/';
-  } else if (provider === 'cine_hub') {
-    baseUrl = 'https://cinehub.example.com/stream/';
+  switch (provider) {
+    case 'vidsrc_xyz':
+      baseUrl = `https://vidsrc.xyz/embed/`;
+      break;
+    case 'netflix':
+      baseUrl = `https://example-netflix.com/watch/`;
+      break;
+    case 'prime_video':
+      baseUrl = `https://example-primevideo.com/watch/`;
+      break;
+    case 'disney_plus':
+      baseUrl = `https://example-disneyplus.com/watch/`;
+      break;
+    case 'hbo_max':
+      baseUrl = `https://example-hbomax.com/watch/`;
+      break;
+    case 'hulu':
+      baseUrl = `https://example-hulu.com/watch/`;
+      break;
+    default:
+      baseUrl = `https://vidsrc.to/embed/`;
   }
   
   if (contentType === 'movie') {
-    return `${baseUrl}${contentId}`;
-  } else if (episodeId) {
-    return `${baseUrl}${contentId}/${episodeId}`;
-  } else if (seasonNumber && episodeNumber) {
-    return `${baseUrl}${contentId}/s${seasonNumber}e${episodeNumber}`;
+    return `${baseUrl}movie/${contentId}`;
+  } else {
+    // For series or anime, include season and episode if available
+    let url = `${baseUrl}${contentType}/${contentId}`;
+    if (seasonNumber !== undefined && episodeNumber !== undefined) {
+      url += `/season/${seasonNumber}/episode/${episodeNumber}`;
+    }
+    return url;
   }
+};
+
+/**
+ * Get download URL for content
+ */
+export const getDownloadUrl = (
+  contentId: string,
+  quality: string = '720p',
+  contentType: string = 'movie',
+  episodeId?: string
+): string => {
+  const baseUrl = 'https://example-download.com/download/';
+  if (contentType === 'movie') {
+    return `${baseUrl}${contentType}/${contentId}/${quality}`;
+  } else {
+    return `${baseUrl}${contentType}/${contentId}/${episodeId || 'latest'}/${quality}`;
+  }
+};
+
+/**
+ * Track streaming activity
+ */
+export const trackStreamingActivity = (
+  contentId: string,
+  userId: string,
+  currentTime: number,
+  episodeId?: string
+): void => {
+  // In a real implementation, this would send data to a backend
+  console.log(`Tracking activity: Content ID ${contentId}, User ID ${userId}, Time ${currentTime}, Episode ID ${episodeId || 'N/A'}`);
   
-  return `${baseUrl}${contentId}/default`;
+  // Store locally for history
+  try {
+    const historyKey = 'watch_history';
+    const history = JSON.parse(localStorage.getItem(historyKey) || '[]');
+    
+    // Find if this content already exists in history
+    const existingIndex = history.findIndex((item: any) => 
+      item.contentId === contentId && item.episodeId === episodeId
+    );
+    
+    const timestamp = new Date().toISOString();
+    
+    if (existingIndex >= 0) {
+      // Update existing entry
+      history[existingIndex].currentTime = currentTime;
+      history[existingIndex].lastWatched = timestamp;
+    } else {
+      // Add new entry
+      history.unshift({
+        contentId,
+        episodeId,
+        currentTime,
+        lastWatched: timestamp,
+        userId
+      });
+    }
+    
+    // Keep only last 50 items
+    const trimmedHistory = history.slice(0, 50);
+    localStorage.setItem(historyKey, JSON.stringify(trimmedHistory));
+  } catch (error) {
+    console.error('Error saving watch history:', error);
+  }
+};
+
+/**
+ * Mark content as complete
+ */
+export const markContentAsComplete = (
+  contentId: string,
+  userId: string,
+  episodeId?: string
+): void => {
+  // In a real implementation, this would send data to a backend
+  console.log(`Marking complete: Content ID ${contentId}, User ID ${userId}, Episode ID ${episodeId || 'N/A'}`);
+  
+  // Store completion status locally
+  try {
+    const completedKey = 'completed_content';
+    const completed = JSON.parse(localStorage.getItem(completedKey) || '[]');
+    
+    const existingItem = completed.find((item: any) => 
+      item.contentId === contentId && item.episodeId === episodeId
+    );
+    
+    if (!existingItem) {
+      completed.push({
+        contentId,
+        episodeId,
+        userId,
+        completedAt: new Date().toISOString()
+      });
+      
+      localStorage.setItem(completedKey, JSON.stringify(completed));
+    }
+  } catch (error) {
+    console.error('Error saving completion status:', error);
+  }
+};
+
+/**
+ * Get trailer URL
+ */
+export const getTrailerUrl = async (contentId: string, contentType: string = 'movie'): Promise<string | null> => {
+  // This would typically fetch from an API
+  // For now, return YouTube embed URLs based on content ID
+  return `https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1`;
+};
+
+/**
+ * Start screen recording
+ */
+export const startRecording = (
+  videoElement: HTMLVideoElement,
+  filename: string
+): (() => void) => {
+  // This is just a mock implementation
+  // In a real app, you would use MediaRecorder API
+  console.log('Screen recording started', videoElement, filename);
+  
+  // Return a function to stop recording
+  return () => {
+    console.log('Screen recording stopped');
+    toast.success(`Recording saved as ${filename}.mp4`);
+  };
+};
+
+/**
+ * Get personalized recommendations based on watch history
+ */
+export const getPersonalizedRecommendations = async (userId: string): Promise<any[]> => {
+  // This would typically call an API that uses the user's watch history
+  // For now, return mock data
+  console.log(`Getting recommendations for user ${userId}`);
+  
+  // Return empty array for now
+  return [];
 };

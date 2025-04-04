@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +8,33 @@ const SearchBar: React.FC = () => {
   const navigate = useNavigate();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+
+  // Load recent searches on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("recent_searches");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          setRecentSearches(parsed.slice(0, 5)); // Only keep last 5 searches
+        }
+      }
+    } catch (error) {
+      console.error("Error loading recent searches:", error);
+    }
+  }, []);
+
+  const saveRecentSearch = (query: string) => {
+    try {
+      // Add current search to beginning, remove duplicates, keep only 5
+      const updated = [query, ...recentSearches.filter(item => item !== query)].slice(0, 5);
+      setRecentSearches(updated);
+      localStorage.setItem("recent_searches", JSON.stringify(updated));
+    } catch (error) {
+      console.error("Error saving recent search:", error);
+    }
+  };
 
   const toggleSearch = () => {
     setIsSearchOpen(!isSearchOpen);
@@ -22,6 +48,7 @@ const SearchBar: React.FC = () => {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
+      saveRecentSearch(searchQuery.trim());
       navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
       setIsSearchOpen(false);
     }

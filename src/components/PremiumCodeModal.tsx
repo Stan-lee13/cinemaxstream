@@ -15,6 +15,13 @@ interface PremiumCodeModalProps {
 }
 
 const PremiumCodeModal = ({ isOpen, onClose }: PremiumCodeModalProps) => {
+  const handleSuccess = () => {
+    // Give a bit of time for the success message to be visible
+    setTimeout(() => {
+      onClose();
+    }, 1500);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="bg-gray-900 border-gray-800 text-white sm:max-w-md">
@@ -29,7 +36,7 @@ const PremiumCodeModal = ({ isOpen, onClose }: PremiumCodeModalProps) => {
         </DialogHeader>
         
         <div className="py-4">
-          <PremiumCodeInput onSuccess={onClose} />
+          <PremiumCodeInput onSuccess={handleSuccess} />
         </div>
       </DialogContent>
     </Dialog>
