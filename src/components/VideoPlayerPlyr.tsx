@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Volume2, VolumeX, Maximize, SkipForward, SkipBack, Download, Video } from "lucide-react";
-import { trackStreamingActivity, markContentAsComplete, startRecording } from "@/utils/videoUtils";
+import { trackStreamingActivity, markContentAsComplete } from "@/utils/videoUtils";
 import { toast } from "sonner";
 import Plyr from 'plyr';
 import 'plyr/dist/plyr.css';
@@ -146,19 +146,32 @@ const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({
     }
   }, [src, poster, autoPlay]);
   
+  // Modified to receive a single param or none
   const toggleRecording = () => {
     if (!videoRef.current) return;
     
     if (!isRecording) {
-      const stopFn = startRecording(videoRef.current, `${title || 'video'}-recording`);
-      setStopRecordingFn(() => stopFn);
-      setIsRecording(true);
-      toast.success("Recording started");
+      try {
+        import('@/utils/streamingUtils').then(module => {
+          module.startRecording().then(stream => {
+            if (stream) {
+              setStopRecordingFn(() => () => {
+                stream.getTracks().forEach(track => track.stop());
+                toast.success("Recording saved");
+              });
+              setIsRecording(true);
+              toast.success("Recording started");
+            }
+          });
+        });
+      } catch (error) {
+        console.error("Recording error:", error);
+        toast.error("Failed to start recording");
+      }
     } else if (stopRecordingFn) {
       stopRecordingFn();
       setIsRecording(false);
       setStopRecordingFn(null);
-      toast.success("Recording saved");
     }
   };
   

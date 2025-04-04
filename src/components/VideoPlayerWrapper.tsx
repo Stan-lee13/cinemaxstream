@@ -37,16 +37,15 @@ const VideoPlayerWrapper = ({
   
   useEffect(() => {
     // Update source when provider changes
-    const src = getStreamingUrl(
-      contentId,
-      contentType,
-      activeProvider as any,
-      episodeId,
-      seasonNumber,
-      episodeNumber
-    );
+    const options: any = {};
+    if (episodeId) options.episode = episodeId;
+    if (seasonNumber) options.season = seasonNumber;
+    if (episodeNumber) options.episodeNum = episodeNumber;
+    if (autoPlay) options.autoplay = autoPlay;
+    
+    const src = getStreamingUrl(contentId, activeProvider, options);
     setVideoSrc(src);
-  }, [contentId, contentType, activeProvider, episodeId, seasonNumber, episodeNumber]);
+  }, [contentId, contentType, activeProvider, episodeId, seasonNumber, episodeNumber, autoPlay]);
   
   const handleProviderChange = (providerId: string) => {
     setActiveProvider(providerId);

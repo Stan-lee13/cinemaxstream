@@ -81,9 +81,9 @@ export const getTrailerUrl = async (contentId: string, contentType: string = 'mo
 };
 
 /**
- * Start screen recording for live content
+ * Start recording for live content
  */
-export const startRecording = async (options = {}) => {
+export const startRecording = async (options = {}): Promise<MediaStream | null> => {
   try {
     if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
       const stream = await navigator.mediaDevices.getDisplayMedia({
@@ -100,6 +100,6 @@ export const startRecording = async (options = {}) => {
     }
   } catch (error) {
     console.error('Error starting recording:', error);
-    throw error;
+    return null;
   }
 };

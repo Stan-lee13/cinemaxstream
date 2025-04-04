@@ -27,8 +27,15 @@ export const useAuthForm = () => {
       if (isSignUp) {
         await signUp(email, password);
         toast.success("Account created successfully! Please check your email for verification.");
-        // Auto switch to sign in mode after successful signup
-        setIsSignUp(false);
+        // Automatically sign in after successful signup
+        try {
+          await signIn(email, password);
+          navigate("/");
+        } catch (signInError) {
+          console.log("Auto sign-in failed after signup:", signInError);
+          // If auto-signin fails, just switch to sign in mode
+          setIsSignUp(false);
+        }
       } else {
         await signIn(email, password);
         toast.success("Signed in successfully!");
@@ -59,7 +66,8 @@ export const useAuthForm = () => {
     try {
       setIsLoading(true);
       await signInWithGoogle();
-      // Redirect happens automatically
+      // After successful sign-in, navigate to home page
+      navigate("/");
     } catch (error: any) {
       console.error("Google auth error:", error);
       toast.error(error.message || "Google authentication failed");

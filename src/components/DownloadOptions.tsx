@@ -1,103 +1,101 @@
 
 import { useState } from "react";
-import { DownloadCloud, X } from "lucide-react";
-import { toast } from "sonner";
+import { Download, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { QUALITY_OPTIONS, getDownloadUrl, hasPremiumAccess } from "@/utils/videoUtils";
-import PremiumBadge from "./PremiumBadge";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { toast } from "sonner";
+import { getDownloadUrl } from "@/utils/videoUtils";
+import { QUALITY_OPTIONS } from "@/utils/streamingUtils";
+import { hasPremiumAccess } from "@/utils/authUtils";
 
 interface DownloadOptionsProps {
   contentId: string;
-  contentType?: string;
-  isPremium?: boolean;
-  episodeId?: string;
+  title: string;
 }
 
-const DownloadOptions = ({ contentId, contentType = 'movie', isPremium = false, episodeId }: DownloadOptionsProps) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const canAccessPremium = hasPremiumAccess();
+const DownloadOptions = ({ contentId, title }: DownloadOptionsProps) => {
+  const [selectedQuality, setSelectedQuality] = useState<string>(QUALITY_OPTIONS[1].value);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const hasPremium = hasPremiumAccess();
   
-  const handleDownload = (quality: string) => {
-    if (!contentId) return;
+  // Handle download
+  const handleDownload = async () => {
+    setIsDownloading(true);
     
-    if (isPremium && !canAccessPremium) {
-      toast.error("Premium content requires subscription or premium code");
+    // Check if premium quality and user doesn't have premium
+    const selectedOption = QUALITY_OPTIONS.find(opt => opt.value === selectedQuality);
+    const isPremium = selectedQuality === "4k";
+    
+    if (isPremium && !hasPremium) {
+      toast.error("Premium subscription required for 4K downloads");
+      setIsDownloading(false);
       return;
     }
     
-    const downloadUrl = getDownloadUrl(contentId, quality, contentType);
-    window.open(downloadUrl, '_blank');
-    
-    toast.success(`Starting download in ${quality}`);
-    setIsOpen(false);
+    try {
+      // Get download URL
+      const downloadUrl = getDownloadUrl(contentId, selectedQuality);
+      
+      // Create an anchor element and trigger download
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `${title.replace(/\s+/g, '_')}_${selectedQuality}.mp4`;
+      link.click();
+      
+      toast.success(`Download started: ${title} (${selectedQuality})`);
+    } catch (error) {
+      console.error("Download error:", error);
+      toast.error("Failed to start download. Please try again.");
+    } finally {
+      // Add slight delay for UX
+      setTimeout(() => {
+        setIsDownloading(false);
+      }, 1500);
+    }
   };
   
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetTrigger asChild>
-        <Button variant="outline" size="sm" className="flex items-center gap-2 bg-gray-800 border-gray-700">
-          <DownloadCloud size={16} className="opacity-70" />
-          <span>Download</span>
-        </Button>
-      </SheetTrigger>
-      <SheetContent className="bg-gray-900 border-gray-800 text-white">
-        <SheetHeader className="text-left">
-          <SheetTitle className="text-white">Download Options</SheetTitle>
-          <SheetDescription className="text-gray-400">
-            Select video quality to download
-          </SheetDescription>
-        </SheetHeader>
-        
-        <div className="py-6">
-          <div className="flex flex-col space-y-2">
-            {QUALITY_OPTIONS.map((option) => (
-              <Button
-                key={option.quality}
-                variant="ghost"
-                className={`w-full justify-between py-6 px-4 bg-gray-800/50 hover:bg-gray-800 ${
-                  option.premium && !canAccessPremium ? 'opacity-50' : ''
-                }`}
-                disabled={option.premium && !canAccessPremium}
-                onClick={() => handleDownload(option.quality)}
-              >
-                <div className="flex flex-col items-start">
-                  <span className="font-semibold">{option.label}</span>
-                  <span className="text-sm text-gray-400">{option.size}</span>
-                </div>
-                {option.premium && <PremiumBadge showLock={!canAccessPremium} className="scale-75" />}
-              </Button>
-            ))}
-          </div>
-          
-          <Separator className="my-4 bg-gray-800" />
-          
-          <div className="text-sm text-gray-400">
-            <p>Downloads are for offline viewing only.</p>
-            <p className="mt-2">Please respect copyright and do not redistribute.</p>
-          </div>
-        </div>
-        
-        <SheetFooter className="flex flex-col sm:flex-row gap-2">
-          <SheetClose asChild>
-            <Button variant="outline" className="w-full sm:w-auto border-gray-700">
-              <X size={16} className="mr-2" />
-              Cancel
-            </Button>
-          </SheetClose>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+    <div className="flex items-center gap-2">
+      <Select
+        value={selectedQuality}
+        onValueChange={setSelectedQuality}
+      >
+        <SelectTrigger className="w-[140px]">
+          <SelectValue placeholder="Select quality" />
+        </SelectTrigger>
+        <SelectContent>
+          {QUALITY_OPTIONS.map((option) => (
+            <SelectItem 
+              key={option.value} 
+              value={option.value}
+              disabled={option.value === "4k" && !hasPremium}
+            >
+              {option.label}
+              {option.value === "4k" && !hasPremium && " (Premium)"}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      
+      <Button 
+        variant="outline" 
+        size="icon"
+        onClick={handleDownload}
+        disabled={isDownloading}
+      >
+        {isDownloading ? (
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+        ) : (
+          <Download size={16} />
+        )}
+      </Button>
+    </div>
   );
 };
 
