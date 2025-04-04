@@ -11,6 +11,15 @@ const streamingProviders = [
 // Mock premium content check
 const premiumContentIds = ['1124620', '634649', '505642', '843794', '872585'];
 
+// Quality options for downloads
+export const QUALITY_OPTIONS = [
+  { quality: '2160p', label: '4K Ultra HD', size: '~8-10 GB', premium: true },
+  { quality: '1080p', label: 'Full HD', size: '~2-4 GB', premium: false },
+  { quality: '720p', label: 'HD', size: '~800 MB-1.5 GB', premium: false },
+  { quality: '480p', label: 'Standard Definition', size: '~400-700 MB', premium: false },
+  { quality: '360p', label: 'Low Definition', size: '~250-350 MB', premium: false }
+];
+
 // Storage key for premium access
 const PREMIUM_ACCESS_KEY = 'premium_access';
 const VALID_PREMIUM_CODES = ['PREMIUM123', 'NETFLIX2025', 'CINEMAX2025'];
@@ -236,7 +245,7 @@ export const startRecording = (
   // Return a function to stop recording
   return () => {
     console.log('Screen recording stopped');
-    toast.success(`Recording saved as ${filename}.mp4`);
+    // Import toast from the component that needs it rather than importing here
   };
 };
 
@@ -250,4 +259,26 @@ export const getPersonalizedRecommendations = async (userId: string): Promise<an
   
   // Return empty array for now
   return [];
+};
+
+/**
+ * Generate a secure password
+ */
+export const generateSecurePassword = (length: number = 12): string => {
+  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+';
+  let password = '';
+  
+  // Ensure at least one character of each type
+  password += charset[Math.floor(Math.random() * 26)]; // lowercase
+  password += charset[Math.floor(Math.random() * 26) + 26]; // uppercase
+  password += charset[Math.floor(Math.random() * 10) + 52]; // number
+  password += charset[Math.floor(Math.random() * (charset.length - 62)) + 62]; // special
+  
+  // Fill the rest of the password
+  for (let i = 4; i < length; i++) {
+    password += charset[Math.floor(Math.random() * charset.length)];
+  }
+  
+  // Shuffle the password
+  return password.split('').sort(() => 0.5 - Math.random()).join('');
 };
