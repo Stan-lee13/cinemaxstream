@@ -34,7 +34,7 @@ const MovieDetail = ({
       return;
     }
     
-    const downloadUrl = getDownloadUrl(content.id, content.content_type, quality);
+    const downloadUrl = getDownloadUrl(content.id, quality, content.content_type || 'movie');
     window.open(downloadUrl, '_blank');
     
     toast.success(`Starting download in ${quality}`);

@@ -1,4 +1,6 @@
 
+import { toast } from "sonner";
+
 // Mock data for videos
 const VIDEO_SOURCES = {
   movies: {
@@ -48,7 +50,7 @@ export const getTrailerUrl = (contentId: string, contentType: string = 'movie'):
 };
 
 // Generate download URLs based on content ID and quality
-export const getDownloadUrl = (contentId: string, quality: string): string => {
+export const getDownloadUrl = (contentId: string, quality: string, contentType: string = 'movie'): string => {
   return `https://example.com/download/${contentId}_${quality}.mp4`;
 };
 
@@ -62,13 +64,13 @@ export const enterPremiumCode = (code: string): boolean => {
 };
 
 // Get personalized recommendations based on user viewing history
-export const getPersonalizedRecommendations = (category?: string) => {
+export const getPersonalizedRecommendations = (userId?: string, category?: string) => {
   // In a real app, this would use an algorithm to suggest content
   return [
-    { id: "1", title: "Inception", posterPath: "/placeholder.svg", type: "movie" },
-    { id: "2", title: "Stranger Things", posterPath: "/placeholder.svg", type: "series" },
-    { id: "3", title: "The Matrix", posterPath: "/placeholder.svg", type: "movie" },
-    { id: "4", title: "Breaking Bad", posterPath: "/placeholder.svg", type: "series" },
+    { id: "1", title: "Inception", posterPath: "/placeholder.svg", image: "/placeholder.svg", type: "movie", category: "movie", rating: "4.5", year: "2010", duration: "148 min" },
+    { id: "2", title: "Stranger Things", posterPath: "/placeholder.svg", image: "/placeholder.svg", type: "series", category: "series", rating: "4.8", year: "2016", duration: "Seasons: 4" },
+    { id: "3", title: "The Matrix", posterPath: "/placeholder.svg", image: "/placeholder.svg", type: "movie", category: "movie", rating: "4.7", year: "1999", duration: "136 min" },
+    { id: "4", title: "Breaking Bad", posterPath: "/placeholder.svg", image: "/placeholder.svg", type: "series", category: "series", rating: "4.9", year: "2008", duration: "Seasons: 5" },
   ];
 };
 
@@ -171,12 +173,6 @@ export const startRecording = (
     toast('Recording saved as ' + fileName + '.mp4');
   };
   
-  // Mock toast function
-  const toast = (message: string) => {
-    console.log('TOAST:', message);
-    // In a real app, this would show a toast notification
-  };
-  
   return stopRecordingFn;
 };
 
@@ -237,4 +233,3 @@ export const getStreamingUrl = (
   
   return `${baseUrl}${contentId}/default`;
 };
-

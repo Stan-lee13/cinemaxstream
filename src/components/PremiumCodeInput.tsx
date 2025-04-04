@@ -1,21 +1,19 @@
 
-import { useState } from 'react';
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import { enterPremiumCode } from "@/utils/videoUtils";
-import { Crown, Check } from 'lucide-react';
-import { toast } from 'sonner';
+import { Loader2 } from "lucide-react";
 
 interface PremiumCodeInputProps {
   onSuccess?: () => void;
-  userId: string;
 }
 
-const PremiumCodeInput = ({ onSuccess, userId }: PremiumCodeInputProps) => {
-  const [code, setCode] = useState('');
+const PremiumCodeInput = ({ onSuccess }: PremiumCodeInputProps) => {
+  const [code, setCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-
+  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -26,72 +24,54 @@ const PremiumCodeInput = ({ onSuccess, userId }: PremiumCodeInputProps) => {
     
     setIsSubmitting(true);
     
-    try {
-      const success = enterPremiumCode(code, userId);
+    // Simulate API call
+    setTimeout(() => {
+      const isValid = enterPremiumCode(code);
       
-      if (success) {
-        setIsSuccess(true);
-        onSuccess?.();
-        setTimeout(() => {
-          setIsSuccess(false);
-        }, 3000);
+      if (isValid) {
+        toast.success("Premium access granted!");
+        if (onSuccess) onSuccess();
+      } else {
+        toast.error("Invalid premium code. Please try again.");
       }
-    } finally {
+      
       setIsSubmitting(false);
-      setCode('');
-    }
+    }, 1000);
   };
-
+  
   return (
-    <div className="p-4 rounded-lg bg-gradient-to-br from-yellow-900/30 to-yellow-600/10 border border-yellow-700/30">
-      <div className="flex items-start gap-3 mb-4">
-        <Crown size={24} className="text-yellow-500 shrink-0 mt-1" />
-        <div>
-          <h3 className="text-lg font-bold text-yellow-500">Premium Content Access</h3>
-          <p className="text-gray-300 text-sm">
-            Enter your premium code to unlock all premium content.
-          </p>
-        </div>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <Input
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          placeholder="Enter premium code"
+          className="bg-gray-800 border-gray-700 focus:border-cinemax-500"
+          disabled={isSubmitting}
+          autoComplete="off"
+          autoFocus
+        />
       </div>
       
-      <form onSubmit={handleSubmit} className="mt-3">
-        <div className="flex gap-2">
-          <Input
-            type="text"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            placeholder="Enter premium code"
-            className="bg-black/50 border-yellow-700/30 focus:border-yellow-500"
-            disabled={isSubmitting || isSuccess}
-          />
-          
-          <Button
-            type="submit"
-            className={`shrink-0 ${
-              isSuccess 
-                ? "bg-green-600 hover:bg-green-700" 
-                : "bg-yellow-600 hover:bg-yellow-700"
-            }`}
-            disabled={isSubmitting || isSuccess}
-          >
-            {isSubmitting ? (
-              "Verifying..."
-            ) : isSuccess ? (
-              <>
-                <Check size={16} className="mr-1" />
-                Success
-              </>
-            ) : (
-              "Activate"
-            )}
-          </Button>
-        </div>
-        
-        <p className="text-xs text-gray-500 mt-2">
-          Premium codes can be obtained from our partners or through special promotions.
-        </p>
-      </form>
-    </div>
+      <Button 
+        type="submit"
+        className="bg-cinemax-500 hover:bg-cinemax-600 w-full"
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Verifying...
+          </>
+        ) : (
+          "Unlock Premium"
+        )}
+      </Button>
+      
+      <div className="text-center text-sm text-gray-400">
+        <p>Valid codes: PREMIUM123, NETFLIX2025, CINEMAX2025</p>
+      </div>
+    </form>
   );
 };
 

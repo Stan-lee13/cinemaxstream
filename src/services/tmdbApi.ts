@@ -26,6 +26,7 @@ export interface ContentItem {
   category: string;
   type?: string;
   trailer_key?: string;
+  content_type?: string;
 }
 
 // Function to format content item
@@ -41,6 +42,8 @@ const formatContentItem = (item: any, type: string = 'movie'): ContentItem => {
     duration: isMovie ? '120 min' : 'Seasons: ' + (item.number_of_seasons || 'N/A'),
     rating: (item.vote_average / 2).toFixed(1),
     category: type,
+    type: type,
+    content_type: type,
     trailer_key: item.id.toString() // Using ID as a placeholder for trailer key
   };
 };
@@ -164,6 +167,7 @@ const getAnime = async (): Promise<ContentItem[]> => {
       const formattedItem = formatContentItem(item, 'series');
       formattedItem.category = 'anime';
       formattedItem.type = 'anime';
+      formattedItem.content_type = 'anime';
       return formattedItem;
     });
   } catch (error) {
@@ -214,7 +218,8 @@ const getContentDetails = async (id: string, type: string = 'movie'): Promise<Co
       console.error("Error fetching video details:", e);
     }
     
-    return formatContentItem(data, type);
+    const formattedItem = formatContentItem(data, type);
+    return formattedItem;
   } catch (error) {
     console.error("Error fetching content details:", error);
     return null;
@@ -279,7 +284,9 @@ const getContentByCategory = async (category: string): Promise<ContentItem[]> =>
     return data.results.map((item: any) => {
       // Determine type from media_type if available
       const itemType = item.media_type || type;
-      return formatContentItem(item, itemType === 'tv' ? 'series' : itemType);
+      const content = formatContentItem(item, itemType === 'tv' ? 'series' : itemType);
+      content.content_type = itemType === 'tv' ? 'series' : itemType;
+      return content;
     });
   } catch (error) {
     console.error(`Error fetching ${category} content:`, error);

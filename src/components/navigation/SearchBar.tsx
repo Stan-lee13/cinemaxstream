@@ -12,6 +12,11 @@ const SearchBar: React.FC = () => {
 
   const toggleSearch = () => {
     setIsSearchOpen(!isSearchOpen);
+    if (!isSearchOpen) {
+      setTimeout(() => {
+        document.querySelector<HTMLInputElement>('input[name="search"]')?.focus();
+      }, 100);
+    }
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -22,17 +27,34 @@ const SearchBar: React.FC = () => {
     }
   };
 
+  const clearSearch = () => {
+    setSearchQuery("");
+    document.querySelector<HTMLInputElement>('input[name="search"]')?.focus();
+  };
+
   return (
     <>
       {isSearchOpen ? (
         <form onSubmit={handleSearch} className="relative animate-fade-in">
           <Input 
+            name="search"
             placeholder="Search for movies, series..." 
             className="w-60 bg-secondary/70 border-gray-700 focus:border-cinemax-500 text-white"
             autoFocus
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
+          {searchQuery ? (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              type="button"
+              onClick={clearSearch}
+              className="absolute right-8 top-1/2 -translate-y-1/2 h-5 w-5 p-0 text-gray-400"
+            >
+              <X size={14} />
+            </Button>
+          ) : null}
           <Button 
             variant="ghost" 
             size="icon" 
