@@ -1,9 +1,11 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuthState";
 import { toast } from 'sonner';
 import { tmdbApi } from "@/services/tmdbApi";
 import { getTrailerUrl, hasPremiumAccess, getAvailableProviders } from "@/utils/videoUtils";
+import { getDefaultRuntime } from "@/utils/contentUtils";
 
 export const useContentDetail = (contentId: string | undefined) => {
   const [content, setContent] = useState<any | null>(null);
@@ -55,7 +57,7 @@ export const useContentDetail = (contentId: string | undefined) => {
               category_id: null,
               content_type: tmdbContent.type || 'movie',
               year: tmdbContent.year,
-              duration: tmdbContent.duration,
+              duration: tmdbContent.duration || getDefaultRuntime(tmdbContent.type || 'movie'),
               rating: tmdbContent.rating,
               featured: false,
               trending: true,
@@ -65,7 +67,7 @@ export const useContentDetail = (contentId: string | undefined) => {
               content_categories: {
                 id: '1',
                 name: tmdbContent.category,
-                slug: tmdbContent.category.toLowerCase(),
+                slug: tmdbContent.category?.toLowerCase() || 'general',
                 description: null
               }
             });
@@ -101,12 +103,12 @@ export const useContentDetail = (contentId: string | undefined) => {
                   setSeasons(tvSeasons);
                 } else {
                   // Fallback to mock data if no seasons found
-                  createMockSeasons(tmdbContent.title);
+                  createMockSeasons(tmdbContent.title, tmdbContent.type);
                 }
               } catch (error) {
                 console.error("Error fetching TV details:", error);
                 // Fallback to mock data
-                createMockSeasons(tmdbContent.title);
+                createMockSeasons(tmdbContent.title, tmdbContent.type);
               }
             }
             
@@ -178,12 +180,12 @@ export const useContentDetail = (contentId: string | undefined) => {
               setSeasons(seasonsWithEpisodes);
             } else {
               // Fallback to mock data if no seasons
-              createMockSeasons(contentData.title);
+              createMockSeasons(contentData.title, contentData.content_type);
             }
           } catch (error) {
             console.error("Error fetching TV details:", error);
             // Fallback to mock data
-            createMockSeasons(contentData.title);
+            createMockSeasons(contentData.title, contentData.content_type);
           }
         }
       } catch (error) {
@@ -198,12 +200,13 @@ export const useContentDetail = (contentId: string | undefined) => {
   }, [contentId, isAuthenticated, user]);
 
   // Helper function to create mock seasons and episodes
-  const createMockSeasons = (title: string) => {
+  const createMockSeasons = (title: string, contentType: string = 'series') => {
     // For anime, create different structure based on type
-    const isAnime = content?.content_type === 'anime';
+    const isAnime = contentType === 'anime';
     
-    const seasonCount = isAnime ? 2 : 3;
+    const seasonCount = isAnime ? 1 : 3;
     const episodesPerSeason = isAnime ? 12 : 10;
+    const episodeDuration = isAnime ? "24 min" : "45 min";
     
     const mockSeasons: Season[] = Array.from({ length: seasonCount }, (_, i) => ({
       id: `season-${i+1}`,
@@ -216,7 +219,7 @@ export const useContentDetail = (contentId: string | undefined) => {
         episode_number: j+1,
         season_number: i+1,
         description: `This is episode ${j+1} of season ${i+1} of ${title}`,
-        duration: isAnime ? "24 min" : "45 min",
+        duration: episodeDuration,
         air_date: new Date().toISOString()
       })),
       poster: content?.image_url || content?.image,

@@ -2,7 +2,6 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getTrailerUrl } from "@/utils/videoUtils";
 import { useEffect, useState } from "react";
 
 interface TrailerModalProps {
@@ -18,26 +17,35 @@ const TrailerModal = ({ isOpen, onClose, trailerKey, title }: TrailerModalProps)
   const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
-    // Only fetch trailer when modal is open and we have a key
+    // Only prepare trailer when modal is open and we have a key
     if (isOpen && trailerKey) {
-      // Reset state
       setIsLoading(true);
       setError(null);
       
-      // Fetch trailer URL
-      const fetchTrailer = async () => {
-        try {
-          const url = await getTrailerUrl(trailerKey, "movie");
-          setTrailerSrc(url);
-        } catch (error) {
-          console.error("Error fetching trailer URL:", error);
-          setError("Failed to load trailer");
-        } finally {
-          setIsLoading(false);
+      try {
+        // Format YouTube embed URL properly
+        if (trailerKey.includes('youtube.com') || trailerKey.includes('youtu.be')) {
+          // Extract video ID if it's already a YouTube URL
+          let videoId = trailerKey;
+          
+          if (trailerKey.includes('youtube.com/watch?v=')) {
+            videoId = trailerKey.split('v=')[1].split('&')[0];
+          } else if (trailerKey.includes('youtu.be/')) {
+            videoId = trailerKey.split('youtu.be/')[1];
+          }
+          
+          setTrailerSrc(`https://www.youtube.com/embed/${videoId}?autoplay=1&origin=${window.location.origin}`);
+        } else {
+          // Assume trailerKey is already a video ID
+          setTrailerSrc(`https://www.youtube.com/embed/${trailerKey}?autoplay=1&origin=${window.location.origin}`);
         }
-      };
-      
-      fetchTrailer();
+        
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error setting up trailer URL:", error);
+        setError("Failed to load trailer");
+        setIsLoading(false);
+      }
     } else {
       // Reset trailer source when modal is closed
       setTrailerSrc("");
@@ -49,7 +57,7 @@ const TrailerModal = ({ isOpen, onClose, trailerKey, title }: TrailerModalProps)
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-4xl p-0 overflow-hidden bg-transparent border-none">
         <div className="relative">
           <Button 
@@ -73,6 +81,7 @@ const TrailerModal = ({ isOpen, onClose, trailerKey, title }: TrailerModalProps)
               </div>
             ) : trailerSrc ? (
               <iframe
+                key={`trailer-${trailerSrc}`}
                 src={trailerSrc}
                 title={`${title} Trailer`}
                 className="w-full h-full"

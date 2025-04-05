@@ -5,16 +5,33 @@
 
 // Mock data for streaming services
 export const streamingProviders = [
+  { id: 'vidsrc_xyz', name: 'VidSrc XYZ', contentType: 'all' },
+  { id: 'vidsrc_pro', name: 'VidSrc Pro', contentType: 'all' },
+  { id: 'vidsrc_wtf', name: 'VidSrc WTF', contentType: 'all' },
+  { id: 'vidsrc_in', name: 'VidSrc.in', contentType: 'movie' },
+  { id: 'embed_su', name: 'Embed.su', contentType: 'all' },
   { id: 'netflix', name: 'Netflix', contentType: 'all' },
-  { id: 'vidsrc_xyz', name: 'VidSrc', contentType: 'all' },
   { id: 'prime_video', name: 'Prime Video', contentType: 'all' },
   { id: 'disney_plus', name: 'Disney+', contentType: 'all' },
   { id: 'hbo_max', name: 'HBO Max', contentType: 'all' },
   { id: 'hulu', name: 'Hulu', contentType: 'series' },
   { id: 'aniwatch', name: 'AniWatch', contentType: 'anime' },
   { id: 'fmovies', name: 'FMovies', contentType: 'all' },
+  { id: 'fmovies_net', name: 'FMovies.net', contentType: 'all' },
+  { id: 'fzmovies_net', name: 'FZMovies', contentType: 'movie' },
+  { id: 'embed_rgshows', name: 'RGShows', contentType: 'all' },
+  { id: 'godriveplayer', name: 'GDrivePlayer', contentType: 'all' },
+  { id: 'sflix', name: 'SFlix', contentType: 'all' },
+  { id: 'primewire_tf', name: 'PrimeWire', contentType: 'all' },
   { id: 'eztv', name: 'EZTV', contentType: 'series', isTorrent: true },
   { id: 'yts', name: 'YTS', contentType: 'movie', isTorrent: true }
+];
+
+// Download providers - separate from streaming
+export const downloadProviders = [
+  { id: 'filemoon', name: 'FileMoon', supportedQualities: ['4k', '1080p', '720p'] },
+  { id: 'streamtape', name: 'StreamTape', supportedQualities: ['1080p', '720p', '480p'] },
+  { id: 'vidcloud', name: 'VidCloud', supportedQualities: ['720p', '480p', '360p'] }
 ];
 
 // Mock premium content check
@@ -42,12 +59,30 @@ export const getAvailableProviders = (contentId: string, contentType: string = '
  */
 export const getBestProviderForContentType = (contentType: string): string => {
   switch (contentType) {
+    case 'movie':
+      return 'vidsrc_in';
     case 'series':
       return 'vidsrc_xyz';
     case 'anime':
       return 'aniwatch';
     default:
       return 'vidsrc_xyz';
+  }
+};
+
+/**
+ * Get appropriate runtime for content type
+ */
+export const getDefaultRuntime = (contentType: string): string => {
+  switch (contentType) {
+    case 'movie':
+      return '120 min';
+    case 'series':
+      return '45 min';
+    case 'anime':
+      return '24 min';
+    default:
+      return '30 min';
   }
 };
 

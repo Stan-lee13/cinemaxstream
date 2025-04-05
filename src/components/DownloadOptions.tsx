@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { getDownloadUrl } from "@/utils/videoUtils";
 import { QUALITY_OPTIONS } from "@/utils/streamingUtils";
 import { hasPremiumAccess } from "@/utils/authUtils";
+import { downloadProviders } from "@/utils/contentUtils";
 
 interface DownloadOptionsProps {
   contentId: string;
@@ -20,9 +21,15 @@ interface DownloadOptionsProps {
 }
 
 const DownloadOptions = ({ contentId, title }: DownloadOptionsProps) => {
-  const [selectedQuality, setSelectedQuality] = useState<string>(QUALITY_OPTIONS[1].value);
+  const [selectedQuality, setSelectedQuality] = useState<string>(QUALITY_OPTIONS[1].value); // Default to 1080p
+  const [selectedProvider, setSelectedProvider] = useState<string>("filemoon");
   const [isDownloading, setIsDownloading] = useState(false);
   const hasPremium = hasPremiumAccess();
+  
+  // Get available providers for the selected quality
+  const availableProviders = downloadProviders.filter(provider => 
+    provider.supportedQualities.includes(selectedQuality)
+  );
   
   // Handle download
   const handleDownload = async (e: React.MouseEvent) => {
@@ -42,13 +49,27 @@ const DownloadOptions = ({ contentId, title }: DownloadOptionsProps) => {
     }
     
     try {
-      // Get download URL
-      const downloadUrl = getDownloadUrl(contentId, selectedQuality);
+      // Get download URL based on provider
+      const providerFunction = (contentId: string, quality: string) => {
+        switch (selectedProvider) {
+          case 'filemoon':
+            return `https://filemoon.in/d/${contentId}?quality=${quality}`;
+          case 'streamtape':
+            return `https://streamtape.com/v/${contentId}/${encodeURIComponent(quality)}`;
+          case 'vidcloud':
+            return `https://vidcloud.stream/download/${contentId}?quality=${quality}`;
+          default:
+            return `https://api.example.com/download/${contentId}?quality=${quality}`;
+        }
+      };
+      
+      const downloadUrl = providerFunction(contentId, selectedQuality);
       
       // Create a download link and trigger it
       const link = document.createElement('a');
       link.href = downloadUrl;
       link.download = `${title.replace(/\s+/g, '_')}_${selectedQuality}.mp4`;
+      link.target = "_blank"; 
       document.body.appendChild(link); // Append to body to ensure it works
       link.click();
       document.body.removeChild(link); // Clean up
@@ -86,6 +107,25 @@ const DownloadOptions = ({ contentId, title }: DownloadOptionsProps) => {
             >
               {option.label}
               {option.value === "4k" && !hasPremium && " (Premium)"}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      
+      <Select
+        value={selectedProvider}
+        onValueChange={setSelectedProvider}
+      >
+        <SelectTrigger className="w-[140px]">
+          <SelectValue placeholder="Select provider" />
+        </SelectTrigger>
+        <SelectContent onClick={(e) => e.stopPropagation()}>
+          {availableProviders.map((provider) => (
+            <SelectItem 
+              key={provider.id} 
+              value={provider.id}
+            >
+              {provider.name}
             </SelectItem>
           ))}
         </SelectContent>

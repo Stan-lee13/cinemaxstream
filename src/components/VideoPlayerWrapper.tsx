@@ -3,7 +3,8 @@ import { useState, useEffect } from "react";
 import VideoPlayer from "./VideoPlayer";
 import VideoPlayerPlyr from "./VideoPlayerPlyr";
 import VideoPlayerVideoJS from "./VideoPlayerVideoJS";
-import { getAvailableProviders, getBestProviderForContentType, getStreamingUrl } from "@/utils/videoUtils";
+import { getAvailableProviders, getBestProviderForContentType } from "@/utils/contentUtils";
+import { getStreamingUrl } from "@/utils/streamingUtils";
 
 interface VideoPlayerWrapperProps {
   contentId: string;
@@ -40,13 +41,16 @@ const VideoPlayerWrapper = ({
   const [key, setKey] = useState<number>(0); // Key to force re-mount of player components
   
   useEffect(() => {
-    // Update source when provider changes
-    const options: any = {};
+    // Update source when provider or content changes
+    const options: any = {
+      contentType,
+      autoplay: autoPlay
+    };
+    
     if (episodeId) options.episode = episodeId;
     if (seasonNumber) options.season = seasonNumber;
     if (episodeNumber) options.episodeNum = episodeNumber;
     if (title) options.title = title;
-    if (autoPlay) options.autoplay = autoPlay;
     
     try {
       const src = getStreamingUrl(contentId, activeProvider, options);
@@ -62,11 +66,13 @@ const VideoPlayerWrapper = ({
     setActiveProvider(providerId);
   };
   
-  // If using VideoJS (default and recommended)
-  if (useVideoJS) {
-    return (
-      <div key={`vjs-${contentId}-${key}`} className="player-container">
+  // Determine which player to use based on props
+  const renderPlayer = () => {
+    // If using VideoJS (default and recommended)
+    if (useVideoJS) {
+      return (
         <VideoPlayerVideoJS
+          key={`vjs-${contentId}-${activeProvider}-${key}`}
           src={videoSrc}
           contentId={contentId}
           contentType={contentType}
@@ -80,15 +86,14 @@ const VideoPlayerWrapper = ({
           activeProvider={activeProvider}
           onProviderChange={handleProviderChange}
         />
-      </div>
-    );
-  }
-  
-  // If using Plyr
-  if (usePlyr) {
-    return (
-      <div key={`plyr-${contentId}-${key}`} className="player-container">
+      );
+    }
+    
+    // If using Plyr
+    if (usePlyr) {
+      return (
         <VideoPlayerPlyr
+          key={`plyr-${contentId}-${activeProvider}-${key}`}
           src={videoSrc}
           contentId={contentId}
           contentType={contentType}
@@ -102,14 +107,13 @@ const VideoPlayerWrapper = ({
           activeProvider={activeProvider}
           onProviderChange={handleProviderChange}
         />
-      </div>
-    );
-  }
-  
-  // Default fallback to basic player
-  return (
-    <div key={`basic-${contentId}-${key}`} className="player-container">
+      );
+    }
+    
+    // Default fallback to basic player
+    return (
       <VideoPlayer
+        key={`basic-${contentId}-${activeProvider}-${key}`}
         src={videoSrc}
         contentId={contentId}
         userId={userId}
@@ -118,25 +122,34 @@ const VideoPlayerWrapper = ({
         onEnded={onEnded}
         poster={poster}
       />
+    );
+  };
+  
+  return (
+    <div className="player-container">
+      {renderPlayer()}
       
-      <div className="mt-4 flex flex-wrap gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-400">Source:</span>
-          {availableProviders.map(provider => (
-            <button
-              key={provider.id}
-              className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                activeProvider === provider.id 
-                  ? "bg-cinemax-500 text-white" 
-                  : "bg-gray-800 text-gray-300 hover:bg-gray-700"
-              }`}
-              onClick={() => handleProviderChange(provider.id)}
-            >
-              {provider.name}
-            </button>
-          ))}
+      {/* Only show provider selector for basic player */}
+      {!useVideoJS && !usePlyr && (
+        <div className="mt-4 flex flex-wrap gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-400">Source:</span>
+            {availableProviders.map(provider => (
+              <button
+                key={provider.id}
+                className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                  activeProvider === provider.id 
+                    ? "bg-cinemax-500 text-white" 
+                    : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                }`}
+                onClick={() => handleProviderChange(provider.id)}
+              >
+                {provider.name}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

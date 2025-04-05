@@ -179,47 +179,60 @@ const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({
   
   // Handle video source change
   useEffect(() => {
-    if (!videoRef.current || !playerInitialized) return;
+    if (!videoRef.current || !playerInitialized || !playerRef.current) return;
     
     setIsLoading(true);
     setError(null);
     
     try {
       // Update the video source
-      videoRef.current.src = src;
-      
-      if (poster) {
-        videoRef.current.poster = poster;
-      }
-      
-      // Load the new source
-      videoRef.current.load();
-      
-      // Attempt to play if autoplay is enabled
-      if (autoPlay && playerRef.current) {
-        // Set muted to help with autoplay policies
-        if (playerRef.current.muted !== undefined) {
-          playerRef.current.muted = true;
+      if (videoRef.current) {
+        videoRef.current.src = src;
+        
+        if (poster) {
+          videoRef.current.poster = poster;
         }
         
-        setTimeout(() => {
-          if (playerRef.current) {
-            try {
-              const playPromise = playerRef.current.play();
-              
-              if (playPromise !== undefined && typeof playPromise.then === 'function') {
-                playPromise.then(() => {
-                  console.log("Source change autoplay successful");
-                }).catch((error: any) => {
-                  console.error("Source change autoplay prevented:", error);
-                  toast.info("Click play to start video");
-                });
-              }
-            } catch (error) {
-              console.error("Error during source change autoplay:", error);
-            }
+        // Load the new source
+        videoRef.current.load();
+        
+        if (playerRef.current) {
+          // Force Plyr to recognize the new source
+          playerRef.current.source = {
+            type: 'video',
+            sources: [{
+              src: src,
+              type: 'video/mp4',
+            }]
+          };
+        }
+        
+        // Attempt to play if autoplay is enabled
+        if (autoPlay && playerRef.current) {
+          // Set muted to help with autoplay policies
+          if (playerRef.current.muted !== undefined) {
+            playerRef.current.muted = true;
           }
-        }, 100);
+          
+          setTimeout(() => {
+            if (playerRef.current) {
+              try {
+                const playPromise = playerRef.current.play();
+                
+                if (playPromise !== undefined && typeof playPromise.then === 'function') {
+                  playPromise.then(() => {
+                    console.log("Source change autoplay successful");
+                  }).catch((error: any) => {
+                    console.error("Source change autoplay prevented:", error);
+                    toast.info("Click play to start video");
+                  });
+                }
+              } catch (error) {
+                console.error("Error during source change autoplay:", error);
+              }
+            }
+          }, 100);
+        }
       }
       
       setIsLoading(false);
@@ -324,7 +337,7 @@ const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({
       </video>
       
       {/* Custom Controls (shown outside the Plyr UI) */}
-      <div className="absolute bottom-20 right-4 flex flex-col gap-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="absolute bottom-20 right-4 flex flex-col gap-2 z-20 opacity-0 hover:opacity-100 transition-opacity">
         <Button
           variant="secondary"
           size="icon"

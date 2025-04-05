@@ -4,6 +4,7 @@ import { tmdbApi } from '@/services/tmdbApi';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getTrailerUrl } from "@/utils/videoUtils";
+import { getDefaultRuntime } from "@/utils/contentUtils";
 
 interface UseContentDetailsOptions {
   contentId: string | undefined;
@@ -69,7 +70,7 @@ export const useContentDetails = ({
               category_id: null,
               content_type: tmdbContent.type || 'movie',
               year: tmdbContent.year,
-              duration: tmdbContent.duration,
+              duration: tmdbContent.duration || getDefaultRuntime(tmdbContent.type || 'movie'),
               rating: tmdbContent.rating,
               featured: false,
               trending: true,
@@ -79,7 +80,7 @@ export const useContentDetails = ({
               content_categories: {
                 id: '1',
                 name: tmdbContent.category,
-                slug: tmdbContent.category.toLowerCase(),
+                slug: tmdbContent.category?.toLowerCase() || 'general',
                 description: null
               }
             };
@@ -94,19 +95,24 @@ export const useContentDetails = ({
             
             // Fetch seasons if it's a series/anime and includeSeasons is true
             if (includeSeasons && (tmdbContent.type === 'series' || tmdbContent.type === 'anime')) {
-              // Generate mock seasons and episodes
-              const mockSeasons: Season[] = Array.from({ length: 3 }, (_, i) => ({
+              // Generate appropriate seasons and episodes based on content type
+              const isAnime = tmdbContent.type === 'anime';
+              const seasonCount = isAnime ? 1 : 3;
+              const episodeCount = isAnime ? 12 : 10;
+              const episodeDuration = isAnime ? "24 min" : "45 min";
+              
+              const mockSeasons: Season[] = Array.from({ length: seasonCount }, (_, i) => ({
                 id: `season-${i+1}`,
                 season_number: i+1,
                 title: `Season ${i+1}`,
-                episode_count: 10,
-                episodes: Array.from({ length: 10 }, (_, j) => ({
+                episode_count: episodeCount,
+                episodes: Array.from({ length: episodeCount }, (_, j) => ({
                   id: `ep-${i+1}-${j+1}`,
-                  title: `Episode ${j+1}: ${tmdbContent.title} Part ${j+1}`,
+                  title: `Episode ${j+1}: ${tmdbContent.title} ${isAnime ? `Episode ${j+1}` : `Part ${j+1}`}`,
                   episode_number: j+1,
                   season_number: i+1,
                   description: `This is episode ${j+1} of season ${i+1} of ${tmdbContent.title}`,
-                  duration: "45 min",
+                  duration: episodeDuration,
                   air_date: new Date().toISOString()
                 })),
                 poster: tmdbContent.image,
@@ -158,19 +164,24 @@ export const useContentDetails = ({
           
           // Fetch seasons if it's a series/anime and includeSeasons is true
           if (includeSeasons && (contentData.content_type === 'series' || contentData.content_type === 'anime')) {
-            // Generate mock seasons and episodes for now
-            const mockSeasons: Season[] = Array.from({ length: 3 }, (_, i) => ({
+            // Generate appropriate seasons and episodes based on content type
+            const isAnime = contentData.content_type === 'anime';
+            const seasonCount = isAnime ? 1 : 3;
+            const episodeCount = isAnime ? 12 : 10;
+            const episodeDuration = isAnime ? "24 min" : "45 min";
+            
+            const mockSeasons: Season[] = Array.from({ length: seasonCount }, (_, i) => ({
               id: `season-${i+1}`,
               season_number: i+1,
               title: `Season ${i+1}`,
-              episode_count: 10,
-              episodes: Array.from({ length: 10 }, (_, j) => ({
+              episode_count: episodeCount,
+              episodes: Array.from({ length: episodeCount }, (_, j) => ({
                 id: `ep-${i+1}-${j+1}`,
-                title: `Episode ${j+1}: ${contentData.title} Part ${j+1}`,
+                title: `Episode ${j+1}: ${contentData.title} ${isAnime ? `Episode ${j+1}` : `Part ${j+1}`}`,
                 episode_number: j+1,
                 season_number: i+1,
                 description: `This is episode ${j+1} of season ${i+1} of ${contentData.title}`,
-                duration: "45 min",
+                duration: episodeDuration,
                 air_date: new Date().toISOString()
               })),
               poster: contentData.image_url,

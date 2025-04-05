@@ -36,7 +36,7 @@ const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({
   activeProvider,
   onProviderChange
 }) => {
-  const videoRef = useRef<HTMLDivElement>(null);
+  const videoContainerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -45,20 +45,20 @@ const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(true);
   const [playerInitialized, setPlayerInitialized] = useState(false);
+  const [key, setKey] = useState<number>(Date.now()); // Key for forcing re-render
   
   // Initialize Video.js
   useEffect(() => {
     // Dynamically import video.js to prevent SSR issues
     const setupPlayer = async () => {
       try {
-        const videojs = (await import('video.js')).default;
-        
-        // Make sure we have the videoRef
-        if (!videoRef.current) {
-          console.error("Video ref is not available");
+        if (!videoContainerRef.current) {
+          console.error("Video container ref is not available");
           return;
         }
-
+        
+        const videojs = (await import('video.js')).default;
+        
         // Clean up any previous player instance
         if (playerRef.current) {
           playerRef.current.dispose();
@@ -66,8 +66,8 @@ const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({
         }
         
         // Clear any children from the container
-        while (videoRef.current.firstChild) {
-          videoRef.current.removeChild(videoRef.current.firstChild);
+        while (videoContainerRef.current.firstChild) {
+          videoContainerRef.current.removeChild(videoContainerRef.current.firstChild);
         }
         
         // Create a new video element
@@ -75,9 +75,10 @@ const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({
         videoElement.className = 'video-js vjs-big-play-centered';
         videoElement.setAttribute('playsinline', '');
         videoElement.setAttribute('controls', '');
+        videoElement.setAttribute('data-setup', '{}');
         
         // Append video element to the container
-        videoRef.current.appendChild(videoElement);
+        videoContainerRef.current.appendChild(videoElement);
         
         // Configure videojs
         const videoJsOptions = {
@@ -95,17 +96,25 @@ const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({
           html5: {
             nativeControlsForTouch: false,
             nativeAudioTracks: false,
-            nativeVideoTracks: false
+            nativeVideoTracks: false,
+            hls: {
+              overrideNative: true
+            },
+            vhs: {
+              overrideNative: true
+            }
           }
         };
         
         // Initialize player
-        const player = videojs(videoElement, videoJsOptions);
+        const player = videojs(videoElement, videoJsOptions, function onPlayerReady() {
+          console.log('Player is ready');
+        });
+        
         playerRef.current = player;
         
         // Setup event handlers after player is ready
         player.ready(() => {
-          console.log('Player is ready');
           setIsLoading(false);
           setPlayerInitialized(true);
           
@@ -116,34 +125,38 @@ const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({
             setIsMuted(true);
             
             setTimeout(() => {
-              player.play()
-                .then(() => {
-                  console.log("Autoplay started successfully");
-                  toast("Video playing (muted). Click to unmute", {
-                    action: {
-                      label: "Unmute",
-                      onClick: () => {
-                        if (playerRef.current) {
-                          playerRef.current.muted(false);
-                          setIsMuted(false);
+              try {
+                player.play()
+                  .then(() => {
+                    console.log("Autoplay started successfully");
+                    toast("Video playing (muted). Click to unmute", {
+                      action: {
+                        label: "Unmute",
+                        onClick: () => {
+                          if (playerRef.current) {
+                            playerRef.current.muted(false);
+                            setIsMuted(false);
+                          }
                         }
                       }
-                    }
-                  });
-                })
-                .catch((error: any) => {
-                  console.error("Autoplay prevented:", error);
-                  toast("Click to start playback", {
-                    action: {
-                      label: "Play",
-                      onClick: () => {
-                        if (playerRef.current) {
-                          playerRef.current.play();
+                    });
+                  })
+                  .catch((error: any) => {
+                    console.error("Autoplay prevented:", error);
+                    toast("Click to start playback", {
+                      action: {
+                        label: "Play",
+                        onClick: () => {
+                          if (playerRef.current) {
+                            playerRef.current.play();
+                          }
                         }
                       }
-                    }
+                    });
                   });
-                });
+              } catch (error) {
+                console.error("Error during autoplay:", error);
+              }
             }, 100);
           }
         });
@@ -199,7 +212,7 @@ const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({
         }
       }
     };
-  }, []);
+  }, [key]);
   
   // Handle source updates
   useEffect(() => {
@@ -209,6 +222,7 @@ const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({
       setIsLoading(true);
       setError(null);
       
+      // Update sources
       playerRef.current.src([{
         src: src,
         type: 'video/mp4',
@@ -228,14 +242,18 @@ const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({
         
         setTimeout(() => {
           if (playerRef.current) {
-            playerRef.current.play()
-              .then(() => {
-                console.log("Source change autoplay successful");
-              })
-              .catch((error: any) => {
-                console.error("Source change autoplay prevented:", error);
-                toast.info("Click play to start video");
-              });
+            try {
+              playerRef.current.play()
+                .then(() => {
+                  console.log("Source change autoplay successful");
+                })
+                .catch((error: any) => {
+                  console.error("Source change autoplay prevented:", error);
+                  toast.info("Click play to start video");
+                });
+            } catch (error) {
+              console.error("Error playing video:", error);
+            }
           }
         }, 100);
       }
@@ -245,12 +263,15 @@ const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({
       console.error("Error updating video source:", error);
       setError("Failed to update video source");
       setIsLoading(false);
+      
+      // Force a complete remount of the component as fallback strategy
+      setKey(Date.now());
     }
   }, [src, poster, autoPlay, playerInitialized]);
   
   // Recording functionality
   const toggleRecording = () => {
-    if (!videoRef.current) return;
+    if (!videoContainerRef.current) return;
     
     if (!isRecording) {
       try {
@@ -315,9 +336,7 @@ const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({
               variant="outline" 
               onClick={() => {
                 setError(null);
-                if (playerRef.current) {
-                  playerRef.current.load();
-                }
+                setKey(Date.now()); // Force remount on retry
               }}
             >
               Try Again
@@ -332,10 +351,15 @@ const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({
         </div>
       )}
       
-      <div ref={videoRef} className="video-container" data-vjs-player></div>
+      <div 
+        ref={videoContainerRef} 
+        className="video-container w-full h-full" 
+        data-vjs-player
+        key={`video-container-${key}`}
+      />
       
       {/* Custom Controls (shown outside the player UI) */}
-      <div className="absolute bottom-20 right-4 flex flex-col gap-2 z-20">
+      <div className="absolute bottom-20 right-4 flex flex-col gap-2 z-20 opacity-0 hover:opacity-100 transition-opacity">
         <Button
           variant="secondary"
           size="icon"
