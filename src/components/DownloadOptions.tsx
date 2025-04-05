@@ -74,8 +74,19 @@ const DownloadOptions = ({ contentId, title }: DownloadOptionsProps) => {
       <Select
         value={selectedQuality}
         onValueChange={setSelectedQuality}
+        onOpenChange={(open) => {
+          if (open) {
+            // Prevent closing when selecting quality
+            setTimeout(() => {
+              const selectContent = document.querySelector('[data-radix-select-content]');
+              if (selectContent) {
+                selectContent.addEventListener('click', (e) => e.stopPropagation(), { once: true });
+              }
+            }, 0);
+          }
+        }}
       >
-        <SelectTrigger className="w-[140px]">
+        <SelectTrigger className="w-[140px]" onClick={(e) => e.stopPropagation()}>
           <SelectValue placeholder="Select quality" />
         </SelectTrigger>
         <SelectContent>

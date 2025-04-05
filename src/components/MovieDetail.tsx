@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Play, Download, Heart, Info, Film, Plus } from "lucide-react";
 import BackButton from "./BackButton";
@@ -26,6 +26,24 @@ const MovieDetail = ({
   const isPremiumContent = content?.is_premium || (content?.rating && parseFloat(content.rating) > 8.0);
   const canAccessPremium = hasPremiumAccess();
   const [showDownloadOptions, setShowDownloadOptions] = useState(false);
+  const downloadRef = useRef<HTMLDivElement>(null);
+  
+  // Close download options when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (downloadRef.current && !downloadRef.current.contains(event.target as Node)) {
+        setShowDownloadOptions(false);
+      }
+    };
+    
+    if (showDownloadOptions) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showDownloadOptions]);
   
   return (
     <div className="relative h-[70vh]">
@@ -87,12 +105,15 @@ const MovieDetail = ({
               </Button>
             )}
             
-            <div className="relative">
+            <div className="relative" ref={downloadRef}>
               <Button 
                 variant="outline" 
                 className="gap-2 border-gray-600 hover:bg-secondary hover:text-white px-6" 
                 size="lg"
-                onClick={() => setShowDownloadOptions(!showDownloadOptions)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowDownloadOptions(!showDownloadOptions);
+                }}
               >
                 <Download size={18} />
                 <span>Download</span>
@@ -116,7 +137,10 @@ const MovieDetail = ({
                   ? "bg-cinemax-500/20 border-cinemax-500 text-cinemax-500" 
                   : "border-gray-700 hover:bg-gray-700/50"
               }`}
-              onClick={toggleFavorite}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleFavorite();
+              }}
               aria-label={liked ? "Remove from favorites" : "Add to favorites"}
             >
               <Heart size={18} fill={liked ? "currentColor" : "none"} />
@@ -126,6 +150,10 @@ const MovieDetail = ({
               variant="ghost" 
               size="icon" 
               className="rounded-full border border-gray-700 hover:bg-gray-700/50"
+              onClick={(e) => {
+                e.stopPropagation();
+                toast.info("Added to watchlist");
+              }}
               aria-label="Add to watchlist"
             >
               <Plus size={18} />

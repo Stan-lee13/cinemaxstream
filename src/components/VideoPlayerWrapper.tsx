@@ -37,6 +37,7 @@ const VideoPlayerWrapper = ({
   const availableProviders = getAvailableProviders(contentId, contentType);
   const [activeProvider, setActiveProvider] = useState<string>(getBestProviderForContentType(contentType));
   const [videoSrc, setVideoSrc] = useState<string>("");
+  const [key, setKey] = useState<number>(0); // Key to force re-mount of player components
   
   useEffect(() => {
     // Update source when provider changes
@@ -47,54 +48,67 @@ const VideoPlayerWrapper = ({
     if (title) options.title = title;
     if (autoPlay) options.autoplay = autoPlay;
     
-    const src = getStreamingUrl(contentId, activeProvider, options);
-    setVideoSrc(src);
+    try {
+      const src = getStreamingUrl(contentId, activeProvider, options);
+      setVideoSrc(src);
+      // Increment key to force remount of player when source changes
+      setKey(prev => prev + 1);
+    } catch (error) {
+      console.error("Error getting streaming URL:", error);
+    }
   }, [contentId, contentType, activeProvider, episodeId, seasonNumber, episodeNumber, title, autoPlay]);
   
   const handleProviderChange = (providerId: string) => {
     setActiveProvider(providerId);
   };
   
+  // If using VideoJS (default and recommended)
   if (useVideoJS) {
     return (
-      <VideoPlayerVideoJS
-        src={videoSrc}
-        contentId={contentId}
-        contentType={contentType}
-        userId={userId}
-        episodeId={episodeId}
-        autoPlay={autoPlay}
-        onEnded={onEnded}
-        poster={poster}
-        title={title}
-        availableProviders={availableProviders}
-        activeProvider={activeProvider}
-        onProviderChange={handleProviderChange}
-      />
+      <div key={`vjs-${key}`} className="player-container">
+        <VideoPlayerVideoJS
+          src={videoSrc}
+          contentId={contentId}
+          contentType={contentType}
+          userId={userId}
+          episodeId={episodeId}
+          autoPlay={autoPlay}
+          onEnded={onEnded}
+          poster={poster}
+          title={title}
+          availableProviders={availableProviders}
+          activeProvider={activeProvider}
+          onProviderChange={handleProviderChange}
+        />
+      </div>
     );
   }
   
+  // If using Plyr
   if (usePlyr) {
     return (
-      <VideoPlayerPlyr
-        src={videoSrc}
-        contentId={contentId}
-        contentType={contentType}
-        userId={userId}
-        episodeId={episodeId}
-        autoPlay={autoPlay}
-        onEnded={onEnded}
-        poster={poster}
-        title={title}
-        availableProviders={availableProviders}
-        activeProvider={activeProvider}
-        onProviderChange={handleProviderChange}
-      />
+      <div key={`plyr-${key}`} className="player-container">
+        <VideoPlayerPlyr
+          src={videoSrc}
+          contentId={contentId}
+          contentType={contentType}
+          userId={userId}
+          episodeId={episodeId}
+          autoPlay={autoPlay}
+          onEnded={onEnded}
+          poster={poster}
+          title={title}
+          availableProviders={availableProviders}
+          activeProvider={activeProvider}
+          onProviderChange={handleProviderChange}
+        />
+      </div>
     );
   }
   
+  // Default fallback to basic player
   return (
-    <div className="flex flex-col gap-4">
+    <div key={`basic-${key}`} className="player-container">
       <VideoPlayer
         src={videoSrc}
         contentId={contentId}
