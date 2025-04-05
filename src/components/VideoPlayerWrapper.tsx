@@ -65,7 +65,7 @@ const VideoPlayerWrapper = ({
   // If using VideoJS (default and recommended)
   if (useVideoJS) {
     return (
-      <div key={`vjs-${key}`} className="player-container">
+      <div key={`vjs-${contentId}-${key}`} className="player-container">
         <VideoPlayerVideoJS
           src={videoSrc}
           contentId={contentId}
@@ -87,7 +87,7 @@ const VideoPlayerWrapper = ({
   // If using Plyr
   if (usePlyr) {
     return (
-      <div key={`plyr-${key}`} className="player-container">
+      <div key={`plyr-${contentId}-${key}`} className="player-container">
         <VideoPlayerPlyr
           src={videoSrc}
           contentId={contentId}
@@ -108,7 +108,7 @@ const VideoPlayerWrapper = ({
   
   // Default fallback to basic player
   return (
-    <div key={`basic-${key}`} className="player-container">
+    <div key={`basic-${contentId}-${key}`} className="player-container">
       <VideoPlayer
         src={videoSrc}
         contentId={contentId}

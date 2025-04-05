@@ -1,10 +1,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Volume2, VolumeX, Maximize, SkipForward, SkipBack, Download, Video } from "lucide-react";
+import { Download, Video } from "lucide-react";
 import { trackStreamingActivity, markContentAsComplete } from "@/utils/videoUtils";
 import { toast } from "sonner";
-import Plyr from 'plyr';
 import 'plyr/dist/plyr.css';
 import StreamingProviderSelector from "./StreamingProviderSelector";
 
@@ -38,99 +37,134 @@ const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({
   onProviderChange
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const playerRef = useRef<Plyr | null>(null);
+  const playerRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [stopRecordingFn, setStopRecordingFn] = useState<(() => void) | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [playerInitialized, setPlayerInitialized] = useState(false);
   
   // Initialize Plyr
   useEffect(() => {
-    if (!videoRef.current) return;
+    let plyr: any;
     
-    // Destroy existing player if it exists
-    if (playerRef.current) {
-      playerRef.current.destroy();
-      playerRef.current = null;
-    }
-    
-    try {
-      const player = new Plyr(videoRef.current, {
-        controls: [
-          'play-large', 'play', 'progress', 'current-time', 'mute', 
-          'volume', 'captions', 'settings', 'pip', 'airplay', 'fullscreen'
-        ],
-        seekTime: 10,
-        keyboard: { focused: true, global: false },
-        tooltips: { controls: true, seek: true },
-        captions: { active: true, language: 'auto' },
-        autoplay: false // We'll handle autoplay manually
-      });
-      
-      playerRef.current = player;
-      
-      player.on('ready', () => {
-        setIsLoading(false);
+    const initPlyr = async () => {
+      try {
+        const Plyr = (await import('plyr')).default;
         
-        // Try to autoplay after the player is ready
-        if (autoPlay && player) {
-          // Set volume to 0 initially to help with autoplay policies
-          player.muted = true;
+        if (!videoRef.current) {
+          console.error("Video element ref is not available");
+          return;
+        }
+        
+        // Destroy existing player if it exists
+        if (playerRef.current) {
+          playerRef.current.destroy();
+          playerRef.current = null;
+        }
+        
+        // Create a new Plyr instance
+        plyr = new Plyr(videoRef.current, {
+          controls: [
+            'play-large', 'play', 'progress', 'current-time', 'mute',
+            'volume', 'captions', 'settings', 'pip', 'airplay', 'fullscreen'
+          ],
+          seekTime: 10,
+          keyboard: { focused: true, global: false },
+          tooltips: { controls: true, seek: true },
+          captions: { active: true, language: 'auto' },
+          autoplay: false
+        });
+        
+        playerRef.current = plyr;
+        
+        plyr.on('ready', () => {
+          setIsLoading(false);
+          setPlayerInitialized(true);
           
-          // Small delay to ensure everything is set up
-          setTimeout(() => {
-            const playPromise = player.play();
-            if (playPromise !== undefined) {
-              playPromise.catch(error => {
-                console.error("Autoplay prevented:", error);
-                toast.info("Click play to start playback", {
-                  action: {
-                    label: "Play",
-                    onClick: () => player.play()
-                  }
-                });
-              });
-            }
-          }, 100);
-        }
-      });
-      
-      player.on('play', () => {
-        // Track activity after 15 seconds of playing
-        setTimeout(() => {
-          if (userId && player && player.playing) {
-            trackStreamingActivity(contentId, userId, Math.floor(player.currentTime), episodeId);
+          // Try to autoplay after the player is ready
+          if (autoPlay) {
+            // Set volume to 0 initially to help with autoplay policies
+            plyr.muted = true;
+            
+            // Small delay to ensure everything is set up
+            setTimeout(() => {
+              try {
+                const playPromise = plyr.play();
+                
+                if (playPromise !== undefined) {
+                  playPromise.then(() => {
+                    console.log("Autoplay started successfully");
+                    toast("Video playing (muted). Click to unmute", {
+                      action: {
+                        label: "Unmute",
+                        onClick: () => {
+                          if (playerRef.current) {
+                            playerRef.current.muted = false;
+                          }
+                        }
+                      }
+                    });
+                  }).catch((error: any) => {
+                    console.error("Autoplay prevented:", error);
+                    toast.info("Click play to start playback", {
+                      action: {
+                        label: "Play",
+                        onClick: () => {
+                          if (playerRef.current) {
+                            playerRef.current.play();
+                          }
+                        }
+                      }
+                    });
+                  });
+                }
+              } catch (error) {
+                console.error("Error during autoplay:", error);
+              }
+            }, 100);
           }
-        }, 15000);
-      });
-      
-      player.on('timeupdate', () => {
-        // Track every 15 seconds
-        if (player && Math.floor(player.currentTime) % 15 === 0 && userId && player.playing) {
-          trackStreamingActivity(contentId, userId, Math.floor(player.currentTime), episodeId);
-        }
-      });
-      
-      player.on('ended', () => {
-        if (onEnded) onEnded();
-        if (userId) {
-          markContentAsComplete(contentId, userId, episodeId);
-        }
-      });
-      
-      player.on('error', () => {
-        setError("Error loading video. Please try another source or try again later.");
+        });
+        
+        plyr.on('play', () => {
+          // Track activity after 15 seconds of playing
+          setTimeout(() => {
+            if (userId && plyr && !plyr.paused) {
+              trackStreamingActivity(contentId, userId, Math.floor(plyr.currentTime), episodeId);
+            }
+          }, 15000);
+        });
+        
+        plyr.on('timeupdate', () => {
+          // Track every 15 seconds
+          if (plyr && Math.floor(plyr.currentTime) % 15 === 0 && userId && !plyr.paused) {
+            trackStreamingActivity(contentId, userId, Math.floor(plyr.currentTime), episodeId);
+          }
+        });
+        
+        plyr.on('ended', () => {
+          if (onEnded) onEnded();
+          if (userId) {
+            markContentAsComplete(contentId, userId, episodeId);
+          }
+        });
+        
+        plyr.on('error', () => {
+          setError("Error loading video. Please try another source or try again later.");
+          setIsLoading(false);
+          toast.error("Error loading video. Please try another source.");
+        });
+      } catch (err) {
+        console.error("Error initializing Plyr:", err);
+        setError("Failed to initialize video player");
         setIsLoading(false);
-        toast.error("Error loading video. Please try another source.");
-      });
-    } catch (err) {
-      console.error("Error initializing Plyr:", err);
-      setError("Failed to initialize video player");
-      setIsLoading(false);
-    }
+      }
+    };
     
-    // Cleanup
+    initPlyr();
+    
+    // Cleanup function
     return () => {
       if (playerRef.current) {
         try {
@@ -145,61 +179,58 @@ const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({
   
   // Handle video source change
   useEffect(() => {
-    if (playerRef.current && videoRef.current) {
-      setIsLoading(true);
-      setError(null);
+    if (!videoRef.current || !playerInitialized) return;
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // Update the video source
+      videoRef.current.src = src;
       
-      try {
-        // Update the video source
-        videoRef.current.src = src;
-        
-        // Load and play the new source
-        if (playerRef.current.source) {
-          playerRef.current.source = {
-            type: 'video',
-            sources: [
-              {
-                src: src,
-                type: 'video/mp4',
-              },
-            ],
-            poster: poster,
-          };
-        }
-        
-        // Attempt to play if autoplay is enabled
-        if (autoPlay && playerRef.current) {
-          try {
-            // Set muted to help with autoplay policies
-            playerRef.current.muted = true;
-            
-            const playPromise = playerRef.current.play();
-            // Only handle as a promise if it returns one
-            if (playPromise !== undefined && typeof playPromise === 'object' && typeof playPromise.catch === 'function') {
-              playPromise.catch((error) => {
-                console.error("Autoplay blocked:", error);
-                toast.info("Click play to start video", {
-                  action: {
-                    label: "Play",
-                    onClick: () => playerRef.current?.play()
-                  }
-                });
-              });
-            }
-          } catch (error) {
-            console.error("Error attempting to autoplay:", error);
-          }
-        }
-      } catch (error) {
-        console.error("Error updating video source:", error);
-        setError("Failed to load video");
-      } finally {
-        setIsLoading(false);
+      if (poster) {
+        videoRef.current.poster = poster;
       }
+      
+      // Load the new source
+      videoRef.current.load();
+      
+      // Attempt to play if autoplay is enabled
+      if (autoPlay && playerRef.current) {
+        // Set muted to help with autoplay policies
+        if (playerRef.current.muted !== undefined) {
+          playerRef.current.muted = true;
+        }
+        
+        setTimeout(() => {
+          if (playerRef.current) {
+            try {
+              const playPromise = playerRef.current.play();
+              
+              if (playPromise !== undefined && typeof playPromise.then === 'function') {
+                playPromise.then(() => {
+                  console.log("Source change autoplay successful");
+                }).catch((error: any) => {
+                  console.error("Source change autoplay prevented:", error);
+                  toast.info("Click play to start video");
+                });
+              }
+            } catch (error) {
+              console.error("Error during source change autoplay:", error);
+            }
+          }
+        }, 100);
+      }
+      
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error updating video source:", error);
+      setError("Failed to load video");
+      setIsLoading(false);
     }
-  }, [src, poster, autoPlay]);
+  }, [src, poster, autoPlay, playerInitialized]);
   
-  // Modified to receive a single param or none
+  // Recording functionality
   const toggleRecording = () => {
     if (!videoRef.current) return;
     
@@ -208,10 +239,12 @@ const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({
         import('@/utils/streamingUtils').then(module => {
           module.startRecording().then(stream => {
             if (stream) {
-              setStopRecordingFn(() => () => {
+              const stopRecording = () => {
                 stream.getTracks().forEach(track => track.stop());
                 toast.success("Recording saved");
-              });
+              };
+              
+              setStopRecordingFn(() => stopRecording);
               setIsRecording(true);
               toast.success("Recording started");
             }
@@ -230,14 +263,16 @@ const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({
   
   // Handle download
   const handleDownload = () => {
-    if (!videoRef.current) return;
-    
-    const a = document.createElement('a');
-    a.href = videoRef.current.src;
-    a.download = `${title || 'video'}.mp4`;
-    a.click();
-    
-    toast.success(`Starting download: ${title || 'video'}.mp4`);
+    if (videoRef.current && videoRef.current.src) {
+      const a = document.createElement('a');
+      a.href = videoRef.current.src;
+      a.download = `${title || 'video'}.mp4`;
+      a.click();
+      
+      toast.success(`Starting download: ${title || 'video'}.mp4`);
+    } else {
+      toast.error("No video source available to download");
+    }
   };
   
   return (
@@ -282,7 +317,11 @@ const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({
         crossOrigin="anonymous"
         poster={poster}
         playsInline
-      />
+        controls
+      >
+        <source src={src} type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
       
       {/* Custom Controls (shown outside the Plyr UI) */}
       <div className="absolute bottom-20 right-4 flex flex-col gap-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity">

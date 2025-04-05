@@ -31,6 +31,25 @@ export const getStreamingUrl = (contentId: string, provider: string = 'vidsrc_xy
     embed_su: (id, opts) =>
       `https://embed.su/movie?tmdb=${id}${opts.autoplay ? '&autoplay=1' : ''}`,
     
+    // Additional streaming providers
+    sflix: (id, _) => 
+      `https://sflix.to/watch-movie/${id}`,
+      
+    primewire_tf: (id, _) =>
+      `https://primewire.tf/watch/${id}`,
+      
+    embed_rgshows: (id, opts) => {
+      const type = opts.episode ? 'show' : 'movie';
+      return `https://embed.rgshows.me/${type}?id=${id}${opts.episode ? `&s=${opts.season}&e=${opts.episodeNum}` : ''}`;
+    },
+    
+    godriveplayer: (id, opts) => {
+      const type = opts.episode ? 'tv' : 'movie';
+      const season = opts.season || '1';
+      const episode = opts.episodeNum || '1';
+      return `https://database.gdriveplayer.us/player.php?type=${type}&tmdb=${id}${type === 'tv' ? `&season=${season}&episode=${episode}` : ''}`;
+    },
+    
     // Anime specific providers
     aniwatch: (id, opts) => {
       // Construct URL for anime content
@@ -47,25 +66,6 @@ export const getStreamingUrl = (contentId: string, provider: string = 'vidsrc_xy
       
     fmovies_net: (id, _) => 
       `https://fmovies.net/movie/${id}`,
-        
-    sflix: (id, _) => 
-      `https://sflix.to/watch-movie/${id}`,
-    
-    // Streaming API providers
-    godriveplayer: (id, opts) => {
-      const type = opts.episode ? 'tv' : 'movie';
-      const season = opts.season || '1';
-      const episode = opts.episodeNum || '1';
-      return `https://database.gdriveplayer.us/player.php?type=${type}&tmdb=${id}${type === 'tv' ? `&season=${season}&episode=${episode}` : ''}`;
-    },
-    
-    primewire: (id, opts) => 
-      `https://primewire.tf/watch/${id}`,
-
-    embed_rgshows: (id, opts) => {
-      const type = opts.episode ? 'show' : 'movie';
-      return `https://embed.rgshows.me/${type}?id=${id}${opts.episode ? `&s=${opts.season}&e=${opts.episodeNum}` : ''}`;
-    },
     
     // Premium providers  
     prime_video: (id, _) => 
@@ -82,23 +82,6 @@ export const getStreamingUrl = (contentId: string, provider: string = 'vidsrc_xy
     
     hulu: (id, _) => 
       `https://www.hulu.com/watch/${id}`,
-
-    // Download-oriented providers
-    filemoon: (id, opts) =>
-      `https://filemoon.in/e/${id}${opts.title ? `?title=${encodeURIComponent(opts.title)}` : ''}`,
-    
-    streamtape: (id, _) =>
-      `https://streamtape.com/e/${id}`,
-    
-    vidcloud: (id, _) =>
-      `https://vidcloud.stream/embed/${id}`,
-      
-    // Torrent providers
-    eztv: (id, opts) => 
-      `magnet:?xt=urn:btih:${id}&dn=${encodeURIComponent(opts.title || '')}&tr=udp://tracker.opentrackr.org:1337/announce`,
-    
-    yts: (id, opts) => 
-      `magnet:?xt=urn:btih:${id}&dn=${encodeURIComponent(opts.title || '')}&tr=udp://glotorrents.pw:6969/announce`
   };
   
   // Choose provider function or fallback
@@ -112,33 +95,59 @@ export const getStreamingUrl = (contentId: string, provider: string = 'vidsrc_xy
  * Get download URL for the content
  */
 export const getDownloadUrl = (contentId: string, quality: string = '1080p'): string => {
-  // Use filemoon for downloads as it supports direct downloads
-  const magnetPrefix = 'magnet:?xt=urn:btih:';
+  // Download providers
+  const providers: Record<string, (id: string, quality: string) => string> = {
+    filemoon: (id, quality) =>
+      `https://filemoon.in/d/${id}?quality=${quality}`,
+      
+    streamtape: (id, quality) =>
+      `https://streamtape.com/v/${id}/${encodeURIComponent(quality)}`,
+      
+    vidcloud: (id, quality) =>
+      `https://vidcloud.stream/download/${id}?quality=${quality}`,
+      
+    standard: (id, quality) =>
+      `https://api.example.com/download/${id}?quality=${quality}`
+  };
   
-  // Use different URLs based on quality
-  switch (quality) {
-    case '4k':
-      return `https://api.example.com/download/${contentId}?quality=4k`;
-    case '1080p':
-      return `https://api.example.com/download/${contentId}?quality=1080p`;
-    case '720p':
-      return `https://api.example.com/download/${contentId}?quality=720p`;
-    case '480p':
-      return `https://api.example.com/download/${contentId}?quality=480p`;
-    case '360p':
-      return `https://api.example.com/download/${contentId}?quality=360p`;
-    default:
-      return `https://api.example.com/download/${contentId}?quality=720p`;
+  // Distribute between providers based on quality
+  let provider = 'standard';
+  if (['4k', '1080p'].includes(quality)) {
+    provider = 'filemoon';
+  } else if (quality === '720p') {
+    provider = 'streamtape';
+  } else {
+    provider = 'vidcloud';
   }
+  
+  return providers[provider](contentId, quality);
 };
 
 /**
  * Get trailer URL for the content 
  */
 export const getTrailerUrl = async (contentId: string, contentType: string = 'movie'): Promise<string> => {
-  // For production, this would call a real API
-  const trailerKey = contentId;
-  return `https://www.youtube.com/watch?v=${trailerKey}`;
+  try {
+    // In a real implementation, we would fetch from YouTube API
+    // For now, construct a YouTube trailer URL
+    // First, attempt to use TMDB API to get the trailer key
+    const trailerBaseUrl = 'https://www.youtube.com/embed/';
+    
+    // Fetch the trailer key from TMDB (this is a mock)
+    // In a real implementation, this would call the TMDB API
+    const fetchTrailerKey = async () => {
+      // This would be a real API call to get the trailer key from TMDB
+      // Example: const response = await fetch(`https://api.themoviedb.org/3/${contentType}/${contentId}/videos?api_key=${API_KEY}`);
+      // For now, we'll use the contentId as the trailer key
+      return contentId;
+    };
+    
+    const trailerKey = await fetchTrailerKey();
+    return `${trailerBaseUrl}${trailerKey}`;
+  } catch (error) {
+    console.error("Error fetching trailer:", error);
+    return `https://www.youtube.com/embed/dQw4w9WgXcQ`; // Fallback trailer
+  }
 };
 
 /**

@@ -1,11 +1,10 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Volume2, VolumeX, Maximize, SkipForward, SkipBack, Download, Video } from "lucide-react";
+import { Download, Video } from "lucide-react";
 import { trackStreamingActivity, markContentAsComplete } from "@/utils/videoUtils";
 import { toast } from "sonner";
 import StreamingProviderSelector from "./StreamingProviderSelector";
-import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
 
 interface VideoPlayerVideoJSProps {
@@ -45,141 +44,151 @@ const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(true);
+  const [playerInitialized, setPlayerInitialized] = useState(false);
   
   // Initialize Video.js
   useEffect(() => {
-    // Make sure we have both the wrapper div and VideoJS loaded
-    if (!videoRef.current || !videojs) {
-      console.error("Missing required refs or videojs");
-      return;
-    }
-    
-    // Cleanup previous player instance
-    if (playerRef.current) {
+    // Dynamically import video.js to prevent SSR issues
+    const setupPlayer = async () => {
       try {
-        playerRef.current.dispose();
-        playerRef.current = null;
-      } catch (e) {
-        console.error("Error disposing previous player:", e);
-      }
-    }
-    
-    // Create a div for videojs to attach to
-    const videoElement = document.createElement('video');
-    videoElement.className = 'video-js vjs-big-play-centered';
-    videoElement.setAttribute('playsinline', '');
-    
-    // Make sure any old elements are removed
-    while (videoRef.current.firstChild) {
-      videoRef.current.removeChild(videoRef.current.firstChild);
-    }
-    
-    // Append the new video element
-    videoRef.current.appendChild(videoElement);
-    
-    try {
-      const videoJsOptions = {
-        autoplay: false, // We'll handle autoplay manually
-        controls: true,
-        responsive: true,
-        fluid: true,
-        sources: [{
-          src: src,
-          type: 'video/mp4',
-        }],
-        poster: poster || '',
-        muted: true, // Start muted to enable autoplay
-        playsinline: true,
-      };
-      
-      // Initialize player
-      const player = videojs(videoElement, videoJsOptions);
-      playerRef.current = player;
-      
-      // Setup event handlers
-      player.ready(() => {
-        console.log('Player is ready');
-        setIsLoading(false);
+        const videojs = (await import('video.js')).default;
         
-        // Handle autoplay with muted state to bypass restrictions
-        if (autoPlay) {
-          player.muted(true);
-          setIsMuted(true);
+        // Make sure we have the videoRef
+        if (!videoRef.current) {
+          console.error("Video ref is not available");
+          return;
+        }
+
+        // Clean up any previous player instance
+        if (playerRef.current) {
+          playerRef.current.dispose();
+          playerRef.current = null;
+        }
+        
+        // Clear any children from the container
+        while (videoRef.current.firstChild) {
+          videoRef.current.removeChild(videoRef.current.firstChild);
+        }
+        
+        // Create a new video element
+        const videoElement = document.createElement('video');
+        videoElement.className = 'video-js vjs-big-play-centered';
+        videoElement.setAttribute('playsinline', '');
+        videoElement.setAttribute('controls', '');
+        
+        // Append video element to the container
+        videoRef.current.appendChild(videoElement);
+        
+        // Configure videojs
+        const videoJsOptions = {
+          autoplay: false,
+          controls: true,
+          responsive: true,
+          fluid: true,
+          sources: [{
+            src: src,
+            type: 'video/mp4',
+          }],
+          poster: poster || '',
+          muted: true,
+          playsinline: true,
+          html5: {
+            nativeControlsForTouch: false,
+            nativeAudioTracks: false,
+            nativeVideoTracks: false
+          }
+        };
+        
+        // Initialize player
+        const player = videojs(videoElement, videoJsOptions);
+        playerRef.current = player;
+        
+        // Setup event handlers after player is ready
+        player.ready(() => {
+          console.log('Player is ready');
+          setIsLoading(false);
+          setPlayerInitialized(true);
           
-          setTimeout(() => {
-            try {
-              const playPromise = player.play();
-              
-              if (playPromise !== undefined) {
-                playPromise
-                  .then(() => {
-                    console.log("Autoplay started successfully");
-                    // Show unmute button
-                    toast("Video playing (muted). Click to unmute", {
-                      action: {
-                        label: "Unmute",
-                        onClick: () => {
-                          player.muted(false);
+          // Auto play logic
+          if (autoPlay) {
+            // Mute player to help with autoplay policies
+            player.muted(true);
+            setIsMuted(true);
+            
+            setTimeout(() => {
+              player.play()
+                .then(() => {
+                  console.log("Autoplay started successfully");
+                  toast("Video playing (muted). Click to unmute", {
+                    action: {
+                      label: "Unmute",
+                      onClick: () => {
+                        if (playerRef.current) {
+                          playerRef.current.muted(false);
                           setIsMuted(false);
                         }
                       }
-                    });
-                  })
-                  .catch((error: any) => {
-                    console.error("Autoplay prevented:", error);
-                    toast("Click to start playback", {
-                      action: {
-                        label: "Play",
-                        onClick: () => player.play()
-                      }
-                    });
+                    }
                   });
-              }
-            } catch (error) {
-              console.error("Error attempting to autoplay:", error);
-            }
-          }, 100);
-        }
-      });
-      
-      player.on('error', () => {
-        console.error('Video.js error:', player.error());
-        setError("Error loading video. Please try another source or try again later.");
-        setIsLoading(false);
-        toast.error("Error loading video. Please try another source.");
-      });
-      
-      player.on('play', () => {
-        // Track activity after a few seconds of playing
-        setTimeout(() => {
-          if (userId && player && !player.paused()) {
-            trackStreamingActivity(contentId, userId, Math.floor(player.currentTime()), episodeId);
+                })
+                .catch((error: any) => {
+                  console.error("Autoplay prevented:", error);
+                  toast("Click to start playback", {
+                    action: {
+                      label: "Play",
+                      onClick: () => {
+                        if (playerRef.current) {
+                          playerRef.current.play();
+                        }
+                      }
+                    }
+                  });
+                });
+            }, 100);
           }
-        }, 15000);
-      });
-      
-      player.on('timeupdate', () => {
-        // Track every 15 seconds
-        const currentTime = Math.floor(player.currentTime());
-        if (currentTime % 15 === 0 && currentTime > 0 && userId && !player.paused()) {
-          trackStreamingActivity(contentId, userId, currentTime, episodeId);
-        }
-      });
-      
-      player.on('ended', () => {
-        if (onEnded) onEnded();
-        if (userId) {
-          markContentAsComplete(contentId, userId, episodeId);
-        }
-      });
-      
-    } catch (error) {
-      console.error("Error initializing Video.js:", error);
-      setError("Failed to initialize video player");
-      setIsLoading(false);
-    }
+        });
+        
+        // Error handling
+        player.on('error', () => {
+          console.error('Video.js error:', player.error());
+          setError("Error loading video. Please try another source.");
+          setIsLoading(false);
+        });
+        
+        // Track playback
+        player.on('play', () => {
+          setTimeout(() => {
+            if (userId && playerRef.current && !playerRef.current.paused()) {
+              trackStreamingActivity(contentId, userId, Math.floor(playerRef.current.currentTime()), episodeId);
+            }
+          }, 15000);
+        });
+        
+        player.on('timeupdate', () => {
+          if (!playerRef.current) return;
+          
+          const currentTime = Math.floor(playerRef.current.currentTime());
+          if (currentTime % 15 === 0 && currentTime > 0 && userId && !playerRef.current.paused()) {
+            trackStreamingActivity(contentId, userId, currentTime, episodeId);
+          }
+        });
+        
+        player.on('ended', () => {
+          if (onEnded) onEnded();
+          if (userId) {
+            markContentAsComplete(contentId, userId, episodeId);
+          }
+        });
+      } catch (error) {
+        console.error("Error initializing Video.js:", error);
+        setError("Failed to initialize video player");
+        setIsLoading(false);
+      }
+    };
     
-    // Cleanup
+    setupPlayer();
+    
+    // Cleanup function
     return () => {
       if (playerRef.current) {
         try {
@@ -192,58 +201,52 @@ const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({
     };
   }, []);
   
-  // Handle video source change
+  // Handle source updates
   useEffect(() => {
-    if (playerRef.current) {
+    if (!playerRef.current || !playerInitialized) return;
+    
+    try {
       setIsLoading(true);
       setError(null);
       
-      try {
-        playerRef.current.src([{
-          src: src,
-          type: 'video/mp4',
-        }]);
-        
-        playerRef.current.poster(poster || '');
-        
-        // Attempt to play if autoplay is enabled
-        if (autoPlay) {
-          try {
-            playerRef.current.muted(true);
-            setIsMuted(true);
-            
-            setTimeout(() => {
-              const playPromise = playerRef.current.play();
-              
-              if (playPromise !== undefined && typeof playPromise.then === 'function') {
-                playPromise
-                  .then(() => {
-                    console.log("Source change autoplay successful");
-                  })
-                  .catch((error: any) => {
-                    console.error("Source change autoplay prevented:", error);
-                    toast("Click to play video", {
-                      action: {
-                        label: "Play",
-                        onClick: () => playerRef.current?.play()
-                      }
-                    });
-                  });
-              }
-            }, 100);
-          } catch (error) {
-            console.error("Error attempting to play after source change:", error);
-          }
-        }
-        
-      } catch (error) {
-        console.error("Error changing video source:", error);
-        setError("Failed to load new video source");
-      } finally {
-        setIsLoading(false);
+      playerRef.current.src([{
+        src: src,
+        type: 'video/mp4',
+      }]);
+      
+      if (poster) {
+        playerRef.current.poster(poster);
       }
+      
+      // Reset player state
+      playerRef.current.load();
+      
+      // Try to autoplay with the new source
+      if (autoPlay) {
+        playerRef.current.muted(true);
+        setIsMuted(true);
+        
+        setTimeout(() => {
+          if (playerRef.current) {
+            playerRef.current.play()
+              .then(() => {
+                console.log("Source change autoplay successful");
+              })
+              .catch((error: any) => {
+                console.error("Source change autoplay prevented:", error);
+                toast.info("Click play to start video");
+              });
+          }
+        }, 100);
+      }
+      
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error updating video source:", error);
+      setError("Failed to update video source");
+      setIsLoading(false);
     }
-  }, [src, poster, autoPlay]);
+  }, [src, poster, autoPlay, playerInitialized]);
   
   // Recording functionality
   const toggleRecording = () => {
@@ -254,10 +257,12 @@ const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({
         import('@/utils/streamingUtils').then(module => {
           module.startRecording().then(stream => {
             if (stream) {
-              setStopRecordingFn(() => () => {
+              const stopRecording = () => {
                 stream.getTracks().forEach(track => track.stop());
                 toast.success("Recording saved");
-              });
+              };
+              
+              setStopRecordingFn(() => stopRecording);
               setIsRecording(true);
               toast.success("Recording started");
             }
@@ -277,12 +282,17 @@ const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({
   // Handle download
   const handleDownload = () => {
     if (playerRef.current) {
-      const a = document.createElement('a');
-      a.href = playerRef.current.currentSrc();
-      a.download = `${title || 'video'}.mp4`;
-      a.click();
-      
-      toast.success(`Starting download: ${title || 'video'}.mp4`);
+      const currentSource = playerRef.current.currentSrc();
+      if (currentSource) {
+        const a = document.createElement('a');
+        a.href = currentSource;
+        a.download = `${title || 'video'}.mp4`;
+        a.click();
+        
+        toast.success(`Starting download: ${title || 'video'}.mp4`);
+      } else {
+        toast.error("No video source available to download");
+      }
     }
   };
   
@@ -322,7 +332,7 @@ const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({
         </div>
       )}
       
-      <div ref={videoRef} data-vjs-player></div>
+      <div ref={videoRef} className="video-container" data-vjs-player></div>
       
       {/* Custom Controls (shown outside the player UI) */}
       <div className="absolute bottom-20 right-4 flex flex-col gap-2 z-20">

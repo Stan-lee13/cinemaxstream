@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Download, Check } from "lucide-react";
+import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { 
   Select, 
@@ -26,12 +26,13 @@ const DownloadOptions = ({ contentId, title }: DownloadOptionsProps) => {
   
   // Handle download
   const handleDownload = async (e: React.MouseEvent) => {
+    // Stop event propagation to prevent triggering parent click handlers
     e.preventDefault();
     e.stopPropagation();
+    
     setIsDownloading(true);
     
     // Check if premium quality and user doesn't have premium
-    const selectedOption = QUALITY_OPTIONS.find(opt => opt.value === selectedQuality);
     const isPremium = selectedQuality === "4k";
     
     if (isPremium && !hasPremium) {
@@ -44,12 +45,13 @@ const DownloadOptions = ({ contentId, title }: DownloadOptionsProps) => {
       // Get download URL
       const downloadUrl = getDownloadUrl(contentId, selectedQuality);
       
-      // Create an anchor element and trigger download
+      // Create a download link and trigger it
       const link = document.createElement('a');
       link.href = downloadUrl;
       link.download = `${title.replace(/\s+/g, '_')}_${selectedQuality}.mp4`;
-      link.target = "_blank"; // Open in new tab
+      document.body.appendChild(link); // Append to body to ensure it works
       link.click();
+      document.body.removeChild(link); // Clean up
       
       toast.success(`Download started: ${title} (${selectedQuality})`);
     } catch (error) {
@@ -63,33 +65,19 @@ const DownloadOptions = ({ contentId, title }: DownloadOptionsProps) => {
     }
   };
   
-  // Prevent event propagation on click inside the component
-  const handleContainerClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-  
   return (
-    <div className="flex items-center gap-2" onClick={handleContainerClick}>
+    <div 
+      className="flex items-center gap-2" 
+      onClick={(e) => e.stopPropagation()}
+    >
       <Select
         value={selectedQuality}
         onValueChange={setSelectedQuality}
-        onOpenChange={(open) => {
-          if (open) {
-            // Prevent closing when selecting quality
-            setTimeout(() => {
-              const selectContent = document.querySelector('[data-radix-select-content]');
-              if (selectContent) {
-                selectContent.addEventListener('click', (e) => e.stopPropagation(), { once: true });
-              }
-            }, 0);
-          }
-        }}
       >
-        <SelectTrigger className="w-[140px]" onClick={(e) => e.stopPropagation()}>
+        <SelectTrigger className="w-[140px]">
           <SelectValue placeholder="Select quality" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent onClick={(e) => e.stopPropagation()}>
           {QUALITY_OPTIONS.map((option) => (
             <SelectItem 
               key={option.value} 

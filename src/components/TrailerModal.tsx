@@ -14,22 +14,33 @@ interface TrailerModalProps {
 
 const TrailerModal = ({ isOpen, onClose, trailerKey, title }: TrailerModalProps) => {
   const [trailerSrc, setTrailerSrc] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
     // Only fetch trailer when modal is open and we have a key
     if (isOpen && trailerKey) {
-      // Since getTrailerUrl might be async, handle it appropriately
+      // Reset state
+      setIsLoading(true);
+      setError(null);
+      
+      // Fetch trailer URL
       const fetchTrailer = async () => {
         try {
           const url = await getTrailerUrl(trailerKey, "movie");
           setTrailerSrc(url);
         } catch (error) {
           console.error("Error fetching trailer URL:", error);
-          setTrailerSrc("");
+          setError("Failed to load trailer");
+        } finally {
+          setIsLoading(false);
         }
       };
       
       fetchTrailer();
+    } else {
+      // Reset trailer source when modal is closed
+      setTrailerSrc("");
     }
   }, [isOpen, trailerKey]);
 
@@ -51,7 +62,16 @@ const TrailerModal = ({ isOpen, onClose, trailerKey, title }: TrailerModalProps)
           </Button>
           
           <div className="aspect-video w-full">
-            {trailerSrc ? (
+            {isLoading ? (
+              <div className="w-full h-full flex items-center justify-center bg-black">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cinemax-500"></div>
+              </div>
+            ) : error ? (
+              <div className="w-full h-full flex flex-col items-center justify-center bg-black text-white">
+                <p className="text-red-500 mb-4">{error}</p>
+                <Button variant="outline" onClick={onClose}>Close</Button>
+              </div>
+            ) : trailerSrc ? (
               <iframe
                 src={trailerSrc}
                 title={`${title} Trailer`}
