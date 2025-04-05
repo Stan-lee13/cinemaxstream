@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import VideoPlayer from "./VideoPlayer";
 import VideoPlayerPlyr from "./VideoPlayerPlyr";
+import VideoPlayerVideoJS from "./VideoPlayerVideoJS";
 import { getAvailableProviders, getBestProviderForContentType, getStreamingUrl } from "@/utils/videoUtils";
 
 interface VideoPlayerWrapperProps {
@@ -16,6 +17,7 @@ interface VideoPlayerWrapperProps {
   poster?: string;
   title?: string;
   usePlyr?: boolean;
+  useVideoJS?: boolean;
 }
 
 const VideoPlayerWrapper = ({
@@ -29,7 +31,8 @@ const VideoPlayerWrapper = ({
   onEnded,
   poster,
   title,
-  usePlyr = true
+  usePlyr = false,
+  useVideoJS = true // Default to VideoJS
 }: VideoPlayerWrapperProps) => {
   const availableProviders = getAvailableProviders(contentId, contentType);
   const [activeProvider, setActiveProvider] = useState<string>(getBestProviderForContentType(contentType));
@@ -41,15 +44,35 @@ const VideoPlayerWrapper = ({
     if (episodeId) options.episode = episodeId;
     if (seasonNumber) options.season = seasonNumber;
     if (episodeNumber) options.episodeNum = episodeNumber;
+    if (title) options.title = title;
     if (autoPlay) options.autoplay = autoPlay;
     
     const src = getStreamingUrl(contentId, activeProvider, options);
     setVideoSrc(src);
-  }, [contentId, contentType, activeProvider, episodeId, seasonNumber, episodeNumber, autoPlay]);
+  }, [contentId, contentType, activeProvider, episodeId, seasonNumber, episodeNumber, title, autoPlay]);
   
   const handleProviderChange = (providerId: string) => {
     setActiveProvider(providerId);
   };
+  
+  if (useVideoJS) {
+    return (
+      <VideoPlayerVideoJS
+        src={videoSrc}
+        contentId={contentId}
+        contentType={contentType}
+        userId={userId}
+        episodeId={episodeId}
+        autoPlay={autoPlay}
+        onEnded={onEnded}
+        poster={poster}
+        title={title}
+        availableProviders={availableProviders}
+        activeProvider={activeProvider}
+        onProviderChange={handleProviderChange}
+      />
+    );
+  }
   
   if (usePlyr) {
     return (

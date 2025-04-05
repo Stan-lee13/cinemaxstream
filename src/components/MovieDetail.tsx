@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Play, Download, Heart, Info, Film, Plus } from "lucide-react";
 import BackButton from "./BackButton";
 import PremiumBadge from "./PremiumBadge";
-import { hasPremiumAccess, getDownloadUrl } from "@/utils/videoUtils";
+import { hasPremiumAccess } from "@/utils/videoUtils";
 import DownloadOptions from "./DownloadOptions";
 import { toast } from "sonner";
 
@@ -25,20 +25,7 @@ const MovieDetail = ({
 }: MovieDetailProps) => {
   const isPremiumContent = content?.is_premium || (content?.rating && parseFloat(content.rating) > 8.0);
   const canAccessPremium = hasPremiumAccess();
-  
-  const handleDownload = (quality: string) => {
-    if (!content) return;
-    
-    if (isPremiumContent && !canAccessPremium) {
-      toast.error("Premium content requires subscription or premium code");
-      return;
-    }
-    
-    const downloadUrl = getDownloadUrl(content.id, quality, content.content_type || 'movie');
-    window.open(downloadUrl, '_blank');
-    
-    toast.success(`Starting download in ${quality}`);
-  };
+  const [showDownloadOptions, setShowDownloadOptions] = useState(false);
   
   return (
     <div className="relative h-[70vh]">
@@ -100,15 +87,26 @@ const MovieDetail = ({
               </Button>
             )}
             
-            <Button 
-              variant="outline" 
-              className="gap-2 border-gray-600 hover:bg-secondary hover:text-white px-6" 
-              size="lg"
-              onClick={() => handleDownload('720p')}
-            >
-              <Download size={18} />
-              <span>Download</span>
-            </Button>
+            <div className="relative">
+              <Button 
+                variant="outline" 
+                className="gap-2 border-gray-600 hover:bg-secondary hover:text-white px-6" 
+                size="lg"
+                onClick={() => setShowDownloadOptions(!showDownloadOptions)}
+              >
+                <Download size={18} />
+                <span>Download</span>
+              </Button>
+              
+              {showDownloadOptions && (
+                <div className="absolute top-full left-0 mt-2 p-3 bg-gray-800 border border-gray-700 rounded-lg z-20 w-[200px]">
+                  <DownloadOptions 
+                    contentId={content.id} 
+                    title={content.title} 
+                  />
+                </div>
+              )}
+            </div>
             
             <Button 
               variant="ghost" 

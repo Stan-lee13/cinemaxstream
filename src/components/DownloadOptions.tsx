@@ -25,7 +25,9 @@ const DownloadOptions = ({ contentId, title }: DownloadOptionsProps) => {
   const hasPremium = hasPremiumAccess();
   
   // Handle download
-  const handleDownload = async () => {
+  const handleDownload = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     setIsDownloading(true);
     
     // Check if premium quality and user doesn't have premium
@@ -46,6 +48,7 @@ const DownloadOptions = ({ contentId, title }: DownloadOptionsProps) => {
       const link = document.createElement('a');
       link.href = downloadUrl;
       link.download = `${title.replace(/\s+/g, '_')}_${selectedQuality}.mp4`;
+      link.target = "_blank"; // Open in new tab
       link.click();
       
       toast.success(`Download started: ${title} (${selectedQuality})`);
@@ -60,8 +63,14 @@ const DownloadOptions = ({ contentId, title }: DownloadOptionsProps) => {
     }
   };
   
+  // Prevent event propagation on click inside the component
+  const handleContainerClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+  
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2" onClick={handleContainerClick}>
       <Select
         value={selectedQuality}
         onValueChange={setSelectedQuality}
