@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -19,6 +19,7 @@ const ContentDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const cleanupRef = useRef(false);
   
   const {
     content,
@@ -66,6 +67,20 @@ const ContentDetail = () => {
       loadEpisodesForSeason(seasons[0].season_number);
     }
   }, [seasons.length]);
+  
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      cleanupRef.current = true;
+      // Force cleanup of any remaining player resources
+      if (setIsPlaying) {
+        setIsPlaying(false);
+      }
+      if (setShowTrailer) {
+        setShowTrailer(false);
+      }
+    };
+  }, []);
 
   if (isLoading) {
     return <LoadingState message="Loading content details..." />;
@@ -90,7 +105,7 @@ const ContentDetail = () => {
       
       <main>
         {/* Video Player (shown when isPlaying is true) */}
-        {isPlaying ? (
+        {isPlaying && !cleanupRef.current ? (
           <div className="container mx-auto px-4 py-8">
             <div className="max-w-5xl mx-auto">
               <div className="flex items-center justify-between mb-4">
@@ -286,17 +301,21 @@ const ContentDetail = () => {
       </main>
       
       {/* Modals */}
-      <TrailerModal
-        isOpen={showTrailer}
-        onClose={() => setShowTrailer(false)}
-        trailerKey={trailerUrl || ''}
-        title={content.title}
-      />
+      {showTrailer && (
+        <TrailerModal
+          isOpen={showTrailer}
+          onClose={() => setShowTrailer(false)}
+          trailerKey={trailerUrl || ''}
+          title={content.title}
+        />
+      )}
       
-      <PremiumCodeModal 
-        isOpen={showPremiumModal}
-        onClose={() => setShowPremiumModal(false)}
-      />
+      {showPremiumModal && (
+        <PremiumCodeModal 
+          isOpen={showPremiumModal}
+          onClose={() => setShowPremiumModal(false)}
+        />
+      )}
       
       <Footer />
     </div>

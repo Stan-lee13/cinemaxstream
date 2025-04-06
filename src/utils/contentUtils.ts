@@ -13,6 +13,9 @@ export const streamingProviders = [
   { id: 'filemoon', name: 'FileMoon', contentType: 'all' },
   { id: 'streamtape', name: 'StreamTape', contentType: 'all' },
   { id: 'vidcloud', name: 'VidCloud', contentType: 'all' },
+  { id: 'vidcloud_streaming', name: 'VidCloud.stream', contentType: 'all' },
+  { id: 'filemoon_in', name: 'FileMoon.in', contentType: 'all' },
+  { id: 'fzmovies_net', name: 'FZMovies.net', contentType: 'movie' },
   { id: 'netflix', name: 'Netflix', contentType: 'all' },
   { id: 'prime_video', name: 'Prime Video', contentType: 'all' },
   { id: 'disney_plus', name: 'Disney+', contentType: 'all' },
@@ -21,7 +24,6 @@ export const streamingProviders = [
   { id: 'aniwatch', name: 'AniWatch', contentType: 'anime' },
   { id: 'fmovies', name: 'FMovies', contentType: 'all' },
   { id: 'fmovies_net', name: 'FMovies.net', contentType: 'all' },
-  { id: 'fzmovies_net', name: 'FZMovies', contentType: 'movie' },
   { id: 'embed_rgshows', name: 'RGShows', contentType: 'all' },
   { id: 'godriveplayer', name: 'GDrivePlayer', contentType: 'all' },
   { id: 'sflix', name: 'SFlix', contentType: 'all' },
@@ -33,8 +35,10 @@ export const streamingProviders = [
 // Download providers - separate from streaming
 export const downloadProviders = [
   { id: 'filemoon', name: 'FileMoon', supportedQualities: ['4k', '1080p', '720p'] },
+  { id: 'filemoon_in', name: 'FileMoon.in', supportedQualities: ['4k', '1080p', '720p'] },
   { id: 'streamtape', name: 'StreamTape', supportedQualities: ['1080p', '720p', '480p'] },
-  { id: 'vidcloud', name: 'VidCloud', supportedQualities: ['720p', '480p', '360p'] }
+  { id: 'vidcloud', name: 'VidCloud', supportedQualities: ['1080p', '720p', '480p'] },
+  { id: 'vidcloud_streaming', name: 'VidCloud.stream', supportedQualities: ['4k', '1080p', '720p', '480p'] }
 ];
 
 // Mock premium content check
@@ -84,6 +88,36 @@ export const getDefaultRuntime = (contentType: string): string => {
       return '45 min';
     case 'anime':
       return '24 min';
+    case 'documentary':
+      return '60 min';
+    case 'sports':
+      return '90 min';
+    default:
+      return '30 min';
+  }
+};
+
+/**
+ * Get runtime for specific content based on type and category
+ */
+export const getContentRuntime = (contentType: string, category?: string): string => {
+  // First check specific categories
+  if (category?.toLowerCase().includes('anime')) {
+    return '24 min';
+  }
+  
+  // Then check content type
+  switch (contentType) {
+    case 'movie':
+      return '120 min';
+    case 'series':
+      return '45 min';
+    case 'anime':
+      return '24 min';
+    case 'documentary':
+      return '60 min';
+    case 'sports':
+      return '90 min';
     default:
       return '30 min';
   }

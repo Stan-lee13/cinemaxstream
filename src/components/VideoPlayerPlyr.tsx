@@ -44,6 +44,7 @@ const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [playerInitialized, setPlayerInitialized] = useState(false);
+  const hasLoadedRef = useRef(false);
   
   // Initialize Plyr
   useEffect(() => {
@@ -51,17 +52,15 @@ const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({
     
     const initPlyr = async () => {
       try {
+        // Don't re-initialize if already loaded
+        if (hasLoadedRef.current) return;
+        hasLoadedRef.current = true;
+        
         const Plyr = (await import('plyr')).default;
         
         if (!videoRef.current) {
           console.error("Video element ref is not available");
           return;
-        }
-        
-        // Destroy existing player if it exists
-        if (playerRef.current) {
-          playerRef.current.destroy();
-          playerRef.current = null;
         }
         
         // Create a new Plyr instance
@@ -91,34 +90,36 @@ const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({
             // Small delay to ensure everything is set up
             setTimeout(() => {
               try {
-                const playPromise = plyr.play();
-                
-                if (playPromise !== undefined) {
-                  playPromise.then(() => {
-                    console.log("Autoplay started successfully");
-                    toast("Video playing (muted). Click to unmute", {
-                      action: {
-                        label: "Unmute",
-                        onClick: () => {
-                          if (playerRef.current) {
-                            playerRef.current.muted = false;
+                if (plyr && !plyr.destroyed) {
+                  const playPromise = plyr.play();
+                  
+                  if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                      console.log("Autoplay started successfully");
+                      toast("Video playing (muted). Click to unmute", {
+                        action: {
+                          label: "Unmute",
+                          onClick: () => {
+                            if (playerRef.current && !playerRef.current.destroyed) {
+                              playerRef.current.muted = false;
+                            }
                           }
                         }
-                      }
-                    });
-                  }).catch((error: any) => {
-                    console.error("Autoplay prevented:", error);
-                    toast.info("Click play to start playback", {
-                      action: {
-                        label: "Play",
-                        onClick: () => {
-                          if (playerRef.current) {
-                            playerRef.current.play();
+                      });
+                    }).catch((error: any) => {
+                      console.error("Autoplay prevented:", error);
+                      toast.info("Click play to start playback", {
+                        action: {
+                          label: "Play",
+                          onClick: () => {
+                            if (playerRef.current && !playerRef.current.destroyed) {
+                              playerRef.current.play();
+                            }
                           }
                         }
-                      }
+                      });
                     });
-                  });
+                  }
                 }
               } catch (error) {
                 console.error("Error during autoplay:", error);
@@ -130,7 +131,7 @@ const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({
         plyr.on('play', () => {
           // Track activity after 15 seconds of playing
           setTimeout(() => {
-            if (userId && plyr && !plyr.paused) {
+            if (userId && plyr && !plyr.destroyed && !plyr.paused) {
               trackStreamingActivity(contentId, userId, Math.floor(plyr.currentTime), episodeId);
             }
           }, 15000);
@@ -138,7 +139,7 @@ const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({
         
         plyr.on('timeupdate', () => {
           // Track every 15 seconds
-          if (plyr && Math.floor(plyr.currentTime) % 15 === 0 && userId && !plyr.paused) {
+          if (plyr && !plyr.destroyed && Math.floor(plyr.currentTime) % 15 === 0 && userId && !plyr.paused) {
             trackStreamingActivity(contentId, userId, Math.floor(plyr.currentTime), episodeId);
           }
         });
@@ -174,12 +175,18 @@ const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({
           console.error("Error destroying Plyr:", e);
         }
       }
+      
+      // Reset hasLoaded ref on unmount
+      hasLoadedRef.current = false;
     };
   }, []);
   
   // Handle video source change
   useEffect(() => {
     if (!videoRef.current || !playerInitialized || !playerRef.current) return;
+    
+    // Skip if player is destroyed
+    if (playerRef.current.destroyed) return;
     
     setIsLoading(true);
     setError(null);
@@ -196,7 +203,7 @@ const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({
         // Load the new source
         videoRef.current.load();
         
-        if (playerRef.current) {
+        if (playerRef.current && !playerRef.current.destroyed) {
           // Force Plyr to recognize the new source
           playerRef.current.source = {
             type: 'video',
@@ -208,14 +215,14 @@ const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({
         }
         
         // Attempt to play if autoplay is enabled
-        if (autoPlay && playerRef.current) {
+        if (autoPlay && playerRef.current && !playerRef.current.destroyed) {
           // Set muted to help with autoplay policies
           if (playerRef.current.muted !== undefined) {
             playerRef.current.muted = true;
           }
           
           setTimeout(() => {
-            if (playerRef.current) {
+            if (playerRef.current && !playerRef.current.destroyed) {
               try {
                 const playPromise = playerRef.current.play();
                 
@@ -280,13 +287,34 @@ const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({
       const a = document.createElement('a');
       a.href = videoRef.current.src;
       a.download = `${title || 'video'}.mp4`;
+      document.body.appendChild(a); // This is important for Firefox
       a.click();
+      document.body.removeChild(a); // Clean up
       
       toast.success(`Starting download: ${title || 'video'}.mp4`);
     } else {
       toast.error("No video source available to download");
     }
   };
+  
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      // Clean up recording if active
+      if (isRecording && stopRecordingFn) {
+        stopRecordingFn();
+      }
+      
+      // Ensure Plyr instance is destroyed
+      if (playerRef.current && !playerRef.current.destroyed) {
+        try {
+          playerRef.current.destroy();
+        } catch (e) {
+          console.error("Error destroying Plyr on unmount:", e);
+        }
+      }
+    };
+  }, [isRecording, stopRecordingFn]);
   
   return (
     <div 

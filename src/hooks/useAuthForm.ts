@@ -99,6 +99,9 @@ export const useAuthForm = () => {
     setPassword('password123');
   };
 
+  // Add handleGoogleSignIn alias for backward compatibility
+  const handleGoogleSignIn = handleGoogleAuth;
+
   return {
     mode,
     isLoading,
@@ -115,7 +118,8 @@ export const useAuthForm = () => {
     handleEmailAuth,
     handleGoogleAuth,
     handleGuestAccess,
-    fillTestAccount
+    fillTestAccount,
+    handleGoogleSignIn // Add this alias to fix the error
   };
 };
 

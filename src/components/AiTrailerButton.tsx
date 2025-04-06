@@ -24,6 +24,7 @@ const AiTrailerButton = ({
   const [showTrailer, setShowTrailer] = useState(false);
   const [isLoadingAi, setIsLoadingAi] = useState(false);
   
+  // If no trailer key is provided, don't render the component
   if (!trailerKey) {
     return null;
   }
@@ -50,44 +51,51 @@ const AiTrailerButton = ({
     }
   };
 
+  const handleShowTrailer = (e: React.MouseEvent) => {
+    // Prevent any parent elements from receiving the click event
+    e.preventDefault();
+    e.stopPropagation();
+    setShowTrailer(true);
+  };
+
   return (
-    <div className="flex items-center gap-2">
-      <Button 
-        variant={variant} 
-        size={size}
-        className="gap-2 border-gray-600 hover:bg-secondary hover:text-white px-6" 
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          setShowTrailer(true);
-        }}
-      >
-        <Film size={18} />
-        <span>Watch Trailer</span>
-      </Button>
+    <>
+      <div className="flex items-center gap-2">
+        <Button 
+          variant={variant} 
+          size={size}
+          className="gap-2 border-gray-600 hover:bg-secondary hover:text-white px-6" 
+          onClick={handleShowTrailer}
+        >
+          <Film size={18} />
+          <span>Watch Trailer</span>
+        </Button>
+        
+        <Button
+          variant="secondary"
+          size="icon"
+          onClick={handleAiAnalysis}
+          disabled={isLoadingAi}
+          className="aspect-square h-10"
+          title="AI Sentiment Analysis"
+        >
+          {isLoadingAi ? (
+            <div className="animate-spin h-5 w-5 border-2 border-current border-t-transparent rounded-full" />
+          ) : (
+            <Sparkles size={18} />
+          )}
+        </Button>
+      </div>
       
-      <Button
-        variant="secondary"
-        size="icon"
-        onClick={handleAiAnalysis}
-        disabled={isLoadingAi}
-        className="aspect-square h-10"
-        title="AI Sentiment Analysis"
-      >
-        {isLoadingAi ? (
-          <div className="animate-spin h-5 w-5 border-2 border-current border-t-transparent rounded-full" />
-        ) : (
-          <Sparkles size={18} />
-        )}
-      </Button>
-      
-      <TrailerModal
-        isOpen={showTrailer}
-        onClose={() => setShowTrailer(false)}
-        trailerKey={trailerKey}
-        title={title}
-      />
-    </div>
+      {showTrailer && (
+        <TrailerModal
+          isOpen={showTrailer}
+          onClose={() => setShowTrailer(false)}
+          trailerKey={trailerKey}
+          title={title}
+        />
+      )}
+    </>
   );
 };
 

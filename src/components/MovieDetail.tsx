@@ -1,12 +1,13 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Play, Download, Heart, Info, Film, Plus } from "lucide-react";
+import { Play, Download, Heart, Info, Plus } from 'lucide-react';
 import BackButton from "./BackButton";
 import PremiumBadge from "./PremiumBadge";
 import { hasPremiumAccess } from "@/utils/videoUtils";
 import DownloadOptions from "./DownloadOptions";
 import { toast } from "sonner";
+import AiTrailerButton from "./AiTrailerButton";
 
 interface MovieDetailProps {
   content: any;
@@ -60,7 +61,7 @@ const MovieDetail = ({
         <div className="w-full lg:w-2/3 animate-fade-in">
           <div className="flex flex-wrap gap-3 mb-4">
             <span className="px-2 py-1 rounded-md bg-cinemax-500/20 text-cinemax-400 text-xs font-semibold">
-              <Film size={12} className="inline mr-1" />
+              <div className="inline mr-1" />
               {content.content_type || content.type || 'movie'}
             </span>
             
@@ -94,15 +95,13 @@ const MovieDetail = ({
             </Button>
             
             {content.trailer_key && (
-              <Button 
-                variant="outline" 
-                className="gap-2 border-gray-600 hover:bg-secondary hover:text-white px-6" 
+              <AiTrailerButton
+                trailerKey={content.trailer_key}
+                title={content.title}
+                contentId={content.id}
+                variant="outline"
                 size="lg"
-                onClick={showTrailer}
-              >
-                <Film size={18} />
-                <span>Watch Trailer</span>
-              </Button>
+              />
             )}
             
             <div className="relative" ref={downloadRef}>

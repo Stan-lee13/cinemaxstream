@@ -41,36 +41,49 @@ const VideoPlayerWrapper = ({
   const [videoSrc, setVideoSrc] = useState<string>("");
   const [key, setKey] = useState<number>(0); // Key to force re-mount of player components
   const [requiresIframe, setRequiresIframe] = useState<boolean>(false);
+  const [isError, setIsError] = useState<boolean>(false);
   
   useEffect(() => {
     // Update source when provider or content changes
-    const options: any = {
-      contentType,
-      autoplay: autoPlay
+    const loadSource = async () => {
+      setIsError(false);
+      
+      const options: any = {
+        contentType,
+        autoplay: autoPlay
+      };
+      
+      if (episodeId) options.episode = episodeId;
+      if (seasonNumber) options.season = seasonNumber;
+      if (episodeNumber) options.episodeNum = episodeNumber;
+      if (title) options.title = title;
+      
+      try {
+        const src = getStreamingUrl(contentId, activeProvider, options);
+        setVideoSrc(src);
+        
+        // Check if this is an iframe source
+        const isIframe = isIframeSource(activeProvider);
+        setRequiresIframe(isIframe);
+        
+        // Increment key to force remount of player when source changes
+        setKey(prev => prev + 1);
+      } catch (error) {
+        console.error("Error getting streaming URL:", error);
+        setIsError(true);
+      }
     };
     
-    if (episodeId) options.episode = episodeId;
-    if (seasonNumber) options.season = seasonNumber;
-    if (episodeNumber) options.episodeNum = episodeNumber;
-    if (title) options.title = title;
-    
-    try {
-      const src = getStreamingUrl(contentId, activeProvider, options);
-      setVideoSrc(src);
-      
-      // Check if this is an iframe source
-      const isIframe = isIframeSource(activeProvider);
-      setRequiresIframe(isIframe);
-      
-      // Increment key to force remount of player when source changes
-      setKey(prev => prev + 1);
-    } catch (error) {
-      console.error("Error getting streaming URL:", error);
-    }
+    loadSource();
   }, [contentId, contentType, activeProvider, episodeId, seasonNumber, episodeNumber, title, autoPlay]);
   
   const handleProviderChange = (providerId: string) => {
     setActiveProvider(providerId);
+  };
+  
+  const handleError = () => {
+    setIsError(true);
+    console.error(`Failed to load video from provider: ${activeProvider}`);
   };
   
   // Determine which player to use based on source type and props
@@ -92,6 +105,7 @@ const VideoPlayerWrapper = ({
           availableProviders={availableProviders}
           activeProvider={activeProvider}
           onProviderChange={handleProviderChange}
+          onError={handleError}
         />
       );
     }
@@ -113,6 +127,7 @@ const VideoPlayerWrapper = ({
           availableProviders={availableProviders}
           activeProvider={activeProvider}
           onProviderChange={handleProviderChange}
+          onError={handleError}
         />
       );
     }
@@ -152,6 +167,20 @@ const VideoPlayerWrapper = ({
       />
     );
   };
+  
+  // If there's an error and there are other providers, try to suggest an alternative
+  useEffect(() => {
+    if (isError && availableProviders.length > 1) {
+      // Find the next provider that isn't the current one
+      const nextProvider = availableProviders.find(p => p.id !== activeProvider);
+      if (nextProvider) {
+        console.log(`Trying alternative provider: ${nextProvider.id}`);
+        setTimeout(() => {
+          setActiveProvider(nextProvider.id);
+        }, 1000);
+      }
+    }
+  }, [isError, availableProviders, activeProvider]);
   
   return (
     <div className="player-container">
