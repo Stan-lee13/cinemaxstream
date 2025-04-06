@@ -56,7 +56,11 @@ const AiTrailerButton = ({
         variant={variant} 
         size={size}
         className="gap-2 border-gray-600 hover:bg-secondary hover:text-white px-6" 
-        onClick={() => setShowTrailer(true)}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setShowTrailer(true);
+        }}
       >
         <Film size={18} />
         <span>Watch Trailer</span>

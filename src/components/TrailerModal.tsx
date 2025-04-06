@@ -23,9 +23,8 @@ const TrailerModal = ({ isOpen, onClose, trailerKey, title }: TrailerModalProps)
       setError(null);
       
       try {
-        // Format YouTube embed URL properly
+        // If the key is already a full URL, extract the video ID
         if (trailerKey.includes('youtube.com') || trailerKey.includes('youtu.be')) {
-          // Extract video ID if it's already a YouTube URL
           let videoId = trailerKey;
           
           if (trailerKey.includes('youtube.com/watch?v=')) {
@@ -52,6 +51,7 @@ const TrailerModal = ({ isOpen, onClose, trailerKey, title }: TrailerModalProps)
     }
   }, [isOpen, trailerKey]);
 
+  // If no trailer key is provided, don't render anything
   if (!trailerKey) {
     return null;
   }

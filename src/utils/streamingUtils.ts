@@ -12,6 +12,129 @@ export const QUALITY_OPTIONS = [
   { value: "360p", label: "Low (360p)" }
 ];
 
+// Define source types for different providers
+export enum SourceType {
+  DIRECT = 'direct',  // Direct video URL (mp4, etc)
+  IFRAME = 'iframe',  // Embed via iframe
+  HLS = 'hls',        // HLS streaming (.m3u8)
+  DASH = 'dash'       // DASH streaming (.mpd)
+}
+
+// Provider configuration
+export const providerConfigs = {
+  // Main providers
+  vidsrc_xyz: { 
+    type: SourceType.IFRAME,
+    supportsFullHD: true,
+    contentTypes: ['movie', 'series', 'anime']
+  },
+  vidsrc_pro: { 
+    type: SourceType.IFRAME,
+    supportsFullHD: true,
+    contentTypes: ['movie', 'series']
+  },
+  vidsrc_wtf: { 
+    type: SourceType.IFRAME,
+    supportsFullHD: false,
+    contentTypes: ['movie', 'series']
+  },
+  vidsrc_in: { 
+    type: SourceType.IFRAME,
+    supportsFullHD: true,
+    contentTypes: ['movie']
+  },
+  embed_su: { 
+    type: SourceType.IFRAME,
+    supportsFullHD: false,
+    contentTypes: ['movie', 'series']
+  },
+  sflix: { 
+    type: SourceType.IFRAME,
+    supportsFullHD: false,
+    contentTypes: ['movie', 'series']
+  },
+  primewire_tf: { 
+    type: SourceType.IFRAME,
+    supportsFullHD: false,
+    contentTypes: ['movie', 'series']
+  },
+  fzmovies_net: { 
+    type: SourceType.IFRAME,
+    supportsFullHD: true,
+    contentTypes: ['movie']
+  },
+  embed_rgshows: { 
+    type: SourceType.IFRAME,
+    supportsFullHD: false,
+    contentTypes: ['movie', 'series']
+  },
+  godriveplayer: { 
+    type: SourceType.IFRAME,
+    supportsFullHD: true,
+    contentTypes: ['movie', 'series']
+  },
+  aniwatch: { 
+    type: SourceType.IFRAME,
+    supportsFullHD: false,
+    contentTypes: ['anime']
+  },
+  fmovies: { 
+    type: SourceType.IFRAME,
+    supportsFullHD: true,
+    contentTypes: ['movie', 'series']
+  },
+  fmovies_net: { 
+    type: SourceType.IFRAME,
+    supportsFullHD: true,
+    contentTypes: ['movie', 'series']
+  },
+  // Premium providers
+  netflix: { 
+    type: SourceType.IFRAME,
+    isPremium: true,
+    contentTypes: ['movie', 'series', 'anime']
+  },
+  prime_video: { 
+    type: SourceType.IFRAME,
+    isPremium: true,
+    contentTypes: ['movie', 'series']
+  },
+  disney_plus: { 
+    type: SourceType.IFRAME,
+    isPremium: true,
+    contentTypes: ['movie', 'series', 'anime']
+  },
+  hbo_max: { 
+    type: SourceType.IFRAME,
+    isPremium: true,
+    contentTypes: ['movie', 'series']
+  },
+  hulu: { 
+    type: SourceType.IFRAME,
+    isPremium: true,
+    contentTypes: ['series']
+  },
+  // Download providers as streaming
+  filemoon: { 
+    type: SourceType.DIRECT,
+    supportsFullHD: true,
+    contentTypes: ['movie', 'series'],
+    supportsDownload: true
+  },
+  streamtape: { 
+    type: SourceType.IFRAME,
+    supportsFullHD: true,
+    contentTypes: ['movie', 'series'],
+    supportsDownload: true
+  },
+  vidcloud: { 
+    type: SourceType.IFRAME,
+    supportsFullHD: false,
+    contentTypes: ['movie', 'series', 'anime'],
+    supportsDownload: true
+  }
+};
+
 /**
  * Get streaming URL for the content
  */
@@ -88,6 +211,16 @@ export const getStreamingUrl = (contentId: string, provider: string = 'vidsrc_xy
     
     hulu: (id, _) => 
       `https://www.hulu.com/watch/${id}`,
+      
+    // Download providers that also support streaming
+    filemoon: (id, opts) => 
+      `https://filemoon.in/e/${id}?quality=${opts.quality || '1080p'}`,
+      
+    streamtape: (id, opts) => 
+      `https://streamtape.com/e/${id}/`,
+      
+    vidcloud: (id, opts) => 
+      `https://vidcloud.stream/player?id=${id}`
   };
   
   // Choose best provider by content type if not specified
@@ -95,8 +228,10 @@ export const getStreamingUrl = (contentId: string, provider: string = 'vidsrc_xy
     const contentType = options.contentType || 'movie';
     if (contentType === 'movie') {
       provider = 'vidsrc_in';
-    } else if (contentType === 'series' || contentType === 'anime') {
+    } else if (contentType === 'series') {
       provider = 'vidsrc_xyz';
+    } else if (contentType === 'anime') {
+      provider = 'aniwatch';
     }
   }
   
@@ -105,6 +240,14 @@ export const getStreamingUrl = (contentId: string, provider: string = 'vidsrc_xy
   
   // Return URL
   return providerFn(contentId, options);
+};
+
+/**
+ * Determine if a provider requires iframe embedding
+ */
+export const isIframeSource = (provider: string): boolean => {
+  const config = providerConfigs[provider as keyof typeof providerConfigs];
+  return config?.type === SourceType.IFRAME;
 };
 
 /**
@@ -140,29 +283,43 @@ export const getDownloadUrl = (contentId: string, quality: string = '1080p'): st
 };
 
 /**
- * Get trailer URL for the content 
- * Uses YouTube API to fetch trailer
+ * Get trailer URL from YouTube API
  */
 export const getTrailerUrl = async (contentId: string, contentType: string = 'movie'): Promise<string> => {
   try {
-    // In a real implementation, we would fetch from TMDB API
-    const trailerBaseUrl = 'https://www.youtube.com/embed/';
+    // Real API call would go here, using the YouTube Data API
+    // For now simulating with a fetch to a mock service and fallback keys
     
-    // Mock API request - in a real implementation this would use TMDB API
-    const mockTrailerKeys: Record<string, string> = {
-      '127532': 'dQw4w9WgXcQ', // Default example
-      '634649': 'JfVOs4VSpmA', // Spider-Man: No Way Home
-      '505642': '8YjFbMbfXaQ', // Black Panther: Wakanda Forever
-      '1124620': 'UIHx43DVdk', // Silent Night
-      '906126': 'X4d_v-HyR4o'  // Godzilla x Kong
-    };
-    
-    // Return either the mapped trailer key or a default
-    const trailerKey = mockTrailerKeys[contentId] || contentId;
-    return `${trailerBaseUrl}${trailerKey}`;
+    // First, try to get from TMDB (in a real implementation)
+    try {
+      const tmdbApiKey = 'mock_key'; // In a real app, this would be the TMDB API key
+      const movieOrTv = contentType === 'movie' ? 'movie' : 'tv';
+      const url = `https://api.themoviedb.org/3/${movieOrTv}/${contentId}/videos?api_key=${tmdbApiKey}`;
+      
+      // In a real implementation, we would fetch from this URL
+      // const response = await fetch(url);
+      // const data = await response.json();
+      
+      // Simulate a response with our mock data
+      const mockTrailerKeys: Record<string, string> = {
+        '127532': 'dQw4w9WgXcQ', // Default example
+        '634649': 'JfVOs4VSpmA', // Spider-Man: No Way Home
+        '505642': '8YjFbMbfXaQ', // Black Panther: Wakanda Forever
+        '1124620': 'UIHx43DVdk', // Silent Night
+        '906126': 'X4d_v-HyR4o',  // Godzilla x Kong
+        '119495': 'Frd8WJ5FxHA'   // Wednesday
+      };
+      
+      const trailerKey = mockTrailerKeys[contentId] || 'dQw4w9WgXcQ';
+      return trailerKey;
+    } catch (error) {
+      console.error("Error fetching from TMDB:", error);
+      // Fallback to default key
+      return 'dQw4w9WgXcQ';
+    }
   } catch (error) {
     console.error("Error fetching trailer:", error);
-    return `https://www.youtube.com/embed/dQw4w9WgXcQ`; // Fallback trailer
+    return 'dQw4w9WgXcQ'; // Fallback trailer
   }
 };
 
