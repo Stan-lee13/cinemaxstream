@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Download, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { trackStreamingActivity, markContentAsComplete } from "@/utils/videoUtils";
 import { toast } from "sonner";
 import StreamingProviderSelector from "./StreamingProviderSelector";
@@ -41,7 +41,8 @@ const VideoPlayerIframe: React.FC<VideoPlayerIframeProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [key, setKey] = useState(Date.now()); // For forcing iframe reload
-  
+  const containerRef = useRef<HTMLDivElement>(null);
+
   // Set up activity tracking
   useEffect(() => {
     // Only track if we have a user ID
@@ -82,9 +83,44 @@ const VideoPlayerIframe: React.FC<VideoPlayerIframeProps> = ({
     setError(null);
     setKey(Date.now());
   };
+
+  // Add event listener for iframe loading errors
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+
+    const handleLoadError = () => handleIframeError();
+    
+    // Modern browsers might not trigger error events on iframes due to security
+    // This timeout is a fallback for detecting stalled loads
+    const loadTimeout = setTimeout(() => {
+      if (isLoading) {
+        // Check if iframe has loaded content
+        try {
+          const iframeDoc = iframe.contentDocument || (iframe.contentWindow && iframe.contentWindow.document);
+          if (!iframeDoc || iframeDoc.readyState !== 'complete') {
+            handleIframeError();
+          }
+        } catch (e) {
+          // If we can't access the document (cross-origin), assume it's loading
+          console.log("Cross-origin iframe, can't check load state");
+        }
+      }
+    }, 10000);
+
+    iframe.addEventListener('error', handleLoadError);
+    
+    return () => {
+      iframe.removeEventListener('error', handleLoadError);
+      clearTimeout(loadTimeout);
+    };
+  }, [isLoading]);
   
   return (
-    <div className="relative bg-black rounded-lg overflow-hidden w-full aspect-video">
+    <div 
+      ref={containerRef}
+      className="relative bg-black rounded-lg overflow-hidden w-full aspect-video"
+    >
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-10">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cinemax-500"></div>
@@ -122,7 +158,6 @@ const VideoPlayerIframe: React.FC<VideoPlayerIframeProps> = ({
         className="w-full h-full"
         allowFullScreen
         onLoad={handleIframeLoad}
-        onError={handleIframeError}
         sandbox="allow-forms allow-scripts allow-same-origin allow-presentation"
         allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen"
         style={{ border: 'none' }}

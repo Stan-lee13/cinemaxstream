@@ -94,7 +94,7 @@ const AiTrailerButton = ({
           isOpen={showTrailer}
           onClose={() => setShowTrailer(false)}
           trailerKey={trailerKey}
-          title={title}
+          title={`${title} - Official Trailer`}
         />
       )}
     </>

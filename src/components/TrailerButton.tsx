@@ -38,6 +38,7 @@ const TrailerButton = ({
         size={size}
         className="gap-2 border-gray-600 hover:bg-secondary hover:text-white px-6" 
         onClick={handleShowTrailer}
+        aria-label="Watch Trailer"
       >
         <Film size={18} />
         <span>Watch Trailer</span>
@@ -48,7 +49,7 @@ const TrailerButton = ({
           isOpen={showTrailer}
           onClose={() => setShowTrailer(false)}
           trailerKey={trailerKey}
-          title={title}
+          title={`${title} - Official Trailer`}
         />
       )}
     </>

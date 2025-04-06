@@ -6,6 +6,7 @@ import VideoPlayerVideoJS from "./VideoPlayerVideoJS";
 import VideoPlayerIframe from "./VideoPlayerIframe";
 import { getAvailableProviders, getBestProviderForContentType } from "@/utils/contentUtils";
 import { getStreamingUrl, isIframeSource } from "@/utils/streamingUtils";
+import { toast } from "sonner";
 
 interface VideoPlayerWrapperProps {
   contentId: string;
@@ -42,6 +43,7 @@ const VideoPlayerWrapper = ({
   const [key, setKey] = useState<number>(0); // Key to force re-mount of player components
   const [requiresIframe, setRequiresIframe] = useState<boolean>(false);
   const [isError, setIsError] = useState<boolean>(false);
+  const [errorCount, setErrorCount] = useState<number>(0);
   
   useEffect(() => {
     // Update source when provider or content changes
@@ -68,9 +70,14 @@ const VideoPlayerWrapper = ({
         
         // Increment key to force remount of player when source changes
         setKey(prev => prev + 1);
+
+        // Reset error count when source changes successfully
+        setErrorCount(0);
       } catch (error) {
         console.error("Error getting streaming URL:", error);
         setIsError(true);
+        setErrorCount(prev => prev + 1);
+        toast.error(`Failed to load video from ${activeProvider}. Trying another provider...`);
       }
     };
     
@@ -83,6 +90,7 @@ const VideoPlayerWrapper = ({
   
   const handleError = () => {
     setIsError(true);
+    setErrorCount(prev => prev + 1);
     console.error(`Failed to load video from provider: ${activeProvider}`);
   };
   
@@ -170,17 +178,24 @@ const VideoPlayerWrapper = ({
   
   // If there's an error and there are other providers, try to suggest an alternative
   useEffect(() => {
-    if (isError && availableProviders.length > 1) {
+    if (isError && availableProviders.length > 1 && errorCount < 3) {
       // Find the next provider that isn't the current one
-      const nextProvider = availableProviders.find(p => p.id !== activeProvider);
+      const currentIndex = availableProviders.findIndex(p => p.id === activeProvider);
+      const nextIndex = (currentIndex + 1) % availableProviders.length;
+      const nextProvider = availableProviders[nextIndex];
+      
       if (nextProvider) {
         console.log(`Trying alternative provider: ${nextProvider.id}`);
+        toast.info(`Switching to ${nextProvider.name}...`);
+        
         setTimeout(() => {
           setActiveProvider(nextProvider.id);
         }, 1000);
       }
+    } else if (errorCount >= 3) {
+      toast.error("Multiple providers failed. Please try again later or select a different provider manually.");
     }
-  }, [isError, availableProviders, activeProvider]);
+  }, [isError, availableProviders, activeProvider, errorCount]);
   
   return (
     <div className="player-container">
