@@ -1,4 +1,3 @@
-
 import { providerConfigs, SourceType } from '../streamingUtils';
 
 /**
@@ -32,6 +31,16 @@ export const getStreamingUrlForProvider = (contentId: string, provider: string =
     vidsrc_co: (id, opts) => {
       const type = opts.contentType === 'movie' ? 'movie' : 'tv';
       return `https://vidsrc.co/${type}/${id}`;
+    },
+    
+    vidsrc_cc: (id, opts) => {
+      const type = opts.contentType === 'movie' ? 'movie' : 'tv';
+      return `https://vidsrc.cc/embed/${type}/${id}${opts.autoplay ? '?autoplay=1' : ''}`;
+    },
+    
+    vidsrc_su: (id, opts) => {
+      const type = opts.contentType === 'movie' ? 'movie' : 'tv';
+      return `https://vidsrc.su/embed/${type}/${id}${opts.episode ? `/season-${opts.season}/episode-${opts.episodeNum}` : ''}`;
     },
     
     embed_su: (id, opts) => {
@@ -173,6 +182,28 @@ export const getStreamingUrlForProvider = (contentId: string, provider: string =
     
     funimation: (id, opts) => 
       `https://www.funimation.com/player/${id}/`
+,
+      
+    vidfast: (id, opts) => {
+      const type = opts.contentType === 'movie' ? 'movie' : 'tv';
+      return `https://vidfast.co/embed/${type}/${id}${opts.season && opts.episodeNum ? `/season-${opts.season}/episode-${opts.episodeNum}` : ''}`;
+    },
+
+    anilist: (id, opts) => 
+      `https://anilist.co/anime/${id}${opts.episode ? `/episode/${opts.episode}` : ''}`,
+
+    pstream: (id, opts) => {
+      const type = opts.contentType === 'movie' ? 'movie' : 'tv';
+      return `https://pstream.net/e/${type}/${id}${opts.season && opts.episodeNum ? `/${opts.season}/${opts.episodeNum}` : ''}`;
+    },
+
+    upcloud: (id, opts) => 
+      `https://upcloud.video/embed/${id}${opts.quality ? `-${opts.quality}` : ''}`,
+
+    videasy: (id, opts) => {
+      const type = opts.contentType === 'movie' ? 'movie' : 'show';
+      return `https://videasy.io/embed/${type}/${id}${opts.season && opts.episodeNum ? `/s${opts.season}e${opts.episodeNum}` : ''}`;
+    }
   };
   
   // Choose best provider by content type if not specified

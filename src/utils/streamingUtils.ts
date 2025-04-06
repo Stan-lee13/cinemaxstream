@@ -1,3 +1,4 @@
+
 /**
  * Streaming utility functions
  */
@@ -61,9 +62,45 @@ export const providerConfigs: Record<string, ProviderConfig> = {
     supportsFullHD: true,
     contentTypes: ['movie', 'series']
   },
+  vidsrc_cc: {
+    type: SourceType.IFRAME,
+    supportsFullHD: true,
+    contentTypes: ['movie', 'series', 'anime']
+  },
+  vidsrc_su: {
+    type: SourceType.IFRAME,
+    supportsFullHD: true,
+    contentTypes: ['movie', 'series']
+  },
   embed_su: { 
     type: SourceType.IFRAME,
     supportsFullHD: false,
+    contentTypes: ['movie', 'series']
+  },
+  vidfast: {
+    type: SourceType.IFRAME,
+    supportsFullHD: true,
+    contentTypes: ['movie', 'series', 'anime']
+  },
+  anilist: {
+    type: SourceType.IFRAME,
+    supportsFullHD: false,
+    contentTypes: ['anime']
+  },
+  pstream: {
+    type: SourceType.IFRAME,
+    supportsFullHD: true,
+    contentTypes: ['movie', 'series']
+  },
+  upcloud: {
+    type: SourceType.DIRECT,
+    supportsFullHD: true,
+    contentTypes: ['movie', 'series'],
+    supportsDownload: true
+  },
+  videasy: {
+    type: SourceType.IFRAME,
+    supportsFullHD: true,
     contentTypes: ['movie', 'series']
   },
   sflix: { 

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuthState";
@@ -20,6 +19,8 @@ export const useContentDetail = (contentId: string | undefined) => {
   const [currentSeason, setCurrentSeason] = useState<number | undefined>();
   const [currentEpisode, setCurrentEpisode] = useState<number | undefined>();
   const [trailerUrl, setTrailerUrl] = useState<string | null>(null);
+  const [showSplashScreen, setShowSplashScreen] = useState(false);
+  const [showNeonEffect, setShowNeonEffect] = useState(false);
   const { user, isAuthenticated } = useAuth();
 
   const availableProviders = contentId ? getAvailableProviders(contentId, content?.content_type || 'movie') : [];
@@ -277,7 +278,19 @@ export const useContentDetail = (contentId: string | undefined) => {
       return;
     }
     
-    setIsPlaying(true);
+    // Show splash screen first
+    setShowSplashScreen(true);
+    
+    // After splash screen completes
+    setTimeout(() => {
+      setShowSplashScreen(false);
+      setIsPlaying(true);
+      
+      // Activate neon effect after a slight delay
+      setTimeout(() => {
+        setShowNeonEffect(true);
+      }, 500);
+    }, 3000);
   };
   
   // Handle episode selection
@@ -290,7 +303,20 @@ export const useContentDetail = (contentId: string | undefined) => {
     
     setCurrentSeason(seasonNumber);
     setCurrentEpisode(episodeNumber);
-    setIsPlaying(true);
+    
+    // Show splash screen first
+    setShowSplashScreen(true);
+    
+    // After splash screen completes
+    setTimeout(() => {
+      setShowSplashScreen(false);
+      setIsPlaying(true);
+      
+      // Activate neon effect after a slight delay
+      setTimeout(() => {
+        setShowNeonEffect(true);
+      }, 500);
+    }, 3000);
   };
 
   // Load episodes for a season
@@ -340,7 +366,12 @@ export const useContentDetail = (contentId: string | undefined) => {
     availableProviders,
     startWatching,
     handleEpisodeSelect,
-    loadEpisodesForSeason
+    loadEpisodesForSeason,
+    showSplashScreen,
+    setShowSplashScreen,
+    showNeonEffect,
+    setShowNeonEffect,
+    user
   };
 };
 
