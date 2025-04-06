@@ -44,6 +44,7 @@ const VideoPlayerWrapper = ({
   const [requiresIframe, setRequiresIframe] = useState<boolean>(false);
   const [isError, setIsError] = useState<boolean>(false);
   const [errorCount, setErrorCount] = useState<number>(0);
+  const [manualProviderChange, setManualProviderChange] = useState<boolean>(false);
   
   useEffect(() => {
     // Update source when provider or content changes
@@ -55,9 +56,10 @@ const VideoPlayerWrapper = ({
         autoplay: autoPlay
       };
       
+      // Ensure we're using actual numbers and not NaN for seasons/episodes
       if (episodeId) options.episode = episodeId;
-      if (seasonNumber) options.season = seasonNumber;
-      if (episodeNumber) options.episodeNum = episodeNumber;
+      if (seasonNumber && !isNaN(seasonNumber)) options.season = seasonNumber;
+      if (episodeNumber && !isNaN(episodeNumber)) options.episodeNum = episodeNumber;
       if (title) options.title = title;
       
       try {
@@ -77,7 +79,7 @@ const VideoPlayerWrapper = ({
         console.error("Error getting streaming URL:", error);
         setIsError(true);
         setErrorCount(prev => prev + 1);
-        toast.error(`Failed to load video from ${activeProvider}. Trying another provider...`);
+        toast.error(`Failed to load video from ${activeProvider}.`);
       }
     };
     
@@ -86,6 +88,7 @@ const VideoPlayerWrapper = ({
   
   const handleProviderChange = (providerId: string) => {
     setActiveProvider(providerId);
+    setManualProviderChange(true); // Mark this as a manual change
   };
   
   const handleError = () => {
@@ -176,9 +179,9 @@ const VideoPlayerWrapper = ({
     );
   };
   
-  // If there's an error and there are other providers, try to suggest an alternative
+  // Only auto-switch if it's not a manual provider change and there's an error
   useEffect(() => {
-    if (isError && availableProviders.length > 1 && errorCount < 3) {
+    if (isError && availableProviders.length > 1 && errorCount < 3 && !manualProviderChange) {
       // Find the next provider that isn't the current one
       const currentIndex = availableProviders.findIndex(p => p.id === activeProvider);
       const nextIndex = (currentIndex + 1) % availableProviders.length;
@@ -193,9 +196,9 @@ const VideoPlayerWrapper = ({
         }, 1000);
       }
     } else if (errorCount >= 3) {
-      toast.error("Multiple providers failed. Please try again later or select a different provider manually.");
+      toast.error("Multiple providers failed. Please select a different provider manually.");
     }
-  }, [isError, availableProviders, activeProvider, errorCount]);
+  }, [isError, availableProviders, activeProvider, errorCount, manualProviderChange]);
   
   return (
     <div className="player-container">

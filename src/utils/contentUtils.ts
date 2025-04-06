@@ -1,4 +1,3 @@
-
 /**
  * Content utility functions
  */
@@ -81,13 +80,13 @@ export const getAvailableProviders = (contentId: string, contentType: string = '
 export const getBestProviderForContentType = (contentType: string): string => {
   switch (contentType) {
     case 'movie':
-      return 'vidsrc_in';
+      return 'vidsrc_su';  // Updated to use vidsrc.su for movies
     case 'series':
-      return 'vidsrc_xyz';
+      return 'vidsrc_xyz'; // Updated to use vidsrc.xyz for series
     case 'anime':
-      return 'aniwatch';
+      return 'aniwatch';   // Keep anime provider
     default:
-      return 'vidsrc_xyz';
+      return 'vidsrc_xyz'; // Default fallback
   }
 };
 
