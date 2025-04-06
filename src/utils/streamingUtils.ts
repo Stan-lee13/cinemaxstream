@@ -1,4 +1,3 @@
-
 /**
  * Streaming utility functions
  */
@@ -238,6 +237,9 @@ import {
   isIframeSourceImpl
 } from './providers/providerUtils';
 
+import { getDownloadUrlImpl } from './providers/downloadProviders';
+import { getTrailerUrlImpl } from './providers/trailerProviders';
+
 /**
  * Get streaming URL for the content
  */
@@ -256,8 +258,6 @@ export const isIframeSource = (provider: string): boolean => {
  * Get download URL for the content
  */
 export const getDownloadUrl = (contentId: string, quality: string = '1080p'): string => {
-  // Import from download provider module
-  const { getDownloadUrlImpl } = require('./providers/downloadProviders');
   return getDownloadUrlImpl(contentId, quality);
 };
 
@@ -265,8 +265,6 @@ export const getDownloadUrl = (contentId: string, quality: string = '1080p'): st
  * Get trailer URL from YouTube API
  */
 export const getTrailerUrl = async (contentId: string, contentType: string = 'movie'): Promise<string> => {
-  // Import from trailer provider module
-  const { getTrailerUrlImpl } = require('./providers/trailerProviders');
   return getTrailerUrlImpl(contentId, contentType);
 };
 

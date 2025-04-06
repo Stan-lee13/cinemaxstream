@@ -122,7 +122,7 @@ export const getStreamingUrlForProvider = (contentId: string, provider: string =
     vidcloud: (id, opts) => 
       `https://vidcloud.stream/player?id=${id}`,
 
-    // Additional providers
+    // New and updated providers
     brightcove: (id, opts) => {
       const accountId = opts.accountId || '1234567890';
       const playerId = opts.playerId || 'default';
