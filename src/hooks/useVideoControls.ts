@@ -7,6 +7,11 @@ interface VideoControlsOptions {
   autoEnterLandscape?: boolean;
 }
 
+interface ScreenOrientationType extends ScreenOrientation {
+  lock(orientation: OrientationLockType): Promise<void>;
+  unlock(): void;
+}
+
 export const useVideoControls = (options: VideoControlsOptions = {}) => {
   const {
     enablePip = true,
@@ -75,11 +80,13 @@ export const useVideoControls = (options: VideoControlsOptions = {}) => {
     if (!landscapeSupported) return;
     
     try {
+      const screenOrientation = window.screen.orientation as ScreenOrientationType;
+      
       if (window.screen.orientation.type.includes('landscape')) {
-        await window.screen.orientation.lock('portrait');
+        await screenOrientation.lock('portrait');
         setIsLandscape(false);
       } else {
-        await window.screen.orientation.lock('landscape-primary');
+        await screenOrientation.lock('landscape-primary');
         setIsLandscape(true);
       }
     } catch (error) {
@@ -90,7 +97,9 @@ export const useVideoControls = (options: VideoControlsOptions = {}) => {
   // Effect to handle autoEnterLandscape
   useEffect(() => {
     if (autoEnterLandscape && landscapeSupported) {
-      window.screen.orientation.lock('landscape-primary')
+      const screenOrientation = window.screen.orientation as ScreenOrientationType;
+      
+      screenOrientation.lock('landscape-primary')
         .then(() => setIsLandscape(true))
         .catch(err => console.error('Failed to enter landscape mode:', err));
     }
@@ -98,7 +107,8 @@ export const useVideoControls = (options: VideoControlsOptions = {}) => {
     return () => {
       // Reset orientation when component unmounts
       if (landscapeSupported && isLandscape) {
-        window.screen.orientation.unlock();
+        const screenOrientation = window.screen.orientation as ScreenOrientationType;
+        screenOrientation.unlock();
       }
       
       // Exit PiP when component unmounts

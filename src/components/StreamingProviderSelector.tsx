@@ -14,8 +14,16 @@ import {
 import { getProviderIcon } from "@/utils/urlUtils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
+interface Provider {
+  id: string;
+  name: string;
+  isPremium?: boolean;
+  isTorrent?: boolean;
+  contentType?: string;
+}
+
 interface StreamingProviderSelectorProps {
-  providers: any[];
+  providers: Provider[];
   activeProvider: string;
   contentType: string;
   onProviderChange: (providerId: string) => void;
@@ -46,7 +54,7 @@ const StreamingProviderSelector = ({
     
     acc[group].push(provider);
     return acc;
-  }, {} as Record<string, typeof providers>);
+  }, {} as Record<string, Provider[]>);
   
   if (variant === 'inline') {
     return (
@@ -106,6 +114,7 @@ const StreamingProviderSelector = ({
     );
   }
   
+  // Default dropdown view
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
