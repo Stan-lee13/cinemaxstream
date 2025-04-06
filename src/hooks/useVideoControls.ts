@@ -7,6 +7,10 @@ interface VideoControlsOptions {
   autoEnterLandscape?: boolean;
 }
 
+// Define the missing type
+type OrientationLockType = 'any' | 'natural' | 'landscape' | 'portrait' | 'portrait-primary' | 
+  'portrait-secondary' | 'landscape-primary' | 'landscape-secondary';
+
 interface ScreenOrientationType extends ScreenOrientation {
   lock(orientation: OrientationLockType): Promise<void>;
   unlock(): void;
