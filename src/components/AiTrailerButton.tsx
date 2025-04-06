@@ -66,6 +66,7 @@ const AiTrailerButton = ({
           size={size}
           className="gap-2 border-gray-600 hover:bg-secondary hover:text-white px-6" 
           onClick={handleShowTrailer}
+          aria-label="Watch Trailer"
         >
           <Film size={18} />
           <span>Watch Trailer</span>
@@ -78,6 +79,7 @@ const AiTrailerButton = ({
           disabled={isLoadingAi}
           className="aspect-square h-10"
           title="AI Sentiment Analysis"
+          aria-label="AI Sentiment Analysis"
         >
           {isLoadingAi ? (
             <div className="animate-spin h-5 w-5 border-2 border-current border-t-transparent rounded-full" />

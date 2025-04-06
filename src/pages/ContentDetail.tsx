@@ -301,11 +301,11 @@ const ContentDetail = () => {
       </main>
       
       {/* Modals */}
-      {showTrailer && (
+      {showTrailer && trailerUrl && (
         <TrailerModal
           isOpen={showTrailer}
           onClose={() => setShowTrailer(false)}
-          trailerKey={trailerUrl || ''}
+          trailerKey={trailerUrl}
           title={content.title}
         />
       )}

@@ -132,6 +132,54 @@ export const providerConfigs = {
     supportsFullHD: false,
     contentTypes: ['movie', 'series', 'anime'],
     supportsDownload: true
+  },
+  // Additional streaming providers
+  lookmovie: {
+    type: SourceType.IFRAME,
+    supportsFullHD: true,
+    contentTypes: ['movie', 'series']
+  },
+  gomovies: {
+    type: SourceType.IFRAME,
+    supportsFullHD: true,
+    contentTypes: ['movie', 'series']
+  },
+  moviecrumbs: {
+    type: SourceType.IFRAME,
+    supportsFullHD: false,
+    contentTypes: ['movie', 'series']
+  },
+  moviesjoy: {
+    type: SourceType.IFRAME,
+    supportsFullHD: true,
+    contentTypes: ['movie', 'series']
+  },
+  dopebox: {
+    type: SourceType.IFRAME,
+    supportsFullHD: true,
+    contentTypes: ['movie', 'series']
+  },
+  zoro: {
+    type: SourceType.IFRAME,
+    supportsFullHD: true,
+    contentTypes: ['anime']
+  },
+  gogoanime: {
+    type: SourceType.IFRAME,
+    supportsFullHD: false,
+    contentTypes: ['anime']
+  },
+  crunchyroll: {
+    type: SourceType.IFRAME,
+    supportsFullHD: true,
+    isPremium: true,
+    contentTypes: ['anime']
+  },
+  funimation: {
+    type: SourceType.IFRAME,
+    supportsFullHD: true,
+    isPremium: true,
+    contentTypes: ['anime']
   }
 };
 
@@ -158,13 +206,13 @@ export const getStreamingUrl = (contentId: string, provider: string = 'vidsrc_xy
       `https://embed.su/movie?tmdb=${id}${opts.autoplay ? '&autoplay=1' : ''}`,
     
     // Additional streaming providers
-    sflix: (id, _) => 
+    sflix: (id, opts) => 
       `https://sflix.to/watch-movie/${id}`,
       
-    primewire_tf: (id, _) =>
+    primewire_tf: (id, opts) =>
       `https://primewire.tf/watch/${id}`,
       
-    fzmovies_net: (id, _) => 
+    fzmovies_net: (id, opts) => 
       `https://fzmovies.net/movie/${id}`,
       
     embed_rgshows: (id, opts) => {
@@ -190,26 +238,26 @@ export const getStreamingUrl = (contentId: string, provider: string = 'vidsrc_xy
     },
     
     // Movie/Series providers
-    fmovies: (id, _) => 
+    fmovies: (id, opts) => 
       `https://fmovies.to/watch/${id}`,
       
-    fmovies_net: (id, _) => 
+    fmovies_net: (id, opts) => 
       `https://fmovies.net/movie/${id}`,
     
     // Premium providers  
-    prime_video: (id, _) => 
+    prime_video: (id, opts) => 
       `https://www.amazon.com/gp/video/detail/${id}`,
 
-    netflix: (id, _) => 
+    netflix: (id, opts) => 
       `https://www.netflix.com/title/${id}`,
     
-    disney_plus: (id, _) => 
+    disney_plus: (id, opts) => 
       `https://www.disneyplus.com/video/${id}`,
     
-    hbo_max: (id, _) => 
+    hbo_max: (id, opts) => 
       `https://play.hbomax.com/page/${id}`,
     
-    hulu: (id, _) => 
+    hulu: (id, opts) => 
       `https://www.hulu.com/watch/${id}`,
       
     // Download providers that also support streaming
@@ -220,7 +268,37 @@ export const getStreamingUrl = (contentId: string, provider: string = 'vidsrc_xy
       `https://streamtape.com/e/${id}/`,
       
     vidcloud: (id, opts) => 
-      `https://vidcloud.stream/player?id=${id}`
+      `https://vidcloud.stream/player?id=${id}`,
+
+    // Additional providers
+    lookmovie: (id, opts) => {
+      const type = opts.episode ? 'shows' : 'movies';
+      return `https://lookmovie.io/embed/${type}/play/${id}`;
+    },
+    
+    gomovies: (id, opts) => 
+      `https://gomovies-online.cam/watch-movie/${id}${opts.episode ? `/episode-${opts.episode}` : ''}`,
+    
+    moviecrumbs: (id, opts) => 
+      `https://moviecrumbs.net/player/${id}${opts.episode ? `/s${opts.season}/e${opts.episode}` : ''}`,
+    
+    moviesjoy: (id, opts) => 
+      `https://moviesjoy.to/movie/${id}${opts.episode ? `/season-${opts.season}/episode-${opts.episode}` : ''}`,
+    
+    dopebox: (id, opts) => 
+      `https://dopebox.to/embed/${id}${opts.episode ? `/${opts.season}-${opts.episode}` : ''}`,
+    
+    zoro: (id, opts) => 
+      `https://zoro.to/watch/${id}${opts.episode ? `/episode-${opts.episode}` : ''}`,
+    
+    gogoanime: (id, opts) => 
+      `https://gogoanime.tel/category/${id}${opts.episode ? `-episode-${opts.episode}` : ''}`,
+    
+    crunchyroll: (id, opts) => 
+      `https://www.crunchyroll.com/watch/${id}${opts.episode ? `/${opts.episode}` : ''}`,
+    
+    funimation: (id, opts) => 
+      `https://www.funimation.com/player/${id}/`
   };
   
   // Choose best provider by content type if not specified
@@ -264,6 +342,9 @@ export const getDownloadUrl = (contentId: string, quality: string = '1080p'): st
       
     vidcloud: (id, quality) =>
       `https://vidcloud.stream/download/${id}?quality=${quality}`,
+    
+    fzmovies_net: (id, quality) =>
+      `https://fzmovies.net/download/${id}?quality=${quality}`,
       
     standard: (id, quality) =>
       `https://api.example.com/download/${id}?quality=${quality}`
@@ -275,6 +356,8 @@ export const getDownloadUrl = (contentId: string, quality: string = '1080p'): st
     provider = 'filemoon';
   } else if (quality === '720p') {
     provider = 'streamtape';
+  } else if (quality === '480p') {
+    provider = 'fzmovies_net';
   } else {
     provider = 'vidcloud';
   }
@@ -305,9 +388,10 @@ export const getTrailerUrl = async (contentId: string, contentType: string = 'mo
         '127532': 'dQw4w9WgXcQ', // Default example
         '634649': 'JfVOs4VSpmA', // Spider-Man: No Way Home
         '505642': '8YjFbMbfXaQ', // Black Panther: Wakanda Forever
-        '1124620': 'UIHx43DVdk', // Silent Night
+        '1124620': 'UIHx43DVdk',  // Silent Night
         '906126': 'X4d_v-HyR4o',  // Godzilla x Kong
-        '119495': 'Frd8WJ5FxHA'   // Wednesday
+        '119495': 'Frd8WJ5FxHA',  // Wednesday
+        '950387': 'UEBkR-L8OL8'   // Oppenheimer
       };
       
       const trailerKey = mockTrailerKeys[contentId] || 'dQw4w9WgXcQ';
@@ -343,4 +427,40 @@ export const startRecording = async (options = {}): Promise<MediaStream | null> 
     console.error('Error starting recording:', error);
     return null;
   }
+};
+
+/**
+ * Get a list of all available streaming services
+ */
+export const getAllStreamingServices = () => {
+  return Object.entries(providerConfigs).map(([id, config]) => ({
+    id,
+    name: id.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+    isPremium: config.isPremium || false,
+    supportsDownload: config.supportsDownload || false,
+    contentTypes: config.contentTypes || ['movie'],
+    supportsFullHD: config.supportsFullHD !== undefined ? config.supportsFullHD : false
+  }));
+};
+
+/**
+ * Generate correct runtime for content based on content type
+ */
+export const getContentRuntime = (contentType: string, episodeNumber?: number): string => {
+  // Default runtimes based on content type
+  const defaultRuntimes: Record<string, number> = {
+    'movie': 120, // 2 hours average
+    'series': 45, // 45 minutes average
+    'anime': 24,  // 24 minutes average
+  };
+  
+  const minutes = defaultRuntimes[contentType] || 90;
+  
+  if (minutes >= 60) {
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    return `${hours}h ${remainingMinutes}m`;
+  }
+  
+  return `${minutes}m`;
 };

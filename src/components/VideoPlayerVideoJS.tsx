@@ -20,6 +20,7 @@ interface VideoPlayerVideoJSProps {
   availableProviders: any[];
   activeProvider: string;
   onProviderChange: (providerId: string) => void;
+  onError?: () => void;
 }
 
 const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({ 
@@ -34,7 +35,8 @@ const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({
   title = "Video",
   availableProviders,
   activeProvider,
-  onProviderChange
+  onProviderChange,
+  onError
 }) => {
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
@@ -166,6 +168,7 @@ const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({
           console.error('Video.js error:', player.error());
           setError("Error loading video. Please try another source.");
           setIsLoading(false);
+          if (onError) onError();
         });
         
         // Track playback
@@ -196,6 +199,7 @@ const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({
         console.error("Error initializing Video.js:", error);
         setError("Failed to initialize video player");
         setIsLoading(false);
+        if (onError) onError();
       }
     };
     
@@ -263,6 +267,7 @@ const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({
       console.error("Error updating video source:", error);
       setError("Failed to update video source");
       setIsLoading(false);
+      if (onError) onError();
       
       // Force a complete remount of the component as fallback strategy
       setKey(Date.now());

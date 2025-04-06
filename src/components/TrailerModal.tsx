@@ -84,6 +84,7 @@ const TrailerModal = ({ isOpen, onClose, trailerKey, title }: TrailerModalProps)
             size="icon"
             onClick={handleCloseModal} 
             className="absolute right-2 top-2 z-50 bg-black/50 hover:bg-black/70 text-white rounded-full"
+            aria-label="Close trailer"
           >
             <X size={20} />
           </Button>
@@ -107,6 +108,7 @@ const TrailerModal = ({ isOpen, onClose, trailerKey, title }: TrailerModalProps)
                 className="w-full h-full"
                 allowFullScreen
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation"
               ></iframe>
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-black">

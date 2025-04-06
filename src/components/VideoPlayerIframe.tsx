@@ -19,6 +19,7 @@ interface VideoPlayerIframeProps {
   availableProviders: any[];
   activeProvider: string;
   onProviderChange: (providerId: string) => void;
+  onError?: () => void;
 }
 
 const VideoPlayerIframe: React.FC<VideoPlayerIframeProps> = ({ 
@@ -33,7 +34,8 @@ const VideoPlayerIframe: React.FC<VideoPlayerIframeProps> = ({
   title = "Video",
   availableProviders,
   activeProvider,
-  onProviderChange
+  onProviderChange,
+  onError
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -71,6 +73,7 @@ const VideoPlayerIframe: React.FC<VideoPlayerIframeProps> = ({
     setIsLoading(false);
     setError("Failed to load content from this provider. Try another source.");
     toast.error("Failed to load video", { id: "player-error" });
+    if (onError) onError();
   };
   
   // Reload iframe

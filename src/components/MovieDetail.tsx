@@ -46,6 +46,36 @@ const MovieDetail = ({
     };
   }, [showDownloadOptions]);
   
+  const handleWatchButtonClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    startWatching();
+  };
+  
+  const handleTrailerButtonClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    showTrailer();
+  };
+  
+  const handleDownloadButtonClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowDownloadOptions(!showDownloadOptions);
+  };
+  
+  const handleFavoriteButtonClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleFavorite();
+  };
+  
+  const handleAddToWatchlist = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toast.info("Added to watchlist");
+  };
+  
   return (
     <div className="relative h-[70vh]">
       <BackButton fixed />
@@ -88,7 +118,8 @@ const MovieDetail = ({
             <Button 
               className="bg-cinemax-500 hover:bg-cinemax-600 gap-2 px-6" 
               size="lg"
-              onClick={startWatching}
+              onClick={handleWatchButtonClick}
+              aria-label="Watch Now"
             >
               <Play size={18} />
               <span>Watch Now</span>
@@ -109,10 +140,8 @@ const MovieDetail = ({
                 variant="outline" 
                 className="gap-2 border-gray-600 hover:bg-secondary hover:text-white px-6" 
                 size="lg"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowDownloadOptions(!showDownloadOptions);
-                }}
+                onClick={handleDownloadButtonClick}
+                aria-label="Download options"
               >
                 <Download size={18} />
                 <span>Download</span>
@@ -136,10 +165,7 @@ const MovieDetail = ({
                   ? "bg-cinemax-500/20 border-cinemax-500 text-cinemax-500" 
                   : "border-gray-700 hover:bg-gray-700/50"
               }`}
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleFavorite();
-              }}
+              onClick={handleFavoriteButtonClick}
               aria-label={liked ? "Remove from favorites" : "Add to favorites"}
             >
               <Heart size={18} fill={liked ? "currentColor" : "none"} />
@@ -149,10 +175,7 @@ const MovieDetail = ({
               variant="ghost" 
               size="icon" 
               className="rounded-full border border-gray-700 hover:bg-gray-700/50"
-              onClick={(e) => {
-                e.stopPropagation();
-                toast.info("Added to watchlist");
-              }}
+              onClick={handleAddToWatchlist}
               aria-label="Add to watchlist"
             >
               <Plus size={18} />

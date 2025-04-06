@@ -19,9 +19,17 @@ const TrailerButton = ({
 }: TrailerButtonProps) => {
   const [showTrailer, setShowTrailer] = useState(false);
   
+  // If no trailer key is provided, don't render the component
   if (!trailerKey) {
     return null;
   }
+
+  const handleShowTrailer = (e: React.MouseEvent) => {
+    // Prevent any parent elements from receiving the click event
+    e.preventDefault();
+    e.stopPropagation();
+    setShowTrailer(true);
+  };
 
   return (
     <>
@@ -29,18 +37,20 @@ const TrailerButton = ({
         variant={variant} 
         size={size}
         className="gap-2 border-gray-600 hover:bg-secondary hover:text-white px-6" 
-        onClick={() => setShowTrailer(true)}
+        onClick={handleShowTrailer}
       >
         <Film size={18} />
         <span>Watch Trailer</span>
       </Button>
       
-      <TrailerModal
-        isOpen={showTrailer}
-        onClose={() => setShowTrailer(false)}
-        trailerKey={trailerKey}
-        title={title}
-      />
+      {showTrailer && (
+        <TrailerModal
+          isOpen={showTrailer}
+          onClose={() => setShowTrailer(false)}
+          trailerKey={trailerKey}
+          title={title}
+        />
+      )}
     </>
   );
 };
