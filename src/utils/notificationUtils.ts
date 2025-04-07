@@ -42,10 +42,10 @@ export const showContentNotification = async (content: {
     const notification = new Notification(`New ${content.type} available!`, {
       body: content.title,
       icon: '/favicon.ico',
-      image: content.image,
       badge: '/favicon.ico',
       data: {
-        url: `/content/${content.id}`
+        url: `/content/${content.id}`,
+        imageUrl: content.image // Store the image URL in the data object instead
       }
     });
     

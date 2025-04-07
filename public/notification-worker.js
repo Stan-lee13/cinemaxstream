@@ -8,9 +8,9 @@ self.addEventListener('push', function(event) {
     body: data.body || 'New content is available!',
     icon: data.icon || '/favicon.ico',
     badge: data.badge || '/favicon.ico',
-    image: data.image,
     data: {
       url: data.url || '/',
+      imageUrl: data.image // Store image URL in data instead
     },
     actions: data.actions || [
       { action: 'view', title: 'View Now' },
