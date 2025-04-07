@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import VideoPlayer from "./VideoPlayer";
 import VideoPlayerPlyr from "./VideoPlayerPlyr";
 import VideoPlayerVideoJS from "./VideoPlayerVideoJS";
@@ -38,26 +38,36 @@ const VideoPlayerWrapper = ({
   useVideoJS = true // Default to VideoJS
 }: VideoPlayerWrapperProps) => {
   const availableProviders = getAvailableProviders(contentId, contentType);
-  const [activeProvider, setActiveProvider] = useState<string>(getBestProviderForContentType(contentType));
+  const [activeProvider, setActiveProvider] = useState<string>('vidsrc_su'); // Default to vidsrc.su
   const [videoSrc, setVideoSrc] = useState<string>("");
   const [key, setKey] = useState<number>(0); // Key to force re-mount of player components
   const [requiresIframe, setRequiresIframe] = useState<boolean>(false);
   const [isError, setIsError] = useState<boolean>(false);
   const [errorCount, setErrorCount] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const loadingTimerRef = useRef<number | null>(null);
   
   useEffect(() => {
     // Update source when provider or content changes
     const loadSource = async () => {
+      setIsLoading(true);
       setIsError(false);
+      
+      // Clear any previous loading timer
+      if (loadingTimerRef.current) {
+        clearTimeout(loadingTimerRef.current);
+        loadingTimerRef.current = null;
+      }
       
       const options: any = {
         contentType,
         autoplay: autoPlay
       };
       
+      // Ensure we're passing valid numbers, not NaN
       if (episodeId) options.episode = episodeId;
-      if (seasonNumber) options.season = seasonNumber;
-      if (episodeNumber) options.episodeNum = episodeNumber;
+      if (typeof seasonNumber === 'number') options.season = seasonNumber;
+      if (typeof episodeNumber === 'number') options.episodeNum = episodeNumber;
       if (title) options.title = title;
       
       try {
@@ -73,6 +83,15 @@ const VideoPlayerWrapper = ({
 
         // Reset error count when source changes successfully
         setErrorCount(0);
+        
+        // Set up loading timer - wait 15 seconds before auto-switching
+        loadingTimerRef.current = window.setTimeout(() => {
+          if (isLoading) {
+            // If still loading after 15s, try another provider
+            toast.error(`${activeProvider} is taking too long to load. Trying another provider...`);
+            handleError();
+          }
+        }, 15000);
       } catch (error) {
         console.error("Error getting streaming URL:", error);
         setIsError(true);
@@ -82,6 +101,13 @@ const VideoPlayerWrapper = ({
     };
     
     loadSource();
+    
+    return () => {
+      if (loadingTimerRef.current) {
+        clearTimeout(loadingTimerRef.current);
+        loadingTimerRef.current = null;
+      }
+    };
   }, [contentId, contentType, activeProvider, episodeId, seasonNumber, episodeNumber, title, autoPlay]);
   
   const handleProviderChange = (providerId: string) => {
@@ -92,6 +118,16 @@ const VideoPlayerWrapper = ({
     setIsError(true);
     setErrorCount(prev => prev + 1);
     console.error(`Failed to load video from provider: ${activeProvider}`);
+  };
+  
+  const handleLoaded = () => {
+    setIsLoading(false);
+    
+    // Clear the loading timer
+    if (loadingTimerRef.current) {
+      clearTimeout(loadingTimerRef.current);
+      loadingTimerRef.current = null;
+    }
   };
   
   // Determine which player to use based on source type and props
@@ -114,6 +150,7 @@ const VideoPlayerWrapper = ({
           activeProvider={activeProvider}
           onProviderChange={handleProviderChange}
           onError={handleError}
+          onLoaded={handleLoaded}
         />
       );
     }
@@ -136,6 +173,7 @@ const VideoPlayerWrapper = ({
           activeProvider={activeProvider}
           onProviderChange={handleProviderChange}
           onError={handleError}
+          onLoaded={handleLoaded}
         />
       );
     }
@@ -157,6 +195,8 @@ const VideoPlayerWrapper = ({
           availableProviders={availableProviders}
           activeProvider={activeProvider}
           onProviderChange={handleProviderChange}
+          onError={handleError}
+          onLoaded={handleLoaded}
         />
       );
     }
@@ -172,6 +212,8 @@ const VideoPlayerWrapper = ({
         autoPlay={autoPlay}
         onEnded={onEnded}
         poster={poster}
+        onError={handleError}
+        onLoaded={handleLoaded}
       />
     );
   };

@@ -1,10 +1,10 @@
-
 /**
  * Content utility functions
  */
 
 // Mock data for streaming services
 export const streamingProviders = [
+  { id: 'vidsrc_su', name: 'VidSrc SU', contentType: 'all' },
   { id: 'vidsrc_xyz', name: 'VidSrc XYZ', contentType: 'all' },
   { id: 'vidsrc_pro', name: 'VidSrc Pro', contentType: 'all' },
   { id: 'vidsrc_wtf', name: 'VidSrc WTF', contentType: 'all' },
@@ -12,7 +12,6 @@ export const streamingProviders = [
   { id: 'vidsrc_pk', name: 'VidSrc.pk', contentType: 'all' },
   { id: 'vidsrc_co', name: 'VidSrc.co', contentType: 'all' },
   { id: 'vidsrc_cc', name: 'VidSrc.cc', contentType: 'all' },
-  { id: 'vidsrc_su', name: 'VidSrc.su', contentType: 'all' },
   { id: 'embed_su', name: 'Embed.su', contentType: 'all' },
   { id: 'filemoon', name: 'FileMoon', contentType: 'all' },
   { id: 'streamtape', name: 'StreamTape', contentType: 'all' },
@@ -81,13 +80,13 @@ export const getAvailableProviders = (contentId: string, contentType: string = '
 export const getBestProviderForContentType = (contentType: string): string => {
   switch (contentType) {
     case 'movie':
-      return 'vidsrc_in';
+      return 'vidsrc_su'; // Default to vidsrc.su
     case 'series':
-      return 'vidsrc_xyz';
+      return 'vidsrc_su'; // Default to vidsrc.su
     case 'anime':
       return 'aniwatch';
     default:
-      return 'vidsrc_xyz';
+      return 'vidsrc_su'; // Default to vidsrc.su
   }
 };
 

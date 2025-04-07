@@ -20,6 +20,7 @@ interface VideoPlayerIframeProps {
   activeProvider: string;
   onProviderChange: (providerId: string) => void;
   onError?: () => void;
+  onLoaded?: () => void;
 }
 
 const VideoPlayerIframe: React.FC<VideoPlayerIframeProps> = ({ 
@@ -35,7 +36,8 @@ const VideoPlayerIframe: React.FC<VideoPlayerIframeProps> = ({
   availableProviders,
   activeProvider,
   onProviderChange,
-  onError
+  onError,
+  onLoaded
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -67,6 +69,7 @@ const VideoPlayerIframe: React.FC<VideoPlayerIframeProps> = ({
   const handleIframeLoad = () => {
     setIsLoading(false);
     toast.success(`Now playing: ${title}`, { id: "player-loaded", duration: 2000 });
+    if (onLoaded) onLoaded();
   };
   
   // Handle errors

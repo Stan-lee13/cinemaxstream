@@ -1,9 +1,10 @@
+
 import { providerConfigs, SourceType } from '../streamingUtils';
 
 /**
  * Get streaming URL for the content based on provider
  */
-export const getStreamingUrlForProvider = (contentId: string, provider: string = 'vidsrc_xyz', options: any = {}): string => {
+export const getStreamingUrlForProvider = (contentId: string, provider: string = 'vidsrc_su', options: any = {}): string => {
   // Provider URL construction functions
   const providers: Record<string, (id: string, opts: any) => string> = {
     // Main providers
@@ -40,7 +41,10 @@ export const getStreamingUrlForProvider = (contentId: string, provider: string =
     
     vidsrc_su: (id, opts) => {
       const type = opts.contentType === 'movie' ? 'movie' : 'tv';
-      return `https://vidsrc.su/embed/${type}/${id}${opts.episode ? `/season-${opts.season}/episode-${opts.episodeNum}` : ''}`;
+      const season = typeof opts.season === 'number' ? opts.season : '';
+      const episode = typeof opts.episodeNum === 'number' ? opts.episodeNum : '';
+      const seasonEpisodePath = (season && episode) ? `/season-${season}/episode-${episode}` : '';
+      return `https://vidsrc.su/embed/${type}/${id}${seasonEpisodePath}`;
     },
     
     embed_su: (id, opts) => {
@@ -69,20 +73,23 @@ export const getStreamingUrlForProvider = (contentId: string, provider: string =
     
     embedplay_me: (id, opts) => {
       const type = opts.contentType === 'movie' ? 'movie' : 'tv';
-      const season = opts.season || '1';
-      const episode = opts.episodeNum || '1';
+      const season = typeof opts.season === 'number' ? opts.season : 1;
+      const episode = typeof opts.episodeNum === 'number' ? opts.episodeNum : 1;
       return `https://embedplay.me/player/${type}/${id}${type === 'tv' ? `/s${season}/e${episode}` : ''}`;
     },
       
     embed_rgshows: (id, opts) => {
       const type = opts.episode ? 'show' : 'movie';
-      return `https://embed.rgshows.me/${type}?id=${id}${opts.episode ? `&s=${opts.season}&e=${opts.episodeNum}` : ''}`;
+      const season = typeof opts.season === 'number' ? opts.season : '';
+      const episode = typeof opts.episodeNum === 'number' ? opts.episodeNum : '';
+      const seasonEpisodePath = (season && episode) ? `&s=${season}&e=${episode}` : '';
+      return `https://embed.rgshows.me/${type}?id=${id}${seasonEpisodePath}`;
     },
     
     godriveplayer: (id, opts) => {
       const type = opts.contentType === 'movie' ? 'movie' : 'tv';
-      const season = opts.season || '1';
-      const episode = opts.episodeNum || '1';
+      const season = typeof opts.season === 'number' ? opts.season : 1;
+      const episode = typeof opts.episodeNum === 'number' ? opts.episodeNum : 1;
       return `https://database.gdriveplayer.us/player.php?type=${type}&tmdb=${id}${type === 'tv' ? `&season=${season}&episode=${episode}` : ''}`;
     },
     
@@ -181,12 +188,14 @@ export const getStreamingUrlForProvider = (contentId: string, provider: string =
       `https://www.crunchyroll.com/watch/${id}${opts.episode ? `/${opts.episode}` : ''}`,
     
     funimation: (id, opts) => 
-      `https://www.funimation.com/player/${id}/`
-,
+      `https://www.funimation.com/player/${id}/`,
       
     vidfast: (id, opts) => {
       const type = opts.contentType === 'movie' ? 'movie' : 'tv';
-      return `https://vidfast.co/embed/${type}/${id}${opts.season && opts.episodeNum ? `/season-${opts.season}/episode-${opts.episodeNum}` : ''}`;
+      const season = typeof opts.season === 'number' ? opts.season : '';
+      const episode = typeof opts.episodeNum === 'number' ? opts.episodeNum : '';
+      const seasonEpisodePath = (season && episode) ? `/season-${season}/episode-${episode}` : '';
+      return `https://vidfast.co/embed/${type}/${id}${seasonEpisodePath}`;
     },
 
     anilist: (id, opts) => 
@@ -200,9 +209,18 @@ export const getStreamingUrlForProvider = (contentId: string, provider: string =
     upcloud: (id, opts) => 
       `https://upcloud.video/embed/${id}${opts.quality ? `-${opts.quality}` : ''}`,
 
+    // Updated based on videasy.net/docs
     videasy: (id, opts) => {
-      const type = opts.contentType === 'movie' ? 'movie' : 'show';
-      return `https://videasy.io/embed/${type}/${id}${opts.season && opts.episodeNum ? `/s${opts.season}e${opts.episodeNum}` : ''}`;
+      const type = opts.contentType === 'movie' ? 'movie' : 'series';
+      const season = typeof opts.season === 'number' ? opts.season : '';
+      const episode = typeof opts.episodeNum === 'number' ? opts.episodeNum : '';
+      
+      if (type === 'movie') {
+        return `https://videasy.net/embed/movies/${id}?autoplay=${opts.autoplay ? '1' : '0'}`;
+      } else {
+        // Handle series with proper season and episode format
+        return `https://videasy.net/embed/series/${id}/${season || '1'}/${episode || '1'}?autoplay=${opts.autoplay ? '1' : '0'}`;
+      }
     }
   };
   
@@ -210,16 +228,16 @@ export const getStreamingUrlForProvider = (contentId: string, provider: string =
   if (!provider) {
     const contentType = options.contentType || 'movie';
     if (contentType === 'movie') {
-      provider = 'vidsrc_xyz';
+      provider = 'vidsrc_su';
     } else if (contentType === 'series') {
-      provider = 'vidsrc_pro';
+      provider = 'vidsrc_su';
     } else if (contentType === 'anime') {
       provider = 'aniwatch';
     }
   }
   
   // Choose provider function or fallback
-  const providerFn = providers[provider] || providers.vidsrc_xyz;
+  const providerFn = providers[provider] || providers.vidsrc_su;
   
   // Return URL
   return providerFn(contentId, options);

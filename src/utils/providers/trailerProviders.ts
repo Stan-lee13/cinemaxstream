@@ -1,6 +1,7 @@
 
 /**
  * Trailer provider utilities
+ * Note: We only use YouTube as the source for trailers
  */
 
 /**
@@ -9,7 +10,7 @@
  */
 export const getTrailerUrlImpl = async (contentId: string, contentType: string = 'movie'): Promise<string> => {
   try {
-    // Real API call would go here, using the YouTube Data API
+    // This only fetches trailers from YouTube
     // For now simulating with a fetch to a mock service and fallback keys
     
     // First, try to get from TMDB (in a real implementation)

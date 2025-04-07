@@ -6,6 +6,7 @@ import './index.css';
 import { ThemeProvider } from './hooks/useTheme';
 import { AuthProvider } from './hooks/useAuthState';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from 'sonner';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -28,6 +29,7 @@ root.render(
       <AuthProvider>
         <ThemeProvider>
           <App />
+          <Toaster position="top-right" richColors />
         </ThemeProvider>
       </AuthProvider>
     </QueryClientProvider>

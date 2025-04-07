@@ -32,6 +32,7 @@ const TrailerModal = ({ isOpen, onClose, trailerKey, title }: TrailerModalProps)
       setError(null);
       
       try {
+        // YouTube is the only source for trailers
         // If the key is already a full URL, extract the video ID
         if (trailerKey.includes('youtube.com') || trailerKey.includes('youtu.be')) {
           let videoId = trailerKey;
