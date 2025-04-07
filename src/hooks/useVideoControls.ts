@@ -7,6 +7,12 @@ interface VideoControlsOptions {
   autoEnterLandscape?: boolean;
 }
 
+// Define a more specific type for screen orientation
+interface ScreenOrientationExtended extends ScreenOrientation {
+  lock: (orientation: string) => Promise<void>;
+  unlock: () => void;
+}
+
 export const useVideoControls = (options: VideoControlsOptions = {}) => {
   const {
     enablePip = true,
@@ -34,6 +40,7 @@ export const useVideoControls = (options: VideoControlsOptions = {}) => {
   const landscapeSupported = typeof window !== 'undefined' && 
     typeof window.screen !== 'undefined' && 
     typeof window.screen.orientation !== 'undefined' &&
+    'lock' in window.screen.orientation &&
     enableLandscape;
   
   // Toggle fullscreen
@@ -76,10 +83,10 @@ export const useVideoControls = (options: VideoControlsOptions = {}) => {
     
     try {
       if (window.screen.orientation.type.includes('landscape')) {
-        await window.screen.orientation.lock('portrait');
+        await (window.screen.orientation as ScreenOrientationExtended).lock('portrait');
         setIsLandscape(false);
       } else {
-        await window.screen.orientation.lock('landscape-primary');
+        await (window.screen.orientation as ScreenOrientationExtended).lock('landscape-primary');
         setIsLandscape(true);
       }
     } catch (error) {
@@ -90,7 +97,7 @@ export const useVideoControls = (options: VideoControlsOptions = {}) => {
   // Effect to handle autoEnterLandscape
   useEffect(() => {
     if (autoEnterLandscape && landscapeSupported) {
-      window.screen.orientation.lock('landscape-primary')
+      (window.screen.orientation as ScreenOrientationExtended).lock('landscape-primary')
         .then(() => setIsLandscape(true))
         .catch(err => console.error('Failed to enter landscape mode:', err));
     }
@@ -98,7 +105,7 @@ export const useVideoControls = (options: VideoControlsOptions = {}) => {
     return () => {
       // Reset orientation when component unmounts
       if (landscapeSupported && isLandscape) {
-        window.screen.orientation.unlock();
+        (window.screen.orientation as ScreenOrientationExtended).unlock();
       }
       
       // Exit PiP when component unmounts

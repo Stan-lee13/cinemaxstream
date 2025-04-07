@@ -177,7 +177,7 @@ const StreamingProviderSelector = ({
                  group === 'anime' ? 'Anime Specific' : 'Standard Sources'}
               </DropdownMenuLabel>
               
-              {groupProviders.map(provider => (
+              {Array.isArray(groupProviders) && groupProviders.map(provider => (
                 <DropdownMenuItem
                   key={provider.id}
                   onClick={() => {
