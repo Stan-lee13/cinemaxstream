@@ -39,7 +39,9 @@ export const showContentNotification = async (content: {
   }
   
   try {
-    const notification = new Notification(`New ${content.type} available!`, {
+    // When using the Notification API directly, we need to handle images differently
+    // as the 'image' property is not supported in all browsers
+    const notificationOptions: NotificationOptions = {
       body: content.title,
       icon: '/favicon.ico',
       badge: '/favicon.ico',
@@ -47,7 +49,15 @@ export const showContentNotification = async (content: {
         url: `/content/${content.id}`,
         imageUrl: content.image // Store the image URL in the data object instead
       }
-    });
+    };
+    
+    // For browsers that do support image, we can add it conditionally
+    if (content.image) {
+      // @ts-ignore - TypeScript doesn't recognize this property on all browsers
+      notificationOptions.image = content.image;
+    }
+    
+    const notification = new Notification(`New ${content.type} available!`, notificationOptions);
     
     notification.onclick = () => {
       window.focus();
@@ -58,6 +68,30 @@ export const showContentNotification = async (content: {
     return true;
   } catch (error) {
     console.error('Error showing notification:', error);
+    return false;
+  }
+};
+
+export const requestNotificationPermission = async (): Promise<boolean> => {
+  if (!('Notification' in window)) {
+    console.log('Notifications not supported');
+    return false;
+  }
+
+  if (Notification.permission === 'granted') {
+    return true;
+  }
+
+  if (Notification.permission === 'denied') {
+    console.log('Notification permission denied');
+    return false;
+  }
+
+  try {
+    const permission = await Notification.requestPermission();
+    return permission === 'granted';
+  } catch (error) {
+    console.error('Error requesting notification permission:', error);
     return false;
   }
 };

@@ -8,19 +8,22 @@ export type NotificationPreference = 'all' | 'favorites' | 'none';
 export const useNotifications = () => {
   const [permission, setPermission] = useState<NotificationPermission | 'default'>('default');
   const [notificationPreference, setNotificationPreference] = useLocalStorage<NotificationPreference>('notification_preference', 'all');
+  const [isSupported, setIsSupported] = useState(false);
   
   useEffect(() => {
     // Check if the browser supports notifications
-    if (!('Notification' in window)) {
-      return;
+    if ('Notification' in window) {
+      setIsSupported(true);
+      
+      // Set initial permission state
+      setPermission(Notification.permission);
+    } else {
+      setIsSupported(false);
     }
-    
-    // Set initial permission state
-    setPermission(Notification.permission);
   }, []);
   
   const requestPermission = async () => {
-    if (!('Notification' in window)) {
+    if (!isSupported) {
       toast.error('Notifications are not supported in this browser');
       return false;
     }
@@ -32,8 +35,11 @@ export const useNotifications = () => {
       if (permission === 'granted') {
         toast.success('Notifications enabled!');
         return true;
-      } else {
+      } else if (permission === 'denied') {
         toast.error('Notification permission was denied');
+        return false;
+      } else {
+        toast.error('Notification permission was dismissed');
         return false;
       }
     } catch (error) {
@@ -44,7 +50,7 @@ export const useNotifications = () => {
   };
   
   const sendNotification = (title: string, options?: NotificationOptions) => {
-    if (!('Notification' in window) || permission !== 'granted') {
+    if (!isSupported || permission !== 'granted') {
       return false;
     }
     
@@ -63,6 +69,8 @@ export const useNotifications = () => {
     sendNotification,
     notificationPreference,
     setNotificationPreference,
-    isSupported: 'Notification' in window
+    isSupported
   };
 };
+
+export default useNotifications;

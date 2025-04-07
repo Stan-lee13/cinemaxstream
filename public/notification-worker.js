@@ -15,7 +15,8 @@ self.addEventListener('push', function(event) {
     actions: data.actions || [
       { action: 'view', title: 'View Now' },
       { action: 'dismiss', title: 'Later' }
-    ]
+    ],
+    image: data.image // Keep this for browsers that support image in notifications
   };
   
   event.waitUntil(

@@ -4,11 +4,18 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App.tsx';
 import './index.css';
-import { registerServiceWorker } from './utils/notificationUtils.ts';
+import { registerServiceWorker, requestNotificationPermission } from './utils/notificationUtils.ts';
 import { Toaster } from 'sonner';
 
 // Initialize service worker for notifications
-registerServiceWorker().catch(console.error);
+registerServiceWorker()
+  .then(() => {
+    console.log('Service worker registered successfully');
+    // Don't request permission automatically - let user manually enable it
+  })
+  .catch(error => {
+    console.error('Failed to register service worker:', error);
+  });
 
 const container = document.getElementById('root');
 if (!container) {

@@ -28,6 +28,16 @@ const DEFAULT_AVATARS = [
     id: 'avatar-5',
     url: 'https://api.dicebear.com/7.x/lorelei/svg?seed=Midnight',
     alt: 'Avatar 5'
+  },
+  {
+    id: 'avatar-6',
+    url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Dusty',
+    alt: 'Avatar 6'
+  },
+  {
+    id: 'avatar-7',
+    url: 'https://api.dicebear.com/7.x/adventurer/svg?seed=Luna',
+    alt: 'Avatar 7'
   }
 ];
 
@@ -53,11 +63,20 @@ export const AvatarSelection: React.FC<AvatarSelectionProps> = ({
               selectedAvatarUrl === avatar.url ? 'ring-2 ring-primary ring-offset-2 ring-offset-background scale-110' : 'hover:scale-105'
             }`}
             onClick={() => onAvatarSelect(avatar.url)}
+            aria-label={`Select ${avatar.alt}`}
+            title={avatar.alt}
           >
             <Avatar className="h-12 w-12">
               <AvatarImage src={avatar.url} alt={avatar.alt} />
               <AvatarFallback>{avatar.alt.charAt(0)}</AvatarFallback>
             </Avatar>
+            {selectedAvatarUrl === avatar.url && (
+              <span className="absolute -right-1 -bottom-1 bg-primary rounded-full w-4 h-4 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </span>
+            )}
           </button>
         ))}
       </div>
