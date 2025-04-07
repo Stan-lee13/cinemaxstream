@@ -4,8 +4,6 @@ import Navbar from '@/components/Navbar';
 import HeroSection from '@/components/HeroSection';
 import ContentRow from '@/components/ContentRow';
 import Footer from '@/components/Footer';
-import AIStreamingAssistant from '@/components/AIStreamingAssistant';
-import OnboardingTutorial from '@/components/OnboardingTutorial';
 import { tmdbApi } from '@/services/tmdbApi';
 import { getPersonalizedRecommendations } from '@/utils/videoUtils';
 import { useAuth } from '@/hooks/useAuthState';
@@ -18,8 +16,6 @@ const Index = () => {
   const [personalizedContent, setPersonalizedContent] = useState<Content[]>([]);
   const [featuredContent, setFeaturedContent] = useState<FeaturedContent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [recentlyAdded, setRecentlyAdded] = useState<Content[]>([]);
-  const [topRated, setTopRated] = useState<Content[]>([]);
   const { user, isAuthenticated } = useAuth();
   const [showSplash, setShowSplash] = useState(true);
 
@@ -75,14 +71,6 @@ const Index = () => {
         // Fetch anime content
         const anime = await tmdbApi.getAnime();
         setAnimeContent(anime.map(mapToContentType));
-
-        // Fetch recently added content (we'll simulate this)
-        const recentMovies = [...movies].sort(() => Math.random() - 0.5).slice(0, 10);
-        setRecentlyAdded(recentMovies.map(mapToContentType));
-        
-        // Fetch top-rated content (we'll simulate this)
-        const ratedContent = [...movies, ...shows].filter(item => parseFloat(item.rating) > 7.5);
-        setTopRated(ratedContent.map(mapToContentType));
         
         // Fetch personalized recommendations if user is authenticated
         if (isAuthenticated && user) {
@@ -122,7 +110,7 @@ const Index = () => {
         <>
           <Navbar />
           
-          <main className="pb-12">
+          <main>
             <HeroSection featuredContent={featuredContent} />
             
             {isAuthenticated && personalizedContent.length > 0 && (
@@ -146,18 +134,6 @@ const Index = () => {
             />
             
             <ContentRow 
-              title="Recently Added" 
-              viewAllLink="/new-releases" 
-              items={recentlyAdded} 
-            />
-            
-            <ContentRow 
-              title="Top Rated" 
-              viewAllLink="/top-rated" 
-              items={topRated} 
-            />
-            
-            <ContentRow 
               title="Anime" 
               viewAllLink="/anime" 
               items={animeContent} 
@@ -165,12 +141,6 @@ const Index = () => {
           </main>
           
           <Footer />
-          
-          {/* AI Assistant */}
-          <AIStreamingAssistant />
-          
-          {/* Onboarding Tutorial for new users */}
-          <OnboardingTutorial />
         </>
       )}
     </div>

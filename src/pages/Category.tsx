@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -11,22 +12,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuthState";
 import { getPersonalizedRecommendations } from "@/utils/videoUtils";
 
-interface CategoryProps {
-  title?: string;
-  categoryType?: string;
-}
-
-const CategoryPage = ({ title: propTitle, categoryType: propCategoryType }: CategoryProps = {}) => {
-  const { slug } = useParams<{ slug: string }>();
+const CategoryPage = () => {
+  const { category } = useParams<{ category: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<ContentItem[]>([]);
   const [page, setPage] = useState(1);
-  
-  // Determine the actual category from props or params
-  const category = propCategoryType || slug;
   
   // Scroll to top on page load
   useEffect(() => {
@@ -89,15 +82,6 @@ const CategoryPage = ({ title: propTitle, categoryType: propCategoryType }: Cate
   
   // Determine title and description based on category
   const getCategoryInfo = () => {
-    // If title is provided via props, use that
-    if (propTitle) {
-      return {
-        title: propTitle,
-        description: `Explore our collection of ${propTitle.toLowerCase()}.`
-      };
-    }
-    
-    // Otherwise determine from category
     switch (category) {
       case 'movies':
         return { 

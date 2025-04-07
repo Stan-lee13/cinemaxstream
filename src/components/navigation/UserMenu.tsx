@@ -14,9 +14,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, LogOut, Settings, User as UserIcon, History, Crown, Bell } from "lucide-react";
+import { ChevronDown, LogOut, Settings, User as UserIcon, History, Crown } from "lucide-react";
 import ThemeSwitcher from "../ThemeSwitcher";
-import NotificationPermissionPrompt from "../NotificationPermissionPrompt";
 
 export const UserMenu = () => {
   const { user, signOut, isAuthenticated } = useAuth();
@@ -50,7 +49,6 @@ export const UserMenu = () => {
   if (!isAuthenticated) {
     return (
       <div className="flex items-center gap-4">
-        <NotificationPermissionPrompt />
         <ThemeSwitcher />
         <Button 
           variant="outline" 
@@ -80,7 +78,6 @@ export const UserMenu = () => {
 
   return (
     <div className="flex items-center gap-3">
-      <NotificationPermissionPrompt />
       <ThemeSwitcher />
       <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
         <DropdownMenuTrigger asChild>
