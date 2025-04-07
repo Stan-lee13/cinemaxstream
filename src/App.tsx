@@ -13,29 +13,35 @@ import FAQ from '@/pages/FAQ';
 import HelpCenter from '@/pages/HelpCenter';
 import PrivacyPolicy from '@/pages/PrivacyPolicy';
 import Contact from '@/pages/Contact';
+import { AuthProvider } from '@/hooks/useAuthState';
+import { UserPreferencesProvider } from '@/context/UserPreferencesContext';
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Index />} />
-      <Route path="/content/:id" element={<ContentDetail />} />
-      <Route path="/auth" element={<Auth />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/profile" element={<UserProfile />} />
-      <Route path="/history" element={<WatchHistory />} />
-      <Route path="/movies" element={<Category title="Movies" categoryType="movie" />} />
-      <Route path="/series" element={<Category title="TV Series" categoryType="series" />} />
-      <Route path="/anime" element={<Category title="Anime" categoryType="anime" />} />
-      <Route path="/category/:slug" element={<Category />} />
-      
-      {/* New pages */}
-      <Route path="/faq" element={<FAQ />} />
-      <Route path="/help-center" element={<HelpCenter />} />
-      <Route path="/privacy" element={<PrivacyPolicy />} />
-      <Route path="/contact" element={<Contact />} />
-      
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <AuthProvider>
+      <UserPreferencesProvider>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/content/:id" element={<ContentDetail />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/profile" element={<UserProfile />} />
+          <Route path="/history" element={<WatchHistory />} />
+          <Route path="/movies" element={<Category title="Movies" categoryType="movie" />} />
+          <Route path="/series" element={<Category title="TV Series" categoryType="series" />} />
+          <Route path="/anime" element={<Category title="Anime" categoryType="anime" />} />
+          <Route path="/category/:slug" element={<Category />} />
+          
+          {/* New pages */}
+          <Route path="/faq" element={<FAQ />} />
+          <Route path="/help-center" element={<HelpCenter />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/contact" element={<Contact />} />
+          
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </UserPreferencesProvider>
+    </AuthProvider>
   );
 }
 
