@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Bell, X, Bell, ExternalLink } from 'lucide-react';
+import { Bell, X, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -98,6 +98,24 @@ const NotificationBar = () => {
           contentId: '505642',
           image: 'https://image.tmdb.org/t/p/w500/laCJxobHoPVaLQTKxc14Y2zV64J.jpg',
           isRead: seenIds.includes('movie-456')
+        },
+        {
+          id: 'movie-789',
+          title: 'Joker: Folie à Deux',
+          message: 'The anticipated sequel to Joker has arrived',
+          date: new Date().toISOString(),
+          contentId: '575264',
+          image: 'https://image.tmdb.org/t/p/w500/gN79aDbZjUMEQp8Rj6MpJ9eTSQK.jpg',
+          isRead: seenIds.includes('movie-789')
+        },
+        {
+          id: 'movie-101',
+          title: 'The Batman 2',
+          message: 'Return to Gotham with the sequel to The Batman',
+          date: new Date().toISOString(),
+          contentId: '726759',
+          image: 'https://image.tmdb.org/t/p/w500/7IW5yyJ5oA1PxaCKg9xKcNtTl1d.jpg',
+          isRead: seenIds.includes('movie-101')
         }
       ];
       

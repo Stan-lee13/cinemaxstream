@@ -66,8 +66,8 @@ const VideoPlayerWrapper = ({
       
       // Ensure we're passing valid numbers, not NaN
       if (episodeId) options.episode = episodeId;
-      if (typeof seasonNumber === 'number') options.season = seasonNumber;
-      if (typeof episodeNumber === 'number') options.episodeNum = episodeNumber;
+      if (typeof seasonNumber === 'number' && !isNaN(seasonNumber)) options.season = seasonNumber;
+      if (typeof episodeNumber === 'number' && !isNaN(episodeNumber)) options.episodeNum = episodeNumber;
       if (title) options.title = title;
       
       try {

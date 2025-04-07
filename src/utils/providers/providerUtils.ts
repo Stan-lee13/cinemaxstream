@@ -41,9 +41,9 @@ export const getStreamingUrlForProvider = (contentId: string, provider: string =
     
     vidsrc_su: (id, opts) => {
       const type = opts.contentType === 'movie' ? 'movie' : 'tv';
-      const season = typeof opts.season === 'number' ? opts.season : '';
-      const episode = typeof opts.episodeNum === 'number' ? opts.episodeNum : '';
-      const seasonEpisodePath = (season && episode) ? `/season-${season}/episode-${episode}` : '';
+      const season = typeof opts.season === 'number' && !isNaN(opts.season) ? opts.season : '';
+      const episode = typeof opts.episodeNum === 'number' && !isNaN(opts.episodeNum) ? opts.episodeNum : '';
+      const seasonEpisodePath = (season !== '' && episode !== '') ? `/season-${season}/episode-${episode}` : '';
       return `https://vidsrc.su/embed/${type}/${id}${seasonEpisodePath}`;
     },
     
@@ -73,23 +73,23 @@ export const getStreamingUrlForProvider = (contentId: string, provider: string =
     
     embedplay_me: (id, opts) => {
       const type = opts.contentType === 'movie' ? 'movie' : 'tv';
-      const season = typeof opts.season === 'number' ? opts.season : 1;
-      const episode = typeof opts.episodeNum === 'number' ? opts.episodeNum : 1;
+      const season = typeof opts.season === 'number' && !isNaN(opts.season) ? opts.season : 1;
+      const episode = typeof opts.episodeNum === 'number' && !isNaN(opts.episodeNum) ? opts.episodeNum : 1;
       return `https://embedplay.me/player/${type}/${id}${type === 'tv' ? `/s${season}/e${episode}` : ''}`;
     },
       
     embed_rgshows: (id, opts) => {
       const type = opts.episode ? 'show' : 'movie';
-      const season = typeof opts.season === 'number' ? opts.season : '';
-      const episode = typeof opts.episodeNum === 'number' ? opts.episodeNum : '';
-      const seasonEpisodePath = (season && episode) ? `&s=${season}&e=${episode}` : '';
+      const season = typeof opts.season === 'number' && !isNaN(opts.season) ? opts.season : '';
+      const episode = typeof opts.episodeNum === 'number' && !isNaN(opts.episodeNum) ? opts.episodeNum : '';
+      const seasonEpisodePath = (season !== '' && episode !== '') ? `&s=${season}&e=${episode}` : '';
       return `https://embed.rgshows.me/${type}?id=${id}${seasonEpisodePath}`;
     },
     
     godriveplayer: (id, opts) => {
       const type = opts.contentType === 'movie' ? 'movie' : 'tv';
-      const season = typeof opts.season === 'number' ? opts.season : 1;
-      const episode = typeof opts.episodeNum === 'number' ? opts.episodeNum : 1;
+      const season = typeof opts.season === 'number' && !isNaN(opts.season) ? opts.season : 1;
+      const episode = typeof opts.episodeNum === 'number' && !isNaN(opts.episodeNum) ? opts.episodeNum : 1;
       return `https://database.gdriveplayer.us/player.php?type=${type}&tmdb=${id}${type === 'tv' ? `&season=${season}&episode=${episode}` : ''}`;
     },
     
@@ -192,9 +192,9 @@ export const getStreamingUrlForProvider = (contentId: string, provider: string =
       
     vidfast: (id, opts) => {
       const type = opts.contentType === 'movie' ? 'movie' : 'tv';
-      const season = typeof opts.season === 'number' ? opts.season : '';
-      const episode = typeof opts.episodeNum === 'number' ? opts.episodeNum : '';
-      const seasonEpisodePath = (season && episode) ? `/season-${season}/episode-${episode}` : '';
+      const season = typeof opts.season === 'number' && !isNaN(opts.season) ? opts.season : '';
+      const episode = typeof opts.episodeNum === 'number' && !isNaN(opts.episodeNum) ? opts.episodeNum : '';
+      const seasonEpisodePath = (season !== '' && episode !== '') ? `/season-${season}/episode-${episode}` : '';
       return `https://vidfast.co/embed/${type}/${id}${seasonEpisodePath}`;
     },
 
@@ -209,17 +209,19 @@ export const getStreamingUrlForProvider = (contentId: string, provider: string =
     upcloud: (id, opts) => 
       `https://upcloud.video/embed/${id}${opts.quality ? `-${opts.quality}` : ''}`,
 
-    // Updated based on videasy.net/docs
+    // Updated based on videasy.net documentation
     videasy: (id, opts) => {
-      const type = opts.contentType === 'movie' ? 'movie' : 'series';
-      const season = typeof opts.season === 'number' ? opts.season : '';
-      const episode = typeof opts.episodeNum === 'number' ? opts.episodeNum : '';
+      const type = opts.contentType === 'movie' ? 'movies' : 'series';
       
-      if (type === 'movie') {
-        return `https://videasy.net/embed/movies/${id}?autoplay=${opts.autoplay ? '1' : '0'}`;
+      // Format according to Videasy API documentation
+      if (type === 'movies') {
+        return `https://videasy.net/embed/${type}/${id}?autoplay=${opts.autoplay ? '1' : '0'}`;
       } else {
-        // Handle series with proper season and episode format
-        return `https://videasy.net/embed/series/${id}/${season || '1'}/${episode || '1'}?autoplay=${opts.autoplay ? '1' : '0'}`;
+        // Handle TV series with proper season and episode formatting
+        const season = typeof opts.season === 'number' && !isNaN(opts.season) ? opts.season : 1;
+        const episode = typeof opts.episodeNum === 'number' && !isNaN(opts.episodeNum) ? opts.episodeNum : 1;
+        
+        return `https://videasy.net/embed/${type}/${id}/${season}/${episode}?autoplay=${opts.autoplay ? '1' : '0'}`;
       }
     }
   };
