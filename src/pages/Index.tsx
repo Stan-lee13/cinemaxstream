@@ -8,6 +8,7 @@ import { tmdbApi } from '@/services/tmdbApi';
 import { getPersonalizedRecommendations } from '@/utils/videoUtils';
 import { useAuth } from '@/hooks/useAuthState';
 import SplashScreen from '@/components/SplashScreen';
+import LoadingState from '@/components/LoadingState';
 
 const Index = () => {
   const [trendingMovies, setTrendingMovies] = useState<Content[]>([]);
@@ -41,10 +42,12 @@ const Index = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        console.log("Fetching data for Index page");
         setIsLoading(true);
         
         // Fetch trending movies
         const movies = await tmdbApi.getTrendingMovies();
+        console.log("Fetched trending movies:", movies.length);
         setTrendingMovies(movies.map(mapToContentType));
         
         // Set featured content from trending movies
@@ -66,83 +69,92 @@ const Index = () => {
         
         // Fetch popular TV shows
         const shows = await tmdbApi.getPopularTvShows();
+        console.log("Fetched popular shows:", shows.length);
         setPopularShows(shows.map(mapToContentType));
         
         // Fetch anime content
         const anime = await tmdbApi.getAnime();
+        console.log("Fetched anime:", anime.length);
         setAnimeContent(anime.map(mapToContentType));
         
         // Fetch personalized recommendations if user is authenticated
         if (isAuthenticated && user) {
-          const recommendations = await getPersonalizedRecommendations(user.id);
-          setPersonalizedContent(
-            Array.isArray(recommendations) 
-              ? recommendations.map((item: any) => mapToContentType(item)) 
-              : []
-          );
+          console.log("Fetching recommendations for user:", user.id);
+          try {
+            const recommendations = await getPersonalizedRecommendations(user.id);
+            console.log("Fetched recommendations:", recommendations);
+            setPersonalizedContent(
+              Array.isArray(recommendations) 
+                ? recommendations.map((item: any) => mapToContentType(item)) 
+                : []
+            );
+          } catch (recError) {
+            console.error("Error fetching recommendations:", recError);
+          }
         }
       } catch (error) {
         console.error("Error fetching content:", error);
       } finally {
+        console.log("Finished loading data");
         setIsLoading(false);
       }
     };
     
     fetchData();
   }, [isAuthenticated, user]);
+
+  // Hide splash screen after timeout
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 2000);
+    
+    return () => clearTimeout(timer);
+  }, []);
+  
+  if (showSplash) {
+    return <SplashScreen onComplete={() => setShowSplash(false)} />;
+  }
   
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse flex flex-col items-center">
-          <div className="w-24 h-24 rounded-full bg-gray-700 mb-4"></div>
-          <div className="h-4 w-32 bg-gray-700 rounded"></div>
-        </div>
-      </div>
-    );
+    return <LoadingState message="Loading amazing content for you..." />;
   }
   
   return (
     <div className="min-h-screen bg-background">
-      {showSplash ? (
-        <SplashScreen onComplete={() => setShowSplash(false)} />
-      ) : (
-        <>
-          <Navbar />
-          
-          <main>
-            <HeroSection featuredContent={featuredContent} />
-            
-            {isAuthenticated && personalizedContent.length > 0 && (
-              <ContentRow 
-                title="Recommended for You" 
-                viewAllLink="/recommendations" 
-                items={personalizedContent} 
-              />
-            )}
-            
-            <ContentRow 
-              title="Trending Movies" 
-              viewAllLink="/movies" 
-              items={trendingMovies} 
-            />
-            
-            <ContentRow 
-              title="Popular TV Shows" 
-              viewAllLink="/series" 
-              items={popularShows} 
-            />
-            
-            <ContentRow 
-              title="Anime" 
-              viewAllLink="/anime" 
-              items={animeContent} 
-            />
-          </main>
-          
-          <Footer />
-        </>
-      )}
+      <Navbar />
+      
+      <main>
+        <HeroSection featuredContent={featuredContent} />
+        
+        {isAuthenticated && personalizedContent.length > 0 && (
+          <ContentRow 
+            title="Recommended for You" 
+            viewAllLink="/recommendations" 
+            items={personalizedContent} 
+          />
+        )}
+        
+        <ContentRow 
+          title="Trending Movies" 
+          viewAllLink="/movies" 
+          items={trendingMovies} 
+        />
+        
+        <ContentRow 
+          title="Popular TV Shows" 
+          viewAllLink="/series" 
+          items={popularShows} 
+        />
+        
+        <ContentRow 
+          title="Anime" 
+          viewAllLink="/anime" 
+          items={animeContent} 
+        />
+      </main>
+      
+      <Footer />
     </div>
   );
 };

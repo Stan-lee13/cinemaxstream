@@ -1,7 +1,7 @@
 
-import { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 
-type Theme = "default" | "midnight" | "neon" | "sunrise" | "forest";
+export type Theme = "default" | "midnight" | "neon" | "sunrise" | "forest";
 
 interface ThemeContextType {
   theme: Theme;
@@ -10,7 +10,7 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
+export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setTheme] = useState<Theme>(() => {
     const savedTheme = localStorage.getItem("cinemax-theme") as Theme;
     return savedTheme || "default";

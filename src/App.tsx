@@ -3,10 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/hooks/useAuthState";
-import { ThemeProvider } from "@/hooks/useTheme";
 import { Button } from "@/components/ui/button";
 import Index from "./pages/Index";
 import ContentDetail from "./pages/ContentDetail";
@@ -17,15 +14,6 @@ import UserProfile from "./pages/UserProfile";
 import SplashScreen from "./components/SplashScreen";
 import ResetPassword from "./pages/ResetPassword";
 import WatchHistory from "./pages/WatchHistory";
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
 
 const AppRoutes = () => {
   return (
@@ -133,25 +121,19 @@ const App = () => {
   }, []);
 
   return (
-    <React.StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <ThemeProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                {showSplash ? (
-                  <SplashScreen onComplete={() => setShowSplash(false)} />
-                ) : (
-                  <AppRoutes />
-                )}
-              </BrowserRouter>
-            </TooltipProvider>
-          </ThemeProvider>
-        </AuthProvider>
-      </QueryClientProvider>
-    </React.StrictMode>
+    <>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          {showSplash ? (
+            <SplashScreen onComplete={() => setShowSplash(false)} />
+          ) : (
+            <AppRoutes />
+          )}
+        </BrowserRouter>
+      </TooltipProvider>
+    </>
   );
 };
 
