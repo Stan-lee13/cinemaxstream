@@ -2,57 +2,15 @@
  * Content utility functions
  */
 
-// Mock data for streaming services
+// Mock data for streaming services - only keeping the three requested providers
 export const streamingProviders = [
   { id: 'vidsrc_su', name: 'VidSrc SU', contentType: 'all' },
   { id: 'vidsrc_xyz', name: 'VidSrc XYZ', contentType: 'all' },
-  { id: 'vidsrc_pro', name: 'VidSrc Pro', contentType: 'all' },
-  { id: 'vidsrc_wtf', name: 'VidSrc WTF', contentType: 'all' },
-  { id: 'vidsrc_in', name: 'VidSrc.in', contentType: 'movie' },
-  { id: 'vidsrc_pk', name: 'VidSrc.pk', contentType: 'all' },
-  { id: 'vidsrc_co', name: 'VidSrc.co', contentType: 'all' },
-  { id: 'vidsrc_cc', name: 'VidSrc.cc', contentType: 'all' },
-  { id: 'embed_su', name: 'Embed.su', contentType: 'all' },
-  { id: 'filemoon', name: 'FileMoon', contentType: 'all' },
-  { id: 'streamtape', name: 'StreamTape', contentType: 'all' },
-  { id: 'vidcloud', name: 'VidCloud', contentType: 'all' },
-  { id: 'vidcloud_streaming', name: 'VidCloud.stream', contentType: 'all' },
-  { id: 'filemoon_in', name: 'FileMoon.in', contentType: 'all' },
-  { id: 'fzmovies_net', name: 'FZMovies.net', contentType: 'movie' },
-  { id: 'brightcove', name: 'Brightcove', contentType: 'all' },
-  { id: 'ooyala', name: 'Ooyala', contentType: 'all' },
-  { id: 'wurl', name: 'Wurl', contentType: 'all' },
-  { id: 'cinemull_cc', name: 'Cinemull', contentType: 'all' },
-  { id: 'embedplay_me', name: 'EmbedPlay', contentType: 'all' },
-  { id: 'vidfast', name: 'VidFast', contentType: 'all' },
-  { id: 'anilist', name: 'AniList', contentType: 'anime' },
-  { id: 'pstream', name: 'PStream', contentType: 'all' },
-  { id: 'upcloud', name: 'UpCloud', contentType: 'all' },
-  { id: 'videasy', name: 'Videasy', contentType: 'all' },
-  { id: 'netflix', name: 'Netflix', contentType: 'all' },
-  { id: 'prime_video', name: 'Prime Video', contentType: 'all' },
-  { id: 'disney_plus', name: 'Disney+', contentType: 'all' },
-  { id: 'hbo_max', name: 'HBO Max', contentType: 'all' },
-  { id: 'hulu', name: 'Hulu', contentType: 'series' },
-  { id: 'aniwatch', name: 'AniWatch', contentType: 'anime' },
-  { id: 'fmovies', name: 'FMovies', contentType: 'all' },
-  { id: 'fmovies_net', name: 'FMovies.net', contentType: 'all' },
-  { id: 'embed_rgshows', name: 'RGShows', contentType: 'all' },
-  { id: 'godriveplayer', name: 'GDrivePlayer', contentType: 'all' },
-  { id: 'sflix', name: 'SFlix', contentType: 'all' },
-  { id: 'primewire_tf', name: 'PrimeWire', contentType: 'all' },
-  { id: 'eztv', name: 'EZTV', contentType: 'series', isTorrent: true },
-  { id: 'yts', name: 'YTS', contentType: 'movie', isTorrent: true }
+  { id: 'vidsrc_vip', name: 'VidSrc VIP', contentType: 'all' }
 ];
 
-// Download providers - separate from streaming
-export const downloadProviders = [
-  { id: 'filemoon', name: 'FileMoon', supportedQualities: ['4k', '1080p', '720p'] },
-  { id: 'filemoon_in', name: 'FileMoon.in', supportedQualities: ['4k', '1080p', '720p'] },
-  { id: 'streamtape', name: 'StreamTape', supportedQualities: ['1080p', '720p', '480p'] },
-  { id: 'vidcloud', name: 'VidCloud', supportedQualities: ['1080p', '720p', '480p'] },
-  { id: 'vidcloud_streaming', name: 'VidCloud.stream', supportedQualities: ['4k', '1080p', '720p', '480p'] }
-];
+// Download providers - keeping empty for now since user only wants streaming
+export const downloadProviders: any[] = [];
 
 // Mock premium content check
 const premiumContentIds = ['1124620', '634649', '505642', '843794', '872585'];
@@ -78,16 +36,8 @@ export const getAvailableProviders = (contentId: string, contentType: string = '
  * Get best provider based on content type
  */
 export const getBestProviderForContentType = (contentType: string): string => {
-  switch (contentType) {
-    case 'movie':
-      return 'vidsrc_su'; // Default to vidsrc.su
-    case 'series':
-      return 'vidsrc_su'; // Default to vidsrc.su
-    case 'anime':
-      return 'aniwatch';
-    default:
-      return 'vidsrc_su'; // Default to vidsrc.su
-  }
+  // Default to vidsrc.su for all content types
+  return 'vidsrc_su';
 };
 
 /**

@@ -1,4 +1,3 @@
-
 /**
  * Streaming utility functions
  */
@@ -29,40 +28,9 @@ export interface ProviderConfig {
   supportsDownload?: boolean;
 }
 
-// Provider configuration
+// Provider configuration - only keeping the three requested providers
 export const providerConfigs: Record<string, ProviderConfig> = {
-  // Main providers
   vidsrc_xyz: { 
-    type: SourceType.IFRAME,
-    supportsFullHD: true,
-    contentTypes: ['movie', 'series', 'anime']
-  },
-  vidsrc_pro: { 
-    type: SourceType.IFRAME,
-    supportsFullHD: true,
-    contentTypes: ['movie', 'series']
-  },
-  vidsrc_wtf: { 
-    type: SourceType.IFRAME,
-    supportsFullHD: false,
-    contentTypes: ['movie', 'series']
-  },
-  vidsrc_in: { 
-    type: SourceType.IFRAME,
-    supportsFullHD: true,
-    contentTypes: ['movie']
-  },
-  vidsrc_pk: {
-    type: SourceType.IFRAME,
-    supportsFullHD: true,
-    contentTypes: ['movie', 'series', 'anime']
-  },
-  vidsrc_co: {
-    type: SourceType.IFRAME,
-    supportsFullHD: true,
-    contentTypes: ['movie', 'series']
-  },
-  vidsrc_cc: {
     type: SourceType.IFRAME,
     supportsFullHD: true,
     contentTypes: ['movie', 'series', 'anime']
@@ -70,201 +38,12 @@ export const providerConfigs: Record<string, ProviderConfig> = {
   vidsrc_su: {
     type: SourceType.IFRAME,
     supportsFullHD: true,
-    contentTypes: ['movie', 'series']
+    contentTypes: ['movie', 'series', 'anime']
   },
-  embed_su: { 
-    type: SourceType.IFRAME,
-    supportsFullHD: false,
-    contentTypes: ['movie', 'series']
-  },
-  vidfast: {
+  vidsrc_vip: {
     type: SourceType.IFRAME,
     supportsFullHD: true,
     contentTypes: ['movie', 'series', 'anime']
-  },
-  anilist: {
-    type: SourceType.IFRAME,
-    supportsFullHD: false,
-    contentTypes: ['anime']
-  },
-  pstream: {
-    type: SourceType.IFRAME,
-    supportsFullHD: true,
-    contentTypes: ['movie', 'series']
-  },
-  upcloud: {
-    type: SourceType.DIRECT,
-    supportsFullHD: true,
-    contentTypes: ['movie', 'series'],
-    supportsDownload: true
-  },
-  videasy: {
-    type: SourceType.IFRAME,
-    supportsFullHD: true,
-    contentTypes: ['movie', 'series']
-  },
-  sflix: { 
-    type: SourceType.IFRAME,
-    supportsFullHD: false,
-    contentTypes: ['movie', 'series']
-  },
-  primewire_tf: { 
-    type: SourceType.IFRAME,
-    supportsFullHD: false,
-    contentTypes: ['movie', 'series']
-  },
-  fzmovies_net: { 
-    type: SourceType.IFRAME,
-    supportsFullHD: true,
-    contentTypes: ['movie']
-  },
-  embedplay_me: {
-    type: SourceType.IFRAME,
-    supportsFullHD: true,
-    contentTypes: ['movie', 'series']
-  },
-  cinemull_cc: {
-    type: SourceType.IFRAME,
-    supportsFullHD: true,
-    contentTypes: ['movie', 'series']
-  },
-  embed_rgshows: { 
-    type: SourceType.IFRAME,
-    supportsFullHD: false,
-    contentTypes: ['movie', 'series']
-  },
-  godriveplayer: { 
-    type: SourceType.IFRAME,
-    supportsFullHD: true,
-    contentTypes: ['movie', 'series']
-  },
-  // Anime specific providers
-  aniwatch: { 
-    type: SourceType.IFRAME,
-    supportsFullHD: false,
-    contentTypes: ['anime']
-  },
-  // Movie/Series providers
-  fmovies: { 
-    type: SourceType.IFRAME,
-    supportsFullHD: true,
-    contentTypes: ['movie', 'series']
-  },
-  fmovies_net: { 
-    type: SourceType.IFRAME,
-    supportsFullHD: true,
-    contentTypes: ['movie', 'series']
-  },
-  // Premium providers  
-  netflix: { 
-    type: SourceType.IFRAME,
-    isPremium: true,
-    contentTypes: ['movie', 'series', 'anime']
-  },
-  prime_video: { 
-    type: SourceType.IFRAME,
-    isPremium: true,
-    contentTypes: ['movie', 'series']
-  },
-  disney_plus: { 
-    type: SourceType.IFRAME,
-    isPremium: true,
-    contentTypes: ['movie', 'series', 'anime']
-  },
-  hbo_max: { 
-    type: SourceType.IFRAME,
-    isPremium: true,
-    contentTypes: ['movie', 'series']
-  },
-  hulu: { 
-    type: SourceType.IFRAME,
-    isPremium: true,
-    contentTypes: ['series']
-  },
-  // Download providers as streaming
-  filemoon: { 
-    type: SourceType.DIRECT,
-    supportsFullHD: true,
-    contentTypes: ['movie', 'series'],
-    supportsDownload: true
-  },
-  streamtape: { 
-    type: SourceType.IFRAME,
-    supportsFullHD: true,
-    contentTypes: ['movie', 'series'],
-    supportsDownload: true
-  },
-  vidcloud: { 
-    type: SourceType.IFRAME,
-    supportsFullHD: false,
-    contentTypes: ['movie', 'series', 'anime'],
-    supportsDownload: true
-  },
-  // Additional streaming providers
-  brightcove: {
-    type: SourceType.IFRAME,
-    supportsFullHD: true,
-    contentTypes: ['movie', 'series'],
-    supportsDownload: false
-  },
-  ooyala: {
-    type: SourceType.IFRAME,
-    supportsFullHD: true,
-    contentTypes: ['movie', 'series'],
-    supportsDownload: false
-  },
-  wurl: {
-    type: SourceType.IFRAME,
-    supportsFullHD: true,
-    contentTypes: ['movie', 'series'],
-    supportsDownload: false
-  },
-  lookmovie: {
-    type: SourceType.IFRAME,
-    supportsFullHD: true,
-    contentTypes: ['movie', 'series']
-  },
-  gomovies: {
-    type: SourceType.IFRAME,
-    supportsFullHD: true,
-    contentTypes: ['movie', 'series']
-  },
-  moviecrumbs: {
-    type: SourceType.IFRAME,
-    supportsFullHD: false,
-    contentTypes: ['movie', 'series']
-  },
-  moviesjoy: {
-    type: SourceType.IFRAME,
-    supportsFullHD: true,
-    contentTypes: ['movie', 'series']
-  },
-  dopebox: {
-    type: SourceType.IFRAME,
-    supportsFullHD: true,
-    contentTypes: ['movie', 'series']
-  },
-  zoro: {
-    type: SourceType.IFRAME,
-    supportsFullHD: true,
-    contentTypes: ['anime']
-  },
-  gogoanime: {
-    type: SourceType.IFRAME,
-    supportsFullHD: false,
-    contentTypes: ['anime']
-  },
-  crunchyroll: {
-    type: SourceType.IFRAME,
-    supportsFullHD: true,
-    isPremium: true,
-    contentTypes: ['anime']
-  },
-  funimation: {
-    type: SourceType.IFRAME,
-    supportsFullHD: true,
-    isPremium: true,
-    contentTypes: ['anime']
   }
 };
 
@@ -280,7 +59,7 @@ import { getTrailerUrlImpl } from './providers/trailerProviders';
 /**
  * Get streaming URL for the content
  */
-export const getStreamingUrl = (contentId: string, provider: string = 'vidsrc_xyz', options: any = {}): string => {
+export const getStreamingUrl = (contentId: string, provider: string = 'vidsrc_su', options: any = {}): string => {
   return getStreamingUrlForProvider(contentId, provider, options);
 };
 
