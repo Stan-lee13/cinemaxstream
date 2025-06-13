@@ -18,8 +18,8 @@ interface StreamingProviderSelectorProps {
   providers: any[];
   activeProvider: string;
   contentType: string;
-  onProviderChange: (providerId: string) => void;
-  variant?: 'default' | 'inline' | 'grid';
+  onProviderChange: (providerId:string) => void;
+  variant?: 'default' | 'inline' | 'grid' | 'list'; // Added 'list'
 }
 
 const StreamingProviderSelector = ({
@@ -73,31 +73,66 @@ const StreamingProviderSelector = ({
   
   if (variant === 'grid') {
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-2"> {/* Adjusted md:grid-cols-3 for potentially better fit */}
         {providers.map(provider => (
           <Button
             key={provider.id}
             variant="outline"
             size="sm"
             onClick={() => onProviderChange(provider.id)}
-            className={`justify-start ${
+            className={`justify-start text-left w-full ${
               activeProvider === provider.id 
                 ? "bg-cinemax-500/20 border-cinemax-500 text-white" 
-                : "bg-background border-gray-700 text-gray-300"
+                : "bg-background border-gray-700 text-gray-300 hover:bg-gray-800"
+            }`}
+          >
+            <div className="flex items-center gap-2 w-full">
+              <img
+                src={getProviderIcon(provider.id)}
+                alt={provider.name}
+                className="w-4 h-4 rounded object-contain flex-shrink-0"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/icons/play.png';
+                }}
+              />
+              <span className="truncate flex-grow">{provider.name}</span>
+              {activeProvider === provider.id && (
+                <Check className="h-3 w-3 ml-auto flex-shrink-0" />
+              )}
+            </div>
+          </Button>
+        ))}
+      </div>
+    );
+  }
+
+  if (variant === 'list') {
+    return (
+      <div className="flex flex-col gap-2">
+        {providers.map(provider => (
+          <Button
+            key={provider.id}
+            variant="outline"
+            size="sm"
+            onClick={() => onProviderChange(provider.id)}
+            className={`justify-start text-left w-full ${
+              activeProvider === provider.id
+                ? "bg-cinemax-500/20 border-cinemax-500 text-white"
+                : "bg-background border-gray-700 text-gray-300 hover:bg-gray-800"
             }`}
           >
             <div className="flex items-center gap-2 w-full">
               <img 
                 src={getProviderIcon(provider.id)} 
                 alt={provider.name}
-                className="w-4 h-4 rounded object-contain"
+                className="w-4 h-4 rounded object-contain flex-shrink-0"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = '/icons/play.png';
                 }}
               />
-              <span className="truncate">{provider.name}</span>
+              <span className="truncate flex-grow">{provider.name}</span>
               {activeProvider === provider.id && (
-                <Check className="h-3 w-3 ml-auto" />
+                <Check className="h-3 w-3 ml-auto flex-shrink-0" />
               )}
             </div>
           </Button>
@@ -106,6 +141,7 @@ const StreamingProviderSelector = ({
     );
   }
   
+  // Default variant (dropdown)
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>

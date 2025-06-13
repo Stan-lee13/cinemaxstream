@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, List, Grid3X3 } from "lucide-react";
 import useContentDetail from "@/hooks/useContentDetail";
 import LoadingState from "@/components/LoadingState";
+import { toast } from "sonner"; // Import toast
 import PlaySplashScreen from "@/components/PlaySplashScreen";
 import NeonEdgeEffect from "@/components/NeonEdgeEffect";
 import VideoAssistant from "@/components/VideoAssistant";
@@ -24,6 +25,7 @@ const ContentDetail = () => {
   const navigate = useNavigate();
   const cleanupRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [providerViewMode, setProviderViewMode] = useState<'grid' | 'list'>('grid'); // New state for view mode
   
   const {
     content,
@@ -107,8 +109,29 @@ const ContentDetail = () => {
   }
 
   const handleSkipPlayback = (seconds: number) => {
-    // This would be handled by the video player
-    console.log(`Skipping ${seconds} seconds`);
+    toast.info(`Attempting to skip ${seconds} seconds...`);
+    // Actual skip logic would be handled by the video player instance
+  };
+
+  const handleResumePlayback = () => {
+    toast.info("Playback resume requested.");
+    // Actual resume logic would be handled by the video player instance or by setting isPlaying(true)
+    // For now, let's assume it should try to start watching or resume if player is already initialized.
+    if (!isPlaying) {
+      startWatching(); // Or a more specific resume function if available
+    }
+  };
+
+  const handleShowInfo = () => {
+    toast.info(`Info requested for ${content?.title}`);
+    // Logic to show more info, e.g., scroll to details tab or open a modal
+    // For now, this toast is the placeholder action.
+    // Example: navigate to a specific part of the page or open an info modal
+    const tabs = document.querySelector('[role="tablist"]');
+    if (tabs) {
+      const overviewButton = tabs.querySelector('button[value="overview"]') as HTMLElement;
+      overviewButton?.click(); // Switch to overview tab
+    }
   };
 
   return (
@@ -188,6 +211,8 @@ const ContentDetail = () => {
               contentType={content.content_type}
               onRequestEpisode={handleEpisodeSelect}
               onRequestSkip={handleSkipPlayback}
+              onRequestResumePlayback={handleResumePlayback}
+              onRequestShowInfo={handleShowInfo}
             />
           </div>
         ) : (
@@ -264,10 +289,22 @@ const ContentDetail = () => {
                           <div className="flex items-center justify-between mb-4">
                             <h3 className="text-lg font-bold">Available Sources</h3>
                             <div className="flex gap-2">
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className={`h-8 w-8 ${providerViewMode === 'list' ? 'bg-secondary' : ''}`}
+                                onClick={() => setProviderViewMode('list')}
+                                aria-label="List view for providers"
+                              >
                                 <List className="h-4 w-4" />
                               </Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className={`h-8 w-8 ${providerViewMode === 'grid' ? 'bg-secondary' : ''}`}
+                                onClick={() => setProviderViewMode('grid')}
+                                aria-label="Grid view for providers"
+                              >
                                 <Grid3X3 className="h-4 w-4" />
                               </Button>
                             </div>
@@ -278,7 +315,7 @@ const ContentDetail = () => {
                             activeProvider={activeProvider}
                             contentType={content.content_type}
                             onProviderChange={setActiveProvider}
-                            variant="grid"
+                            variant={providerViewMode} // Pass the view mode
                           />
                         </div>
                         
@@ -461,6 +498,9 @@ const ContentDetail = () => {
           contentTitle={content.title}
           contentType={content.content_type}
           onRequestEpisode={handleEpisodeSelect}
+          // Pass other handlers if VideoAssistant is used when not playing.
+          // For this task, VideoAssistant when not playing already has its existing handlers.
+          // The new handlers are primarily for when it's active during playback.
         />
       )}
     </div>

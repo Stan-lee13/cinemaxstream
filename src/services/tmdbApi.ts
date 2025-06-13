@@ -6,13 +6,22 @@
 import { toast } from "sonner";
 import { getImageUrl, normalizeContentType } from "@/utils/urlUtils";
 
-// Base URLs for TMDB API
-const TMDB_BASE_URL = "https://api.themoviedb.org/3";
-const TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p/original";
-const TMDB_POSTER_BASE_URL = "https://image.tmdb.org/t/p/w500";
+// Environment Variables
+const VITE_TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
+const VITE_TMDB_BASE_URL = import.meta.env.VITE_TMDB_BASE_URL || "https://api.themoviedb.org/3";
+const VITE_TMDB_IMAGE_BASE_URL = import.meta.env.VITE_TMDB_IMAGE_BASE_URL || "https://image.tmdb.org/t/p/original";
+const VITE_TMDB_POSTER_BASE_URL = import.meta.env.VITE_TMDB_POSTER_BASE_URL || "https://image.tmdb.org/t/p/w500";
 
-// API Key for TMDB
-const API_KEY = "4626200399b08f9d04b72348e3625f15";
+if (!VITE_TMDB_API_KEY) {
+  throw new Error("VITE_TMDB_API_KEY is not defined. Please check your .env file.");
+}
+
+// Constants for use within the module
+const TMDB_API_KEY = VITE_TMDB_API_KEY;
+const TMDB_BASE_URL = VITE_TMDB_BASE_URL;
+const TMDB_IMAGE_BASE_URL = VITE_TMDB_IMAGE_BASE_URL;
+const TMDB_POSTER_BASE_URL = VITE_TMDB_POSTER_BASE_URL;
+
 
 // Types for data
 export interface ContentItem {
@@ -39,10 +48,10 @@ const formatContentItem = (item: any, type: string = 'movie'): ContentItem => {
     id: item.id.toString(),
     title: isMovie ? item.title : item.name,
     description: item.overview,
-    image: item.poster_path ? `${TMDB_POSTER_BASE_URL}${item.poster_path}` : '/placeholder.svg',
+    image: item.poster_path ? `${TMDB_POSTER_BASE_URL}${item.poster_path}` : getImageUrl('/placeholder.svg'), // Use getImageUrl for consistency
     backdrop: item.backdrop_path ? `${TMDB_IMAGE_BASE_URL}${item.backdrop_path}` : undefined,
     year: (isMovie ? item.release_date : item.first_air_date)?.substring(0, 4) || 'N/A',
-    duration: isMovie ? '120 min' : 'Seasons: ' + (item.number_of_seasons || 'N/A'),
+    duration: isMovie ? '120 min' : 'Seasons: ' + (item.number_of_seasons || 'N/A'), // This duration is a placeholder, actual duration might need more specific fetching if available
     rating: (item.vote_average / 2).toFixed(1),
     category: contentType,
     type: contentType,
@@ -54,7 +63,7 @@ const formatContentItem = (item: any, type: string = 'movie'): ContentItem => {
 // Function to search content
 const searchContent = async (query: string): Promise<ContentItem[]> => {
   try {
-    const url = `${TMDB_BASE_URL}/search/multi?api_key=${API_KEY}&query=${encodeURIComponent(query)}`;
+    const url = `${TMDB_BASE_URL}/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}`;
     const response = await fetch(url);
     
     if (!response.ok) {
@@ -76,7 +85,7 @@ const searchContent = async (query: string): Promise<ContentItem[]> => {
 // Function to get trending movies
 const getTrendingMovies = async (): Promise<ContentItem[]> => {
   try {
-    const url = `${TMDB_BASE_URL}/trending/movie/day?api_key=${API_KEY}`;
+    const url = `${TMDB_BASE_URL}/trending/movie/day?api_key=${TMDB_API_KEY}`;
     const response = await fetch(url);
     
     if (!response.ok) {
@@ -96,7 +105,7 @@ const getTrendingMovies = async (): Promise<ContentItem[]> => {
 // Function to get trending TV shows
 const getTrendingTvShows = async (): Promise<ContentItem[]> => {
   try {
-    const url = `${TMDB_BASE_URL}/trending/tv/day?api_key=${API_KEY}`;
+    const url = `${TMDB_BASE_URL}/trending/tv/day?api_key=${TMDB_API_KEY}`;
     const response = await fetch(url);
     
     if (!response.ok) {
@@ -116,7 +125,7 @@ const getTrendingTvShows = async (): Promise<ContentItem[]> => {
 // Function to get popular movies
 const getPopularMovies = async (): Promise<ContentItem[]> => {
   try {
-    const url = `${TMDB_BASE_URL}/movie/popular?api_key=${API_KEY}`;
+    const url = `${TMDB_BASE_URL}/movie/popular?api_key=${TMDB_API_KEY}`;
     const response = await fetch(url);
     
     if (!response.ok) {
@@ -136,7 +145,7 @@ const getPopularMovies = async (): Promise<ContentItem[]> => {
 // Function to get popular TV shows
 const getPopularTvShows = async (): Promise<ContentItem[]> => {
   try {
-    const url = `${TMDB_BASE_URL}/tv/popular?api_key=${API_KEY}`;
+    const url = `${TMDB_BASE_URL}/tv/popular?api_key=${TMDB_API_KEY}`;
     const response = await fetch(url);
     
     if (!response.ok) {
@@ -157,7 +166,7 @@ const getPopularTvShows = async (): Promise<ContentItem[]> => {
 const getAnime = async (): Promise<ContentItem[]> => {
   try {
     // Using animation genre ID (16) to filter for anime-like content
-    const url = `${TMDB_BASE_URL}/discover/tv?api_key=${API_KEY}&with_genres=16&sort_by=popularity.desc`;
+    const url = `${TMDB_BASE_URL}/discover/tv?api_key=${TMDB_API_KEY}&with_genres=16&sort_by=popularity.desc`;
     const response = await fetch(url);
     
     if (!response.ok) {
@@ -187,7 +196,7 @@ const getContentDetails = async (id: string, type: string = 'movie'): Promise<Co
     
     // For TV shows, we need to adjust the endpoint
     const endpoint = normalizedType === 'series' || normalizedType === 'anime' ? 'tv' : normalizedType;
-    const url = `${TMDB_BASE_URL}/${endpoint}/${id}?api_key=${API_KEY}&append_to_response=videos,credits`;
+    const url = `${TMDB_BASE_URL}/${endpoint}/${id}?api_key=${TMDB_API_KEY}&append_to_response=videos,credits`;
     
     const response = await fetch(url);
     
@@ -230,7 +239,7 @@ const getSimilarContent = async (id: string, type: string = 'movie'): Promise<Co
     
     // For TV shows, we need to adjust the endpoint
     const endpoint = normalizedType === 'series' || normalizedType === 'anime' ? 'tv' : normalizedType;
-    const url = `${TMDB_BASE_URL}/${endpoint}/${id}/similar?api_key=${API_KEY}`;
+    const url = `${TMDB_BASE_URL}/${endpoint}/${id}/similar?api_key=${TMDB_API_KEY}`;
     const response = await fetch(url);
     
     if (!response.ok) {
@@ -255,21 +264,22 @@ const getContentByCategory = async (category: string): Promise<ContentItem[]> =>
     
     switch (category) {
       case 'movies':
-        url = `${TMDB_BASE_URL}/movie/popular?api_key=${API_KEY}`;
+        url = `${TMDB_BASE_URL}/movie/popular?api_key=${TMDB_API_KEY}`;
         type = 'movie';
         break;
       case 'series':
-        url = `${TMDB_BASE_URL}/tv/popular?api_key=${API_KEY}`;
+        url = `${TMDB_BASE_URL}/tv/popular?api_key=${TMDB_API_KEY}`;
         type = 'series';
         break;
       case 'anime':
-        return getAnime();
+        return getAnime(); // getAnime already uses TMDB_API_KEY
       case 'trending':
-        const trendingMovies = await getTrendingMovies();
-        const trendingTvShows = await getTrendingTvShows();
+        const trendingMovies = await getTrendingMovies(); // Uses TMDB_API_KEY
+        const trendingTvShows = await getTrendingTvShows(); // Uses TMDB_API_KEY
         return [...trendingMovies, ...trendingTvShows];
       default:
-        url = `${TMDB_BASE_URL}/trending/all/day?api_key=${API_KEY}`;
+        // Fallback for unspecified categories, could be trending or a specific genre
+        url = `${TMDB_BASE_URL}/trending/all/day?api_key=${TMDB_API_KEY}`;
     }
     
     const response = await fetch(url);
@@ -297,7 +307,7 @@ const getContentByCategory = async (category: string): Promise<ContentItem[]> =>
 // Function to get TV show seasons and episodes
 const getTvShowSeasons = async (id: string): Promise<Season[]> => {
   try {
-    const url = `${TMDB_BASE_URL}/tv/${id}?api_key=${API_KEY}&append_to_response=season/1,season/2,season/3`;
+    const url = `${TMDB_BASE_URL}/tv/${id}?api_key=${TMDB_API_KEY}&append_to_response=season/1,season/2,season/3`; // Example appending specific seasons
     const response = await fetch(url);
     
     if (!response.ok) {
@@ -332,7 +342,7 @@ const getTvShowSeasons = async (id: string): Promise<Season[]> => {
 // Function to get TV show season episodes
 const getTvShowEpisodes = async (id: string, seasonNumber: number): Promise<Episode[]> => {
   try {
-    const url = `${TMDB_BASE_URL}/tv/${id}/season/${seasonNumber}?api_key=${API_KEY}`;
+    const url = `${TMDB_BASE_URL}/tv/${id}/season/${seasonNumber}?api_key=${TMDB_API_KEY}`;
     const response = await fetch(url);
     
     if (!response.ok) {

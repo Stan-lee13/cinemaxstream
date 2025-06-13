@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuthState";
 import { toast } from 'sonner';
+import { useFavorites } from '@/hooks/useFavorites'; // Import useFavorites
 import { tmdbApi } from "@/services/tmdbApi";
 import { getTrailerUrl, hasPremiumAccess, getAvailableProviders } from "@/utils/videoUtils";
 import { getDefaultRuntime } from "@/utils/contentUtils";
@@ -9,7 +10,7 @@ import { getDefaultRuntime } from "@/utils/contentUtils";
 export const useContentDetail = (contentId: string | undefined) => {
   const [content, setContent] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [liked, setLiked] = useState(false);
+  // const [liked, setLiked] = useState(false); // Replaced by useFavorites
   const [relatedContent, setRelatedContent] = useState<any[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showTrailer, setShowTrailer] = useState(false);
@@ -22,6 +23,9 @@ export const useContentDetail = (contentId: string | undefined) => {
   const [showSplashScreen, setShowSplashScreen] = useState(false);
   const [showNeonEffect, setShowNeonEffect] = useState(false);
   const { user, isAuthenticated } = useAuth();
+  const { isFavorite, toggleFavorite: toggleFavoriteHook } = useFavorites(); // Use the hook
+
+  const liked = contentId ? isFavorite(contentId) : false; // Derive liked state
 
   const availableProviders = contentId ? getAvailableProviders(contentId, content?.content_type || 'movie') : [];
   const isPremiumContent = content?.is_premium || (content?.rating && parseFloat(content.rating) > 8.0);
@@ -130,17 +134,7 @@ export const useContentDetail = (contentId: string | undefined) => {
           console.error('Error fetching trailer:', e);
         }
         
-        // Check if user has liked this content
-        if (isAuthenticated && user) {
-          const { data: favoriteData } = await (supabase
-            .from('user_favorites') as any)
-            .select('*')
-            .eq('user_id', user.id)
-            .eq('content_id', contentId)
-            .single();
-          
-          setLiked(!!favoriteData);
-        }
+        // Liked state is now derived from useFavorites, so no need to fetch here.
         
         // Fetch related content from the same category
         if (contentData.category_id) {
@@ -230,45 +224,23 @@ export const useContentDetail = (contentId: string | undefined) => {
     setSeasons(mockSeasons);
   };
 
-  // Handle favorite toggle
-  const toggleFavorite = async () => {
+  // Handle favorite toggle using the hook
+  const handleToggleFavorite = useCallback(() => {
     if (!isAuthenticated) {
       toast.error("Please sign in to add favorites");
       return;
     }
-    
-    if (!contentId || !user) return;
-    
-    try {
-      if (liked) {
-        // Remove from favorites
-        await (supabase
-          .from('user_favorites') as any)
-          .delete()
-          .eq('user_id', user.id)
-          .eq('content_id', contentId);
-        
-        toast.success("Removed from favorites");
-      } else {
-        // Add to favorites
-        const favoriteData = {
-          user_id: user.id,
-          content_id: contentId
-        };
-        
-        await (supabase
-          .from('user_favorites') as any)
-          .insert(favoriteData);
-        
-        toast.success("Added to favorites");
-      }
-      
-      setLiked(!liked);
-    } catch (error) {
-      toast.error("Error updating favorites");
-      console.error(error);
+    if (!contentId) return;
+
+    toggleFavoriteHook(contentId); // Use the function from useFavorites
+    // Toast messages can be centralized in useFavorites or handled here if specific context is needed
+    // For now, useFavorites doesn't show toasts, so we can add them here.
+    if (isFavorite(contentId)) { // Check new state after toggle
+      toast.success(`${content?.title || 'Content'} removed from favorites`);
+    } else {
+      toast.success(`${content?.title || 'Content'} added to favorites`);
     }
-  };
+  }, [isAuthenticated, contentId, toggleFavoriteHook, isFavorite, content?.title]);
 
   // Start watching
   const startWatching = () => {
@@ -346,8 +318,8 @@ export const useContentDetail = (contentId: string | undefined) => {
   return {
     content,
     isLoading,
-    liked,
-    toggleFavorite,
+    liked, // This is now derived from useFavorites
+    toggleFavorite: handleToggleFavorite, // Expose the new handler
     relatedContent,
     isPlaying,
     setIsPlaying,

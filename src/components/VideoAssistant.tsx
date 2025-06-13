@@ -22,6 +22,8 @@ interface VideoAssistantProps {
   onRequestEpisode?: (season: number, episode: number) => void;
   onRequestSkip?: (seconds: number) => void;
   onRequestRelated?: () => void;
+  onRequestResumePlayback?: () => void; // New prop
+  onRequestShowInfo?: () => void; // New prop
 }
 
 type Message = {
@@ -36,7 +38,9 @@ const VideoAssistant = ({
   contentType = 'movie',
   onRequestEpisode,
   onRequestSkip,
-  onRequestRelated
+  onRequestRelated,
+  onRequestResumePlayback,
+  onRequestShowInfo
 }: VideoAssistantProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
@@ -124,15 +128,32 @@ const VideoAssistant = ({
   const handleQuickAction = (action: string) => {
     switch (action) {
       case 'play':
-        toast.info("Resuming playback");
+        if (onRequestResumePlayback) {
+          onRequestResumePlayback();
+        } else {
+          toast.info("Resume playback action requested.");
+        }
         break;
       case 'info':
-        toast.info(`Showing details for ${contentTitle}`);
+        if (onRequestShowInfo) {
+          onRequestShowInfo();
+        } else {
+          toast.info(`Show info requested for ${contentTitle}.`);
+        }
         break;
       case 'next':
         if (contentType !== 'movie') {
-          toast.info("Playing next episode");
-          if (onRequestEpisode) onRequestEpisode(1, 2); // Example: go to episode 2
+          toast.info("Requesting next episode..."); // More generic toast
+          if (onRequestEpisode) {
+            // Ideally, we'd need current season/episode context here to request the *actual* next one.
+            // For now, calling it (if provided) is kept, but this part may need future enhancement.
+            // Example: if current is S1E1, next could be S1E2.
+            // The parent (ContentDetail) provides handleEpisodeSelect which might have this context.
+            // However, VideoAssistant doesn't know the current episode to increment it.
+            // The previous (1,2) was an example, let's remove specific numbers if not available.
+            // Or rely on parent to handle "next" logic if no specific episode is passed.
+            onRequestEpisode(-1, -1); // Signal to parent to play "next" based on its context
+          }
         }
         break;
       default:

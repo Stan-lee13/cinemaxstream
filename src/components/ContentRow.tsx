@@ -3,6 +3,16 @@ import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Play, Download, ArrowRight, ArrowLeft } from "lucide-react";
+import { toast } from "sonner"; // Import toast
+
+interface ContentItem { // Assuming ContentItem type, adjust if different
+  id: string;
+  title: string;
+  poster: string;
+  rating: string | number;
+  year: string | number;
+  // Add other relevant fields if needed by the component
+}
 
 interface ContentRowProps {
   title: string;
@@ -124,7 +134,17 @@ const ContentRow: React.FC<ContentRowProps> = ({ title, viewAllLink, items }) =>
                           <Play size={14} />
                           <span>Play</span>
                         </Button>
-                        <Button variant="secondary" size="sm" className="w-8 h-8 p-0 bg-white/10 hover:bg-white/20 border-none">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="w-8 h-8 p-0 bg-white/10 hover:bg-white/20 border-none"
+                          onClick={(e) => {
+                            e.preventDefault(); // Prevent Link navigation
+                            e.stopPropagation(); // Stop event bubbling
+                            toast.info(`Download clicked for ${item.title}`);
+                          }}
+                          aria-label={`Download ${item.title}`}
+                        >
                           <Download size={14} />
                         </Button>
                       </div>

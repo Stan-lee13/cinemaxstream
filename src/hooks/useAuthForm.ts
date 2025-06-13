@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { handleError } from '@/utils/errorHandler';
 
 export const useAuthForm = () => {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
@@ -51,8 +52,7 @@ export const useAuthForm = () => {
         navigate('/');
       }
     } catch (error) {
-      console.error('Authentication error:', error);
-      toast.error(error instanceof Error ? error.message : 'Authentication failed');
+      handleError(error, mode === 'signup' ? 'Sign up failed. Please try again.' : 'Login failed. Please check your credentials.');
     } finally {
       setIsLoading(false);
     }
@@ -71,8 +71,9 @@ export const useAuthForm = () => {
 
       if (error) throw error;
     } catch (error) {
-      console.error('Google sign in error:', error);
-      toast.error('Error signing in with Google');
+      handleError(error, 'Google sign-in failed. Please try again.');
+      // Ensure isLoading is set to false in case of Google Auth error,
+      // as the finally block might not be present or run if error is rethrown.
       setIsLoading(false);
     }
   };
@@ -87,8 +88,7 @@ export const useAuthForm = () => {
       toast.success('Logged in as guest');
       navigate('/');
     } catch (error) {
-      console.error('Guest access error:', error);
-      toast.error('Error accessing as guest');
+      handleError(error, 'Guest access failed. Please try again.');
     } finally {
       setIsLoading(false);
     }

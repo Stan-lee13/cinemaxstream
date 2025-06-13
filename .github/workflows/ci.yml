@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ] # Adjust if your main branch has a different name
+  pull_request:
+    branches: [ main, master ] # Adjust if your main branch has a different name
+
+jobs:
+  build_and_test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x] # You can adjust or add Node.js versions
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm' # or 'yarn' or 'pnpm' depending on your package manager
+
+    - name: Install dependencies
+      run: npm install # or 'yarn install' or 'pnpm install'
+
+    - name: Run linters
+      run: npm run lint # Assumes you have a 'lint' script in package.json. Create a placeholder if not.
+
+    - name: Run tests
+      run: npm run test --if-present # Assumes you have a 'test' script. Runs only if script exists.
+
+    - name: Build application
+      run: npm run build # Assumes you have a 'build' script in package.json
+      env: # Add environment variables required for the build process
+        VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+        VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+        VITE_TMDB_API_KEY: ${{ secrets.VITE_TMDB_API_KEY }}
+        # VITE_TMDB_BASE_URL, VITE_TMDB_IMAGE_BASE_URL, VITE_TMDB_POSTER_BASE_URL
+        # are not strictly needed for build, as they have defaults or are client-side runtime.
+        # Add other VITE_ variables if they are essential for the build
+        # For example, if your build process fails without certain VITE_ variables, add them here.
+        # For now, assuming only the keys/sensitive URLs are needed for build-time checks or embedding.
+        # If they are truly runtime only and have defaults, they might not be needed here.
+        # However, Supabase keys are often embedded during build for the client to use.
+        # TMDB API key might be needed if there's any build-time data fetching (less common with Vite client-side apps).
+        # Let's assume the ones listed are sufficient for a typical Vite build process that might embed them.
+        # The default values for TMDB URLs in tmdbApi.ts will be used if not set here for build,
+        # but the API key is critical and has no default. Supabase URL/Key also have no defaults in the updated client.ts.
+```

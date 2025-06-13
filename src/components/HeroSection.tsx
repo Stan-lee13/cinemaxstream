@@ -1,7 +1,21 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react"; // Added useCallback
 import { Button } from "@/components/ui/button";
 import { Play, Download, Heart } from "lucide-react";
+import DownloadOptions from "./DownloadOptions";
+import { toast } from "sonner";
+import { useFavorites } from "@/hooks/useFavorites"; // Import useFavorites
+
+interface FeaturedContent {
+  id: string;
+  title: string;
+  description: string;
+  image: string;
+  category: string;
+  year: string;
+  duration: string;
+  rating: string;
+}
 
 interface HeroSectionProps {
   featuredContent?: FeaturedContent[];
@@ -10,7 +24,7 @@ interface HeroSectionProps {
 // Default featured content in case API fails
 const defaultFeaturedContent: FeaturedContent[] = [
   {
-    id: "1",
+    id: "101", // Assuming IDs should be consistent with what DownloadOptions might expect
     title: "Inception",
     description: "A thief who enters the dreams of others to steal their secrets gets a final mission that could give him his life back.",
     image: "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1920&q=80",
@@ -43,6 +57,10 @@ const defaultFeaturedContent: FeaturedContent[] = [
 
 const HeroSection = ({ featuredContent = defaultFeaturedContent }: HeroSectionProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [showDownloadOptions, setShowDownloadOptions] = useState(false);
+  // const [liked, setLiked] = useState(false); // Replaced by useFavorites
+  const downloadRef = useRef<HTMLDivElement>(null);
+  const { isFavorite, toggleFavorite } = useFavorites();
   
   // Auto slide change
   useEffect(() => {
@@ -50,12 +68,52 @@ const HeroSection = ({ featuredContent = defaultFeaturedContent }: HeroSectionPr
       setCurrentIndex((prevIndex) => 
         prevIndex === featuredContent.length - 1 ? 0 : prevIndex + 1
       );
-    }, 6000);
-    
+    }, 6000); // Change slide every 6 seconds
     return () => clearTimeout(timer);
   }, [currentIndex, featuredContent.length]);
+
+  // Close download options when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (downloadRef.current && !downloadRef.current.contains(event.target as Node)) {
+        setShowDownloadOptions(false);
+      }
+    };
+    if (showDownloadOptions) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showDownloadOptions]);
   
   const currentContent = featuredContent[currentIndex];
+  const liked = currentContent ? isFavorite(currentContent.id) : false;
+
+  const handleDownloadClick = () => {
+    setShowDownloadOptions(!showDownloadOptions);
+  };
+
+  const handleFavoriteClick = useCallback(() => {
+    if (!currentContent) return;
+    toggleFavorite(currentContent.id);
+    // Provide toast feedback based on the new state
+    if (isFavorite(currentContent.id)) { // Check new state *after* toggle
+      toast.success(`${currentContent.title} removed from favorites`);
+    } else {
+      toast.success(`${currentContent.title} added to favorites`);
+    }
+  }, [currentContent, toggleFavorite, isFavorite]);
+
+
+  if (!currentContent) {
+    // Handle case where featuredContent might be empty or currentContent is undefined
+    return (
+      <section className="relative h-[85vh] overflow-hidden flex items-center justify-center">
+        <p className="text-white text-xl">Loading featured content...</p>
+      </section>
+    );
+  }
 
   return (
     <section className="relative h-[85vh] overflow-hidden">
@@ -97,21 +155,37 @@ const HeroSection = ({ featuredContent = defaultFeaturedContent }: HeroSectionPr
               <Play size={18} />
               <span>Watch Now</span>
             </Button>
-            <Button 
-              variant="outline" 
-              className="gap-2 border-gray-600 hover:bg-secondary hover:text-white px-6" 
-              size="lg"
-            >
-              <Download size={18} />
-              <span>Download</span>
-            </Button>
+            <div className="relative" ref={downloadRef}> {/* Wrapper for DownloadOptions positioning */}
+              <Button
+                variant="outline"
+                className="gap-2 border-gray-600 hover:bg-secondary hover:text-white px-6"
+                size="lg"
+                onClick={handleDownloadClick}
+              >
+                <Download size={18} />
+                <span>Download</span>
+              </Button>
+              {showDownloadOptions && currentContent && (
+                <div className="absolute top-full left-0 mt-2 p-3 bg-gray-800 border border-gray-700 rounded-lg z-20 w-[200px]">
+                  <DownloadOptions
+                    contentId={currentContent.id}
+                    title={currentContent.title}
+                  />
+                </div>
+              )}
+            </div>
             <Button 
               variant="ghost" 
               size="icon" 
-              className="rounded-full border border-gray-700 hover:bg-gray-700/50"
+              className={`rounded-full border ${
+                liked
+                  ? "bg-cinemax-500/20 border-cinemax-500 text-cinemax-500"
+                  : "border-gray-700 hover:bg-gray-700/50"
+              }`}
               aria-label="Add to favorites"
+              onClick={handleFavoriteClick}
             >
-              <Heart size={18} />
+              <Heart size={18} fill={liked ? "currentColor" : "none"} />
             </Button>
           </div>
         </div>

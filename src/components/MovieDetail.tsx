@@ -8,6 +8,7 @@ import { hasPremiumAccess } from "@/utils/videoUtils";
 import DownloadOptions from "./DownloadOptions";
 import { toast } from "sonner";
 import AiTrailerButton from "./AiTrailerButton";
+import { sanitizeHTML } from "@/utils/sanitize";
 
 interface MovieDetailProps {
   content: any;
@@ -110,9 +111,11 @@ const MovieDetail = ({
           </div>
           
           <h1 className="text-4xl md:text-5xl font-bold mb-4">{content.title}</h1>
-          <p className="text-gray-300 mb-8 text-sm md:text-base max-w-2xl">
-            {content.description}
-          </p>
+          {/* Assuming content.description might contain HTML that should be rendered safely */}
+          <p
+            className="text-gray-300 mb-8 text-sm md:text-base max-w-2xl"
+            dangerouslySetInnerHTML={{ __html: sanitizeHTML(content.description) }}
+          />
           
           <div className="flex flex-wrap gap-4">
             <Button 
