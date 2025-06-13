@@ -31,7 +31,7 @@ export interface ContentItem {
 }
 
 // Function to format content item
-const formatContentItem = (item: any, type: string = 'movie'): ContentItem => {
+const formatContentItem = (item: any, type: string = 'movie', trailerKey?: string): ContentItem => {
   const isMovie = type === 'movie';
   const contentType = normalizeContentType(type);
   
@@ -47,8 +47,37 @@ const formatContentItem = (item: any, type: string = 'movie'): ContentItem => {
     category: contentType,
     type: contentType,
     content_type: contentType,
-    trailer_key: item.id.toString() // Will be replaced if we find an actual trailer
+    trailer_key: trailerKey,
   };
+};
+
+// Helper function to fetch trailer key
+const _fetchTrailerKey = async (itemId: string, itemType: 'movie' | 'tv'): Promise<string | undefined> => {
+  try {
+    const url = `${TMDB_BASE_URL}/${itemType}/${itemId}/videos?api_key=${API_KEY}`;
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      // Don't toast errors for this, as it's common for items to not have videos
+      console.warn(`Failed to fetch videos for ${itemType} ID ${itemId}: ${response.status}`);
+      return undefined;
+    }
+
+    const data = await response.json();
+
+    if (data.results && data.results.length > 0) {
+      const trailer = data.results.find((v: any) => v.site === 'YouTube' && v.type === 'Trailer');
+      if (trailer) return trailer.key;
+
+      const teaser = data.results.find((v: any) => v.site === 'YouTube' && v.type === 'Teaser');
+      if (teaser) return teaser.key;
+    }
+    return undefined;
+  } catch (error) {
+    console.error(`Error fetching trailer key for ${itemType} ID ${itemId}:`, error);
+    // Don't toast here either to avoid spamming user for non-critical data
+    return undefined;
+  }
 };
 
 // Function to search content
@@ -63,9 +92,16 @@ const searchContent = async (query: string): Promise<ContentItem[]> => {
     
     const data = await response.json();
     
-    return data.results
-      .filter((item: any) => item.media_type === 'movie' || item.media_type === 'tv')
-      .map((item: any) => formatContentItem(item, item.media_type === 'tv' ? 'series' : item.media_type));
+    const results = data.results.filter((item: any) => item.media_type === 'movie' || item.media_type === 'tv');
+
+    const trailerKeyPromises = results.map((item: any) =>
+      _fetchTrailerKey(item.id.toString(), item.media_type === 'tv' ? 'tv' : 'movie')
+    );
+    const trailerKeys = await Promise.all(trailerKeyPromises);
+
+    return results.map((item: any, index: number) =>
+      formatContentItem(item, item.media_type === 'tv' ? 'series' : item.media_type, trailerKeys[index])
+    );
   } catch (error) {
     console.error("Error searching content:", error);
     toast.error("Failed to search content");
@@ -84,8 +120,12 @@ const getTrendingMovies = async (): Promise<ContentItem[]> => {
     }
     
     const data = await response.json();
-    
-    return data.results.map((item: any) => formatContentItem(item, 'movie'));
+    const results = data.results;
+
+    const trailerKeyPromises = results.map((item: any) => _fetchTrailerKey(item.id.toString(), 'movie'));
+    const trailerKeys = await Promise.all(trailerKeyPromises);
+
+    return results.map((item: any, index: number) => formatContentItem(item, 'movie', trailerKeys[index]));
   } catch (error) {
     console.error("Error fetching trending movies:", error);
     toast.error("Failed to load trending movies");
@@ -104,8 +144,12 @@ const getTrendingTvShows = async (): Promise<ContentItem[]> => {
     }
     
     const data = await response.json();
+    const results = data.results;
+
+    const trailerKeyPromises = results.map((item: any) => _fetchTrailerKey(item.id.toString(), 'tv'));
+    const trailerKeys = await Promise.all(trailerKeyPromises);
     
-    return data.results.map((item: any) => formatContentItem(item, 'series'));
+    return results.map((item: any, index: number) => formatContentItem(item, 'series', trailerKeys[index]));
   } catch (error) {
     console.error("Error fetching trending TV shows:", error);
     toast.error("Failed to load trending TV shows");
@@ -124,8 +168,12 @@ const getPopularMovies = async (): Promise<ContentItem[]> => {
     }
     
     const data = await response.json();
-    
-    return data.results.map((item: any) => formatContentItem(item, 'movie'));
+    const results = data.results;
+
+    const trailerKeyPromises = results.map((item: any) => _fetchTrailerKey(item.id.toString(), 'movie'));
+    const trailerKeys = await Promise.all(trailerKeyPromises);
+
+    return results.map((item: any, index: number) => formatContentItem(item, 'movie', trailerKeys[index]));
   } catch (error) {
     console.error("Error fetching popular movies:", error);
     toast.error("Failed to load popular movies");
@@ -144,8 +192,12 @@ const getPopularTvShows = async (): Promise<ContentItem[]> => {
     }
     
     const data = await response.json();
-    
-    return data.results.map((item: any) => formatContentItem(item, 'series'));
+    const results = data.results;
+
+    const trailerKeyPromises = results.map((item: any) => _fetchTrailerKey(item.id.toString(), 'tv'));
+    const trailerKeys = await Promise.all(trailerKeyPromises);
+
+    return results.map((item: any, index: number) => formatContentItem(item, 'series', trailerKeys[index]));
   } catch (error) {
     console.error("Error fetching popular TV shows:", error);
     toast.error("Failed to load popular TV shows");
@@ -165,9 +217,13 @@ const getAnime = async (): Promise<ContentItem[]> => {
     }
     
     const data = await response.json();
+    const results = data.results;
+
+    const trailerKeyPromises = results.map((item: any) => _fetchTrailerKey(item.id.toString(), 'tv'));
+    const trailerKeys = await Promise.all(trailerKeyPromises);
     
-    return data.results.map((item: any) => {
-      const formattedItem = formatContentItem(item, 'series');
+    return results.map((item: any, index: number) => {
+      const formattedItem = formatContentItem(item, 'series', trailerKeys[index]);
       formattedItem.category = 'anime';
       formattedItem.type = 'anime';
       formattedItem.content_type = 'anime';
@@ -202,18 +258,24 @@ const getContentDetails = async (id: string, type: string = 'movie'): Promise<Co
     }
     
     const data = await response.json();
-    const formattedItem = formatContentItem(data, normalizedType);
+    // Initially format without a specific trailer key, as videos are appended.
+    const formattedItem = formatContentItem(data, normalizedType, undefined);
     
     // Set trailer key if available in the response
     if (data.videos && data.videos.results && data.videos.results.length > 0) {
-      // Find a trailer, teaser, or any video
       const trailer = data.videos.results.find((v: any) => 
         v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser')
       );
       
       if (trailer) {
         formattedItem.trailer_key = trailer.key;
+      } else {
+        // Ensure trailer_key is undefined if no suitable video found
+        formattedItem.trailer_key = undefined;
       }
+    } else {
+      // Ensure trailer_key is undefined if no videos data
+      formattedItem.trailer_key = undefined;
     }
     
     return formattedItem;
@@ -238,8 +300,13 @@ const getSimilarContent = async (id: string, type: string = 'movie'): Promise<Co
     }
     
     const data = await response.json();
+    const results = data.results;
     
-    return data.results.map((item: any) => formatContentItem(item, normalizedType));
+    const itemMediaType = normalizedType === 'series' || normalizedType === 'anime' ? 'tv' : 'movie';
+    const trailerKeyPromises = results.map((item: any) => _fetchTrailerKey(item.id.toString(), itemMediaType as 'movie' | 'tv'));
+    const trailerKeys = await Promise.all(trailerKeyPromises);
+
+    return results.map((item: any, index: number) => formatContentItem(item, normalizedType, trailerKeys[index]));
   } catch (error) {
     console.error("Error fetching similar content:", error);
     toast.error("Failed to load similar content");
@@ -279,12 +346,20 @@ const getContentByCategory = async (category: string): Promise<ContentItem[]> =>
     }
     
     const data = await response.json();
+    const results = data.results;
+
+    const trailerKeyPromises = results.map((item: any) => {
+      const itemMediaType = item.media_type === 'tv' ? 'tv' : 'movie'; // Determine type for each item
+      return _fetchTrailerKey(item.id.toString(), itemMediaType);
+    });
+    const trailerKeys = await Promise.all(trailerKeyPromises);
     
-    return data.results.map((item: any) => {
+    return results.map((item: any, index: number) => {
       // Determine type from media_type if available
       const itemType = item.media_type || type;
       const contentType = normalizeContentType(itemType === 'tv' ? 'series' : itemType);
-      const content = formatContentItem(item, contentType);
+      // Pass the fetched trailer key
+      const content = formatContentItem(item, contentType, trailerKeys[index]);
       return content;
     });
   } catch (error) {
@@ -295,7 +370,7 @@ const getContentByCategory = async (category: string): Promise<ContentItem[]> =>
 };
 
 // Function to get TV show seasons and episodes
-const getTvShowSeasons = async (id: string): Promise<Season[]> => {
+const getTvShowSeasons = async (id: string): Promise<Season[]> => { // Note: This function does not return ContentItem, so no trailer_key logic needed here.
   try {
     const url = `${TMDB_BASE_URL}/tv/${id}?api_key=${API_KEY}&append_to_response=season/1,season/2,season/3`;
     const response = await fetch(url);
@@ -330,7 +405,7 @@ const getTvShowSeasons = async (id: string): Promise<Season[]> => {
 };
 
 // Function to get TV show season episodes
-const getTvShowEpisodes = async (id: string, seasonNumber: number): Promise<Episode[]> => {
+const getTvShowEpisodes = async (id: string, seasonNumber: number): Promise<Episode[]> => { // Note: This function does not return ContentItem, so no trailer_key logic needed here.
   try {
     const url = `${TMDB_BASE_URL}/tv/${id}/season/${seasonNumber}?api_key=${API_KEY}`;
     const response = await fetch(url);

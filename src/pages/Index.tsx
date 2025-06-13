@@ -34,7 +34,7 @@ const Index = () => {
       category: item.category || '',
       duration: item.duration || '',
       type: item.type || '',
-      trailer_key: item.id.toString() // Using ID as placeholder for trailer key
+      trailer_key: item.trailer_key, // Use trailer_key from the fetched item
     };
   };
 
@@ -61,7 +61,7 @@ const Index = () => {
             year: item.year,
             duration: item.duration || 'N/A',
             rating: item.rating,
-            trailer_key: item.id.toString() // Using ID as placeholder for trailer key
+            trailer_key: item.trailer_key, // Use trailer_key from the fetched item
           }));
           
           setFeaturedContent(featuredItems);
