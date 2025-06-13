@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import ThemeSwitcher from './ThemeSwitcher';
@@ -95,7 +96,7 @@ const Navbar: React.FC = () => {
           ) : (
             <Button 
               className="bg-cinemax-500 hover:bg-cinemax-600 text-white"
-              onClick={() => navigate('/login')}
+              onClick={() => navigate('/auth')}
             >
               Sign In
             </Button>
