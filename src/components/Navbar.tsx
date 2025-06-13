@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ThemeToggle } from './ThemeSwitcher';
+import ThemeSwitcher from './ThemeSwitcher';
 import MobileMenu from './navigation/MobileMenu';
 import { Button } from './ui/button';
 import { Menu, X } from 'lucide-react';
@@ -87,7 +86,7 @@ const Navbar: React.FC = () => {
           
           {/* Theme Toggle */}
           <div className="hidden sm:block">
-            <ThemeToggle />
+            <ThemeSwitcher />
           </div>
           
           {/* User Menu or Auth */}
