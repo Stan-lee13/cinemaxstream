@@ -116,7 +116,7 @@ const Navbar: React.FC = () => {
       </nav>
       
       {/* Mobile Menu */}
-      <MobileMenu open={mobileMenuOpen} />
+      {mobileMenuOpen && <MobileMenu />}
     </header>
   );
 };

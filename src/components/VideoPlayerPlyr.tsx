@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Download, Video } from "lucide-react";
@@ -20,6 +19,8 @@ interface VideoPlayerPlyrProps {
   availableProviders: any[];
   activeProvider: string;
   onProviderChange: (providerId: string) => void;
+  onError?: () => void;
+  onLoaded?: () => void;
 }
 
 const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({ 
@@ -34,7 +35,9 @@ const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({
   title = "Video",
   availableProviders,
   activeProvider,
-  onProviderChange
+  onProviderChange,
+  onError,
+  onLoaded
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerRef = useRef<any>(null);
@@ -81,6 +84,7 @@ const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({
         plyr.on('ready', () => {
           setIsLoading(false);
           setPlayerInitialized(true);
+          if (onLoaded) onLoaded();
           
           // Try to autoplay after the player is ready
           if (autoPlay) {
@@ -154,12 +158,14 @@ const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({
         plyr.on('error', () => {
           setError("Error loading video. Please try another source or try again later.");
           setIsLoading(false);
+          if (onError) onError();
           toast.error("Error loading video. Please try another source.");
         });
       } catch (err) {
         console.error("Error initializing Plyr:", err);
         setError("Failed to initialize video player");
         setIsLoading(false);
+        if (onError) onError();
       }
     };
     

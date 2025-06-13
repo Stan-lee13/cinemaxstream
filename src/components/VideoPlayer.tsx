@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Play, Pause, Volume2, VolumeX, Maximize, SkipForward, SkipBack } from "lucide-react";
@@ -13,6 +12,8 @@ interface VideoPlayerProps {
   autoPlay?: boolean;
   onEnded?: () => void;
   poster?: string;
+  onError?: () => void;
+  onLoaded?: () => void;
 }
 
 const VideoPlayer: React.FC<VideoPlayerProps> = ({ 
@@ -22,7 +23,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   episodeId,
   autoPlay = false,
   onEnded,
-  poster
+  poster,
+  onError,
+  onLoaded
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(autoPlay);
@@ -52,6 +55,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     const onLoadedMetadata = () => {
       setDuration(video.duration);
       setIsLoading(false);
+      if (onLoaded) onLoaded();
     };
     
     const onVideoEnded = () => {
@@ -62,9 +66,10 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       }
     };
 
-    const onError = () => {
+    const onErrorHandler = () => {
       setError("Error loading video. Please try again later.");
       setIsLoading(false);
+      if (onError) onError();
       toast.error("Error loading video. Please try again later.");
     };
 
@@ -80,7 +85,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     video.addEventListener('timeupdate', onTimeUpdate);
     video.addEventListener('loadedmetadata', onLoadedMetadata);
     video.addEventListener('ended', onVideoEnded);
-    video.addEventListener('error', onError);
+    video.addEventListener('error', onErrorHandler);
     video.addEventListener('waiting', onWaiting);
     video.addEventListener('playing', onPlaying);
     
@@ -92,11 +97,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       video.removeEventListener('timeupdate', onTimeUpdate);
       video.removeEventListener('loadedmetadata', onLoadedMetadata);
       video.removeEventListener('ended', onVideoEnded);
-      video.removeEventListener('error', onError);
+      video.removeEventListener('error', onErrorHandler);
       video.removeEventListener('waiting', onWaiting);
       video.removeEventListener('playing', onPlaying);
     };
-  }, [contentId, userId, episodeId, onEnded, src]);
+  }, [contentId, userId, episodeId, onEnded, src, onError, onLoaded]);
   
   // Controls
   const togglePlay = () => {

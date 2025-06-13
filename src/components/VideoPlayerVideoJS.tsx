@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Download, Video } from "lucide-react";
@@ -21,6 +20,7 @@ interface VideoPlayerVideoJSProps {
   activeProvider: string;
   onProviderChange: (providerId: string) => void;
   onError?: () => void;
+  onLoaded?: () => void;
 }
 
 const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({ 
@@ -36,7 +36,8 @@ const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({
   availableProviders,
   activeProvider,
   onProviderChange,
-  onError
+  onError,
+  onLoaded
 }) => {
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
@@ -119,6 +120,7 @@ const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({
         player.ready(() => {
           setIsLoading(false);
           setPlayerInitialized(true);
+          if (onLoaded) onLoaded();
           
           // Auto play logic
           if (autoPlay) {
