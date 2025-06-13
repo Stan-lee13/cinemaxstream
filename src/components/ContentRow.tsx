@@ -8,6 +8,7 @@ interface ContentRowProps {
   title: string;
   viewAllLink: string;
   items: Content[];
+  category?: string;
 }
 
 const ContentRow: React.FC<ContentRowProps> = ({ title, viewAllLink, items }) => {
