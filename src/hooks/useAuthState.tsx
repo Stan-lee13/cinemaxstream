@@ -27,9 +27,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
+        console.log('Auth state changed:', event, currentSession);
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         setIsLoading(false);
+        
+        if (event === 'SIGNED_IN') {
+          toast.success('Successfully signed in!');
+        } else if (event === 'SIGNED_OUT') {
+          toast.success('Successfully signed out!');
+        } else if (event === 'TOKEN_REFRESHED') {
+          console.log('Token refreshed');
+        }
       }
     );
 
@@ -118,7 +127,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email: email.trim().toLowerCase(), 
         password,
         options: {
-          emailRedirectTo: window.location.origin
+          emailRedirectTo: `${window.location.origin}/auth`
         }
       });
       
@@ -126,7 +135,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
       
-      toast.success('Account created! Check your email for confirmation');
+      if (data.user && !data.user.email_confirmed_at) {
+        toast.success('Account created! Please check your email for verification link');
+      } else {
+        toast.success('Account created successfully!');
+      }
     } catch (error: any) {
       console.error("Signup error:", error);
       toast.error(error.message || 'Error creating account');

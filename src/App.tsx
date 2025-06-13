@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { AuthProvider } from "@/hooks/useAuthState";
 import Index from "./pages/Index";
 import ContentDetail from "./pages/ContentDetail";
 import Category from "./pages/Category";
@@ -14,6 +14,12 @@ import UserProfile from "./pages/UserProfile";
 import SplashScreen from "./components/SplashScreen";
 import ResetPassword from "./pages/ResetPassword";
 import WatchHistory from "./pages/WatchHistory";
+import FAQ from "./pages/FAQ";
+import HelpCenter from "./pages/HelpCenter";
+import Contact from "./pages/Contact";
+import Account from "./pages/Account";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
 
 const AppRoutes = () => {
   return (
@@ -29,6 +35,12 @@ const AppRoutes = () => {
       <Route path="/profile" element={<UserProfile />} />
       <Route path="/favorites" element={<Category />} />
       <Route path="/watch-history" element={<WatchHistory />} />
+      <Route path="/faq" element={<FAQ />} />
+      <Route path="/help-center" element={<HelpCenter />} />
+      <Route path="/contact" element={<Contact />} />
+      <Route path="/account" element={<Account />} />
+      <Route path="/privacy" element={<Privacy />} />
+      <Route path="/terms" element={<Terms />} />
       <Route path="/downloads" element={
         <div className="min-h-screen pt-20 px-4 container mx-auto">
           <h1 className="text-3xl font-bold mb-4">Downloads</h1>
@@ -53,7 +65,7 @@ const AppRoutes = () => {
                   <span className="text-green-500">✓</span> Limited content library
                 </li>
               </ul>
-              <Button variant="outline" className="w-full">Current Plan</Button>
+              <div className="bg-gray-600 text-white px-4 py-2 rounded text-center">Current Plan</div>
             </div>
             
             <div className="bg-card p-6 rounded-lg border border-cinemax-500 flex flex-col relative overflow-hidden">
@@ -77,7 +89,7 @@ const AppRoutes = () => {
                   <span className="text-green-500">✓</span> Offline downloads
                 </li>
               </ul>
-              <Button className="w-full bg-cinemax-500 hover:bg-cinemax-600">Upgrade Now</Button>
+              <div className="bg-cinemax-500 hover:bg-cinemax-600 text-white px-4 py-2 rounded text-center cursor-pointer transition-colors">Upgrade Now</div>
             </div>
             
             <div className="bg-card p-6 rounded-lg border border-gray-700 flex flex-col">
@@ -97,7 +109,7 @@ const AppRoutes = () => {
                   <span className="text-green-500">✓</span> Unlimited downloads
                 </li>
               </ul>
-              <Button variant="outline" className="w-full hover:bg-cinemax-500 hover:text-white">Select Plan</Button>
+              <div className="border border-gray-500 hover:bg-cinemax-500 hover:text-white text-gray-300 px-4 py-2 rounded text-center cursor-pointer transition-colors">Select Plan</div>
             </div>
           </div>
         </div>
@@ -125,13 +137,15 @@ const App = () => {
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
-          {showSplash ? (
-            <SplashScreen onComplete={() => setShowSplash(false)} />
-          ) : (
-            <AppRoutes />
-          )}
-        </BrowserRouter>
+        <AuthProvider>
+          <BrowserRouter>
+            {showSplash ? (
+              <SplashScreen onComplete={() => setShowSplash(false)} />
+            ) : (
+              <AppRoutes />
+            )}
+          </BrowserRouter>
+        </AuthProvider>
       </TooltipProvider>
     </>
   );
