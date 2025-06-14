@@ -1,9 +1,9 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { Play, Star, Clock, ImageOff } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { tmdbApi } from "@/services/tmdbApi";
+import { Content } from "@/types/content";
 
 const SeriesSection = () => {
   const {

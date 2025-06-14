@@ -1,5 +1,6 @@
 
 import React, { useRef } from "react";
+import { Content } from "@/types/content";
 import ContentCard from "./ContentCard";
 
 interface ContentRowListProps {

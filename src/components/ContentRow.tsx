@@ -1,10 +1,10 @@
 import React, { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { tmdbApi } from "@/services/tmdbApi";
+import { Content } from "@/types/content";
 import ContentRowHeader from "./ContentRowHeader";
 import ContentRowControls from "./ContentRowControls";
 import ContentRowList from "./ContentRowList";
-import { Content } from "@/types/content";
 
 interface ContentRowProps {
   title: string;

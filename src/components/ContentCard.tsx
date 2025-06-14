@@ -1,8 +1,8 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { Play, ImageOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Content } from "@/types/content";
 
 interface ContentCardProps {
   item: Content;

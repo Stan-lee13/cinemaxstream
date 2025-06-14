@@ -1,5 +1,5 @@
 
-interface ContentItem {
+export interface ContentItem {
   id: string;
   title: string;
   description: string;
@@ -14,7 +14,7 @@ interface ContentItem {
   trailer_key?: string;
 }
 
-interface Content {
+export interface Content {
   id: string;
   title: string;
   image: string;
@@ -29,7 +29,7 @@ interface Content {
   trailer_key?: string;
 }
 
-interface FeaturedContent {
+export interface FeaturedContent {
   id: string;
   title: string;
   description: string;
@@ -41,7 +41,7 @@ interface FeaturedContent {
   trailer_key?: string;
 }
 
-interface Episode {
+export interface Episode {
   id: string;
   title: string;
   episode_number: number;
@@ -52,7 +52,7 @@ interface Episode {
   air_date?: string;
 }
 
-interface Season {
+export interface Season {
   id: string;
   season_number: number;
   title: string;
