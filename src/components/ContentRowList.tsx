@@ -1,4 +1,3 @@
-
 import React, { useRef } from "react";
 import ContentCard from "./ContentCard";
 import { Content } from "@/types/content";

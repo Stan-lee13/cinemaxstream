@@ -1,4 +1,3 @@
-
 import React, { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { tmdbApi } from "@/services/tmdbApi";
