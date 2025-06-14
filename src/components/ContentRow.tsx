@@ -4,16 +4,31 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Play, Download, ArrowRight, ArrowLeft } from "lucide-react";
 
+// The Content type is globally available from content.d.ts
+// Let's create mock data for demonstration purposes
+const generateMockContent = (category: string): Content[] => {
+  return Array.from({ length: 12 }).map((_, i) => ({
+    id: `${category}-${i + 1}`,
+    title: `${category.charAt(0).toUpperCase() + category.slice(1)} Item ${i + 1}`,
+    poster: `https://source.unsplash.com/random/400x600?${category},movie&sig=${i}`,
+    rating: (7.5 + Math.random() * 2).toFixed(1),
+    year: '2024',
+  }));
+};
+
 interface ContentRowProps {
   title: string;
-  viewAllLink: string;
-  items: Content[];
+  category: string;
+  showViewAll?: boolean;
 }
 
-const ContentRow: React.FC<ContentRowProps> = ({ title, viewAllLink, items }) => {
+const ContentRow: React.FC<ContentRowProps> = ({ title, category, showViewAll }) => {
   const rowRef = useRef<HTMLDivElement>(null);
   const [showLeftControl, setShowLeftControl] = useState(false);
   const [showRightControl, setShowRightControl] = useState(true);
+
+  const items = generateMockContent(category);
+  const viewAllLink = `/${category}`;
 
   const scroll = (direction: "left" | "right") => {
     if (rowRef.current) {
@@ -43,18 +58,24 @@ const ContentRow: React.FC<ContentRowProps> = ({ title, viewAllLink, items }) =>
     }
   };
 
+  if (!items || items.length === 0) {
+    return null; // Don't render anything if there are no items
+  }
+
   return (
     <div className="py-8">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl md:text-2xl font-bold">{title}</h2>
-          <Link 
-            to={viewAllLink} 
-            className="flex items-center gap-1 text-sm text-gray-400 hover:text-white transition-colors"
-          >
-            <span>View All</span>
-            <ArrowRight size={16} />
-          </Link>
+          {showViewAll && (
+            <Link 
+              to={viewAllLink} 
+              className="flex items-center gap-1 text-sm text-gray-400 hover:text-white transition-colors"
+            >
+              <span>View All</span>
+              <ArrowRight size={16} />
+            </Link>
+          )}
         </div>
         
         <div className="relative group">
