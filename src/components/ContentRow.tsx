@@ -1,11 +1,11 @@
 
 import React, { useRef, useState } from "react";
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Play, ArrowRight, ArrowLeft } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { tmdbApi } from "@/services/tmdbApi";
-import ContentCard from "./ContentCard";
+import ContentRowHeader from "./ContentRowHeader";
+import ContentRowControls from "./ContentRowControls";
+import ContentRowList from "./ContentRowList";
+import { Content } from "@/types/content";
 
 interface ContentRowProps {
   title: string;
@@ -19,9 +19,7 @@ const getFetchFnForCategory = (category: string) => {
     case "trending":
       return tmdbApi.getContentByCategory.bind(null, "trending");
     case "movies":
-      return tmdbApi.getContentByCategory.bind(null, "movies");
     case "featured":
-      return tmdbApi.getContentByCategory.bind(null, "movies");
     case "recommended":
       return tmdbApi.getContentByCategory.bind(null, "movies");
     case "anime":
@@ -88,20 +86,13 @@ const ContentRow: React.FC<ContentRowProps> = ({
       id: item.id,
       title: item.title,
       category: item.category,
-      image: item.image,
-      poster: item.poster,
     });
   };
 
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-6 animate-pulse">
-          <div className="h-7 bg-gray-700 w-48 rounded"></div>
-          {showViewAll && (
-            <div className="h-5 bg-gray-800 w-20 rounded"></div>
-          )}
-        </div>
+        <ContentRowHeader title={title} showViewAll={showViewAll} viewAllLink={viewAllLink} />
         <div className="flex gap-4 overflow-x-auto pb-2">
           {Array.from({ length: 6 }).map((_, i) => (
             <div
@@ -117,9 +108,7 @@ const ContentRow: React.FC<ContentRowProps> = ({
   if (error || !items || items.length === 0) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl md:text-2xl font-bold">{title}</h2>
-        </div>
+        <ContentRowHeader title={title} showViewAll={showViewAll} viewAllLink={viewAllLink} />
         <div className="text-gray-600">No content available.</div>
       </div>
     );
@@ -128,47 +117,20 @@ const ContentRow: React.FC<ContentRowProps> = ({
   return (
     <div className="py-8">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl md:text-2xl font-bold">{title}</h2>
-          {showViewAll && (
-            <Link
-              to={viewAllLink}
-              className="flex items-center gap-1 text-sm text-gray-400 hover:text-white transition-colors"
-            >
-              <span>View All</span>
-              <ArrowRight size={16} />
-            </Link>
-          )}
-        </div>
+        <ContentRowHeader title={title} showViewAll={showViewAll} viewAllLink={viewAllLink} />
 
         <div className="relative group">
-          {showLeftControl && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 rounded-full bg-black/50 hover:bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity"
-              onClick={() => scroll("left")}
-              aria-label="Scroll left"
-            >
-              <ArrowLeft size={20} />
-            </Button>
-          )}
+          <ContentRowControls
+            showLeft={showLeftControl}
+            showRight={showRightControl}
+            onScrollLeft={() => scroll("left")}
+            onScrollRight={() => scroll("right")}
+          />
 
-          {showRightControl && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 rounded-full bg-black/50 hover:bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity"
-              onClick={() => scroll("right")}
-              aria-label="Scroll right"
-            >
-              <ArrowRight size={20} />
-            </Button>
-          )}
-
-          <div
-            ref={rowRef}
-            className="flex gap-4 overflow-x-auto scrollbar-none pb-2 -mx-4 px-4"
+          <ContentRowList
+            items={items}
+            onCardClick={logCardClick}
+            rowRef={rowRef}
             onScroll={() => {
               if (rowRef.current) {
                 const { scrollLeft, scrollWidth, clientWidth } = rowRef.current;
@@ -176,15 +138,7 @@ const ContentRow: React.FC<ContentRowProps> = ({
                 setShowRightControl(scrollLeft < scrollWidth - clientWidth - 5);
               }
             }}
-          >
-            {items.map((item) => (
-              <ContentCard
-                key={item.id}
-                item={item}
-                onCardClick={logCardClick}
-              />
-            ))}
-          </div>
+          />
         </div>
       </div>
     </div>
