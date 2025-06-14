@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -9,10 +8,13 @@ import { Play, Download, ArrowRight, ArrowLeft } from "lucide-react";
 const generateMockContent = (category: string): Content[] => {
   return Array.from({ length: 12 }).map((_, i) => ({
     id: `${category}-${i + 1}`,
-    title: `${category.charAt(0).toUpperCase() + category.slice(1)} Item ${i + 1}`,
+    title: `${category.charAt(0).toUpperCase() + category.slice(1)} Item ${
+      i + 1
+    }`,
+    image: `https://source.unsplash.com/random/400x600?${category},movie&sig=${i}`,
     poster: `https://source.unsplash.com/random/400x600?${category},movie&sig=${i}`,
     rating: (7.5 + Math.random() * 2).toFixed(1),
-    year: '2024',
+    year: "2024",
   }));
 };
 
@@ -20,14 +22,20 @@ interface ContentRowProps {
   title: string;
   category: string;
   showViewAll?: boolean;
+  items?: Content[];
 }
 
-const ContentRow: React.FC<ContentRowProps> = ({ title, category, showViewAll }) => {
+const ContentRow: React.FC<ContentRowProps> = ({
+  title,
+  category,
+  showViewAll,
+  items: propItems,
+}) => {
   const rowRef = useRef<HTMLDivElement>(null);
   const [showLeftControl, setShowLeftControl] = useState(false);
   const [showRightControl, setShowRightControl] = useState(true);
 
-  const items = generateMockContent(category);
+  const items = propItems && propItems.length > 0 ? propItems : generateMockContent(category);
   const viewAllLink = `/${category}`;
 
   const scroll = (direction: "left" | "right") => {
@@ -124,7 +132,7 @@ const ContentRow: React.FC<ContentRowProps> = ({ title, category, showViewAll })
                 <Link to={`/content/${item.id}`}>
                   <div className="movie-card h-[260px] sm:h-[300px]">
                     <img 
-                      src={item.poster} 
+                      src={item.poster || item.image} 
                       alt={item.title} 
                       className="w-full h-full object-cover rounded-lg"
                     />

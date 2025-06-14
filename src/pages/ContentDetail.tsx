@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -417,21 +416,22 @@ const ContentDetail = () => {
         )}
         
         {!isPlaying && (
-          <ContentRow 
-            title="More Like This" 
-            viewAllLink={`/${content.content_type}`} 
-            items={relatedContent.map(item => ({
+          <ContentRow
+            title="More Like This"
+            category={content.content_type || "movies"}
+            showViewAll={true}
+            items={relatedContent.map((item) => ({
               id: item.id,
               title: item.title,
-              image: item.image_url || item.image,
+              image: item.image_url || item.image || "",
               poster: item.image_url || item.image,
-              description: item.description || '',
-              year: item.year || '',
-              rating: item.rating || '',
-              category: item.content_type || item.type || '',
-              duration: item.duration || '',
-              type: item.content_type || item.type
-            }))} 
+              description: item.description || "",
+              year: item.year || "",
+              rating: item.rating || "",
+              category: item.content_type || item.type || "",
+              duration: item.duration || "",
+              type: item.content_type || item.type,
+            }))}
           />
         )}
       </main>
