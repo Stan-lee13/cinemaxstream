@@ -33,7 +33,7 @@ const SeriesSection = () => {
               <div key={i} className="bg-card rounded-xl h-80 animate-pulse" />
             ))}
           </div>
-        ) : error || !series?.length ? (
+        ) : error || !series || !series.length ? (
           <div className="text-center text-gray-500">No popular series found.</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -45,7 +45,7 @@ const SeriesSection = () => {
               >
                 <div className="relative">
                   <img
-                    src={show.image || show.poster || "/placeholder.svg"}
+                    src={show.image || "/placeholder.svg"}
                     alt={show.title}
                     className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500"
                     onError={(e) => {
@@ -115,4 +115,3 @@ const SeriesSection = () => {
 };
 
 export default SeriesSection;
-

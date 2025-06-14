@@ -1,5 +1,4 @@
-
-import { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Play, Download, ArrowRight, ArrowLeft } from "lucide-react";
@@ -49,13 +48,13 @@ const ContentRow: React.FC<ContentRowProps> = ({
     data: fetchedItems,
     isLoading,
     error,
-  } = useQuery({
+  } = useQuery<Content[]>({
     queryKey: ["content", category],
     queryFn: getFetchFnForCategory(category),
   });
 
   // Use direct propItems if present, otherwise TMDB data, fallback to empty for robust TS
-  const items = propItems ?? fetchedItems ?? [];
+  const items: Content[] = propItems ?? fetchedItems ?? [];
 
   const viewAllLink = `/${category}`;
 
@@ -105,7 +104,7 @@ const ContentRow: React.FC<ContentRowProps> = ({
     );
   }
 
-  if (error || !items.length) {
+  if (error || !items || items.length === 0) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-6">
@@ -216,4 +215,3 @@ const ContentRow: React.FC<ContentRowProps> = ({
 };
 
 export default ContentRow;
-
