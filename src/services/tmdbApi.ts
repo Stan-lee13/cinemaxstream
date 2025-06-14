@@ -1,3 +1,4 @@
+
 /**
  * API Service for fetching content from TMDB
  */
@@ -5,6 +6,9 @@
 import { toast } from "sonner";
 import { getImageUrl, normalizeContentType } from "@/utils/urlUtils";
 import { ContentItem, Season, Episode } from "@/types/content";
+
+// Re-export for compatibility with other modules
+export type { ContentItem } from "@/types/content";
 
 // Base URLs for TMDB API
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
