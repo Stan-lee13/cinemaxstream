@@ -1,4 +1,3 @@
-
 export interface ContentItem {
   id: string;
   title: string;
@@ -12,6 +11,7 @@ export interface ContentItem {
   category: string;
   type?: string;
   trailer_key?: string;
+  content_type?: string;
 }
 
 export interface Content {

@@ -1,10 +1,10 @@
-
 /**
  * API Service for fetching content from TMDB
  */
 
 import { toast } from "sonner";
 import { getImageUrl, normalizeContentType } from "@/utils/urlUtils";
+import { ContentItem, Season, Episode } from "@/types/content";
 
 // Base URLs for TMDB API
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
@@ -13,22 +13,6 @@ const TMDB_POSTER_BASE_URL = "https://image.tmdb.org/t/p/w500";
 
 // API Key for TMDB
 const API_KEY = "4626200399b08f9d04b72348e3625f15";
-
-// Types for data
-export interface ContentItem {
-  id: string;
-  title: string;
-  description: string;
-  image: string;
-  backdrop?: string;
-  year: string;
-  duration: string;
-  rating: string;
-  category: string;
-  type?: string;
-  trailer_key?: string;
-  content_type?: string;
-}
 
 // Function to format content item
 const formatContentItem = (item: any, type: string = 'movie'): ContentItem => {

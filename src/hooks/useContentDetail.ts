@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuthState";
@@ -5,6 +6,7 @@ import { toast } from 'sonner';
 import { tmdbApi } from "@/services/tmdbApi";
 import { getTrailerUrl, hasPremiumAccess, getAvailableProviders } from "@/utils/videoUtils";
 import { getDefaultRuntime } from "@/utils/contentUtils";
+import { Season, Episode } from "@/types/content";
 
 export const useContentDetail = (contentId: string | undefined) => {
   const [content, setContent] = useState<any | null>(null);

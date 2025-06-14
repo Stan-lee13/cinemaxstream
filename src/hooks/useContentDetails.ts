@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getTrailerUrl } from "@/utils/videoUtils";
 import { getDefaultRuntime } from "@/utils/contentUtils";
+import { Season, Episode } from "@/types/content";
 
 interface UseContentDetailsOptions {
   contentId: string | undefined;

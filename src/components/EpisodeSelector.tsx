@@ -4,6 +4,7 @@ import { ChevronDown, ChevronUp, Play, Calendar, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatDuration } from "@/utils/urlUtils";
+import { Season } from "@/types/content";
 
 interface EpisodeSelectorProps {
   seasons: Season[];
