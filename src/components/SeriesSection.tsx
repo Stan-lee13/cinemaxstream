@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
-import { Play, Star, Clock } from "lucide-react";
+import { Play, Star, Clock, ImageOff } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { tmdbApi } from "@/services/tmdbApi";
 
@@ -44,14 +44,25 @@ const SeriesSection = () => {
                 className="group bg-card rounded-xl overflow-hidden border border-gray-800 hover:border-cinemax-500 transition-all duration-300 hover:scale-105 hover:shadow-2xl"
               >
                 <div className="relative">
-                  <img
-                    src={show.image || "/placeholder.svg"}
-                    alt={show.title}
-                    className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = "/placeholder.svg";
-                    }}
-                  />
+                  {show.image ? (
+                    <img
+                      src={show.image}
+                      alt={show.title}
+                      className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = "none";
+                        const parent = (e.target as HTMLImageElement).parentElement;
+                        if (parent) {
+                          parent.innerHTML += `<div class='flex flex-col items-center justify-center h-full w-full bg-gray-950/90 rounded-lg absolute inset-0 z-10'><svg xmlns="http://www.w3.org/2000/svg" class="mx-auto text-gray-600" width="42" height="42" fill="none" viewBox="0 0 24 24"><path d="M9.44 9.44a5 5 0 0 0 7.07 7.07m-1.06-8.13a5 5 0 0 0-7.07 7.07M9 5v.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM3 3l18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span class='text-xs mt-1 text-gray-500'>Image unavailable</span></div>`;
+                        }
+                      }}
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-64 w-full bg-gray-950/90">
+                      <ImageOff size={42} className="mx-auto text-gray-600" />
+                      <span className="text-xs mt-1 text-gray-500">Image unavailable</span>
+                    </div>
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     <div className="flex items-center justify-between">
@@ -61,7 +72,7 @@ const SeriesSection = () => {
                       </div>
                       <div className="flex items-center gap-1 text-yellow-400">
                         <Star className="w-4 h-4 fill-current" />
-                        <span className="text-sm font-medium">{show.rating}</span>
+                        <span className="text-sm font-medium">{show.rating || "—"}</span>
                       </div>
                     </div>
                   </div>
@@ -70,28 +81,22 @@ const SeriesSection = () => {
                 <div className="p-6">
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-xl font-bold text-white group-hover:text-cinemax-400 transition-colors">
-                      {show.title}
+                      {show.title || "Untitled"}
                     </h3>
-                    <span className="text-cinemax-400 font-medium">{show.year}</span>
+                    <span className="text-cinemax-400 font-medium">{show.year || "—"}</span>
                   </div>
                   <p className="text-gray-400 text-sm mb-4 line-clamp-2">
-                    {show.description}
+                    {show.description || "No description available."}
                   </p>
                   <div className="space-y-2">
                     <div className="flex items-center gap-4 text-sm text-gray-300">
                       <div className="flex items-center gap-1">
                         <Clock className="w-4 h-4" />
                         <span>
-                          {show.duration ? show.duration : "45 min"}
+                          {show.duration ? show.duration : "—"}
                         </span>
                       </div>
-                      <span>•</span>
-                      <span>
-                        {show.category === "series" ? "Series" : ""}
-                      </span>
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      {show.category}
+                      {show.category && <><span>•</span><span>{show.category}</span></>}
                     </div>
                   </div>
                 </div>
