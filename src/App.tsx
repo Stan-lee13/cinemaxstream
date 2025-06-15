@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -20,6 +19,8 @@ import Contact from "./pages/Contact";
 import Account from "./pages/Account";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
+import { useAuth } from "@/hooks/useAuthState";
+import OnboardingAuth from "@/pages/OnboardingAuth";
 
 const AppRoutes = () => {
   return (
@@ -122,32 +123,55 @@ const AppRoutes = () => {
 
 const App = () => {
   const [showSplash, setShowSplash] = useState(true);
+  const { isAuthenticated, isLoading } = useAuth();
 
   useEffect(() => {
     // Automatically hide splash screen after 3 seconds
     const timer = setTimeout(() => {
       setShowSplash(false);
     }, 3000);
-    
     return () => clearTimeout(timer);
   }, []);
 
-  return (
-    <>
+  if (showSplash) {
+    return (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <AuthProvider>
-          <BrowserRouter>
-            {showSplash ? (
-              <SplashScreen onComplete={() => setShowSplash(false)} />
-            ) : (
-              <AppRoutes />
-            )}
-          </BrowserRouter>
-        </AuthProvider>
+        <SplashScreen onComplete={() => setShowSplash(false)} />
       </TooltipProvider>
-    </>
+    );
+  }
+
+  // While auth state is loading, show nothing (or a loader)
+  if (isLoading) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-4 border-cinemax-400 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  // If not authenticated, show onboarding auth
+  if (!isAuthenticated) {
+    return (
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <OnboardingAuth />
+      </TooltipProvider>
+    );
+  }
+
+  // Authenticated - show main app
+  return (
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </TooltipProvider>
   );
 };
 
