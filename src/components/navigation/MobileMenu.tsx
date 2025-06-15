@@ -16,7 +16,8 @@ import {
   Download,
   LogOut,
   User,
-  Settings
+  Settings,
+  Home
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuthState";
 
@@ -39,65 +40,87 @@ const MobileMenu: React.FC = () => {
         <Button 
           variant="ghost" 
           size="icon" 
-          className="md:hidden"
+          className="md:hidden p-2"
           aria-label="Menu"
         >
-          <Menu size={20} />
+          <Menu size={24} className="text-white" />
         </Button>
       </SheetTrigger>
-      <SheetContent className="bg-background border-gray-800 w-[300px]">
-        <nav className="flex flex-col gap-6 mt-8">
-          <Link to="/" className="flex items-center gap-2 text-white hover:text-cinemax-400">
-            <Film size={18} />
-            <span>Home</span>
+      <SheetContent className="bg-background border-gray-800 w-[280px] p-6">
+        <nav className="flex flex-col gap-4 mt-8">
+          <Link 
+            to="/" 
+            className="flex items-center gap-3 text-white hover:text-cinemax-400 py-3 px-2 rounded-lg hover:bg-white/5 transition-colors"
+          >
+            <Home size={20} />
+            <span className="text-base font-medium">Home</span>
           </Link>
-          <Link to="/movies" className="flex items-center gap-2 text-white hover:text-cinemax-400">
-            <Film size={18} />
-            <span>Movies</span>
+          <Link 
+            to="/movies" 
+            className="flex items-center gap-3 text-white hover:text-cinemax-400 py-3 px-2 rounded-lg hover:bg-white/5 transition-colors"
+          >
+            <Film size={20} />
+            <span className="text-base font-medium">Movies</span>
           </Link>
-          <Link to="/series" className="flex items-center gap-2 text-white hover:text-cinemax-400">
-            <Tv size={18} />
-            <span>TV Series</span>
+          <Link 
+            to="/series" 
+            className="flex items-center gap-3 text-white hover:text-cinemax-400 py-3 px-2 rounded-lg hover:bg-white/5 transition-colors"
+          >
+            <Tv size={20} />
+            <span className="text-base font-medium">TV Series</span>
           </Link>
-          <Link to="/anime" className="flex items-center gap-2 text-white hover:text-cinemax-400">
-            <Play size={18} />
-            <span>Anime</span>
+          <Link 
+            to="/anime" 
+            className="flex items-center gap-3 text-white hover:text-cinemax-400 py-3 px-2 rounded-lg hover:bg-white/5 transition-colors"
+          >
+            <Play size={20} />
+            <span className="text-base font-medium">Anime</span>
           </Link>
-          {/* <Link to="/sports" className="flex items-center gap-2 text-white hover:text-cinemax-400">
-            <Play size={18} />
-            <span>Sports</span>
-          </Link> */}
           
           {isAuthenticated ? (
             <>
-              <Link to="/favorites" className="flex items-center gap-2 text-white hover:text-cinemax-400">
-                <Heart size={18} />
-                <span>Favorites</span>
+              <div className="border-t border-gray-700 my-2"></div>
+              <Link 
+                to="/favorites" 
+                className="flex items-center gap-3 text-white hover:text-cinemax-400 py-3 px-2 rounded-lg hover:bg-white/5 transition-colors"
+              >
+                <Heart size={20} />
+                <span className="text-base font-medium">Favorites</span>
               </Link>
-              <Link to="/downloads" className="flex items-center gap-2 text-white hover:text-cinemax-400">
-                <Download size={18} />
-                <span>Downloads</span>
+              <Link 
+                to="/downloads" 
+                className="flex items-center gap-3 text-white hover:text-cinemax-400 py-3 px-2 rounded-lg hover:bg-white/5 transition-colors"
+              >
+                <Download size={20} />
+                <span className="text-base font-medium">Downloads</span>
               </Link>
-              <Link to="/profile" className="flex items-center gap-2 text-white hover:text-cinemax-400">
-                <Settings size={18} />
-                <span>Profile Settings</span>
+              <Link 
+                to="/profile" 
+                className="flex items-center gap-3 text-white hover:text-cinemax-400 py-3 px-2 rounded-lg hover:bg-white/5 transition-colors"
+              >
+                <Settings size={20} />
+                <span className="text-base font-medium">Profile Settings</span>
               </Link>
+              <div className="border-t border-gray-700 my-2"></div>
               <button 
                 onClick={handleSignOut}
-                className="flex items-center gap-2 text-white hover:text-cinemax-400"
+                className="flex items-center gap-3 text-white hover:text-cinemax-400 py-3 px-2 rounded-lg hover:bg-white/5 transition-colors text-left w-full"
               >
-                <LogOut size={18} />
-                <span>Sign Out</span>
+                <LogOut size={20} />
+                <span className="text-base font-medium">Sign Out</span>
               </button>
             </>
           ) : (
-            <button 
-              onClick={handleSignIn}
-              className="flex items-center gap-2 text-white hover:text-cinemax-400"
-            >
-              <User size={18} />
-              <span>Sign In</span>
-            </button>
+            <>
+              <div className="border-t border-gray-700 my-2"></div>
+              <button 
+                onClick={handleSignIn}
+                className="flex items-center gap-3 text-white hover:text-cinemax-400 py-3 px-2 rounded-lg hover:bg-white/5 transition-colors text-left w-full"
+              >
+                <User size={20} />
+                <span className="text-base font-medium">Sign In</span>
+              </button>
+            </>
           )}
         </nav>
       </SheetContent>

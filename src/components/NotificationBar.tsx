@@ -32,11 +32,11 @@ const NotificationBar = () => {
       <Button
         variant="ghost"
         size="sm"
-        className="relative"
+        className="relative p-2"
         onClick={() => setShowNotifications(!showNotifications)}
         aria-label="Notifications"
       >
-        <Bell size={18} />
+        <Bell size={18} className="text-white" />
         {notificationCount > 0 && (
           <span className="absolute -top-1 -right-1 bg-cinemax-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
             {notificationCount}
@@ -45,16 +45,16 @@ const NotificationBar = () => {
       </Button>
 
       {showNotifications && (
-        <div className="absolute right-0 mt-2 w-80 bg-gray-900 border border-gray-800 rounded-md shadow-lg z-50">
+        <div className="absolute right-0 mt-2 w-72 md:w-80 bg-gray-900 border border-gray-800 rounded-md shadow-lg z-50 max-h-[80vh] overflow-hidden">
           <div className="p-3 border-b border-gray-800 flex items-center justify-between">
-            <h3 className="font-semibold">Notifications</h3>
-            <div className="flex gap-2">
+            <h3 className="font-semibold text-sm">Notifications</h3>
+            <div className="flex gap-1">
               {!permissionGranted && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={requestNotificationPermission}
-                  className="text-xs"
+                  className="text-xs px-2 py-1 h-auto"
                 >
                   Enable
                 </Button>
@@ -63,8 +63,9 @@ const NotificationBar = () => {
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowNotifications(false)}
+                className="p-1 h-auto"
               >
-                <X size={16} />
+                <X size={14} />
               </Button>
             </div>
           </div>
@@ -84,7 +85,7 @@ const NotificationBar = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="w-full text-xs"
+                      className="w-full text-xs py-2"
                       onClick={markAllAsRead}
                     >
                       Mark all as read

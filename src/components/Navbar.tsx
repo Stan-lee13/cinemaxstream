@@ -4,7 +4,6 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import ThemeSwitcher from './ThemeSwitcher';
 import MobileMenu from './navigation/MobileMenu';
 import { Button } from './ui/button';
-import { Menu, X } from 'lucide-react';
 import DesktopNav from './navigation/DesktopNav';
 import FavoritesButton from './navigation/FavoritesButton';
 import UserMenu from './navigation/UserMenu';
@@ -14,7 +13,6 @@ import NotificationBar from './NotificationBar';
 
 const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState<boolean>(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -37,15 +35,6 @@ const Navbar: React.FC = () => {
     };
   }, []);
   
-  // Close mobile menu on route change
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [location.pathname]);
-  
-  const toggleMobileMenu = () => {
-    setMobileMenuOpen(!mobileMenuOpen);
-  };
-  
   // Change background when scrolled or on specific pages
   const shouldBeTransparent = location.pathname === '/' && !isScrolled;
   
@@ -57,7 +46,7 @@ const Navbar: React.FC = () => {
           : 'bg-background/80 backdrop-blur-md border-b border-gray-800'
       }`}
     >
-      <nav className="container mx-auto px-4 py-4 flex items-center justify-between">
+      <nav className="container mx-auto px-4 py-3 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center">
           <span className="text-xl font-bold tracking-tight text-white">
@@ -72,7 +61,7 @@ const Navbar: React.FC = () => {
         
         {/* Right-side Controls */}
         <div className="flex items-center gap-1 md:gap-3">
-          {/* Search */}
+          {/* Search - Hidden on small screens */}
           <div className="hidden md:block">
             <SearchBar />
           </div>
@@ -80,44 +69,34 @@ const Navbar: React.FC = () => {
           {/* Notification Bar */}
           <NotificationBar />
           
-          {/* Favorites */}
+          {/* Favorites - Hidden on small screens */}
           <div className="hidden sm:block">
             <FavoritesButton />
           </div>
           
-          {/* Theme Toggle */}
+          {/* Theme Toggle - Hidden on small screens */}
           <div className="hidden sm:block">
             <ThemeSwitcher />
           </div>
           
           {/* User Menu or Auth */}
-          {user ? (
-            <UserMenu />
-          ) : (
-            <Button 
-              className="bg-cinemax-500 hover:bg-cinemax-600 text-white"
-              onClick={() => navigate('/auth')}
-            >
-              Sign In
-            </Button>
-          )}
-          
-          {/* Mobile Menu Toggle */}
-          <div className="block lg:hidden">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={toggleMobileMenu}
-              className="ml-1 text-gray-300"
-            >
-              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </Button>
+          <div className="hidden md:block">
+            {user ? (
+              <UserMenu />
+            ) : (
+              <Button 
+                className="bg-cinemax-500 hover:bg-cinemax-600 text-white text-sm px-4 py-2"
+                onClick={() => navigate('/auth')}
+              >
+                Sign In
+              </Button>
+            )}
           </div>
+          
+          {/* Mobile Menu Toggle - Always visible on mobile */}
+          <MobileMenu />
         </div>
       </nav>
-      
-      {/* Mobile Menu */}
-      {mobileMenuOpen && <MobileMenu />}
     </header>
   );
 };

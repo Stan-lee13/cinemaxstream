@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuthState";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { hasStoredPremiumAccess } from "@/utils/premiumUtils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +25,7 @@ export const UserMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [initials, setInitials] = useState("U");
   const [displayName, setDisplayName] = useState("");
+  const [isPremium, setIsPremium] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -43,6 +45,10 @@ export const UserMenu = () => {
       } else {
         setInitials("U");
       }
+
+      // Check premium status
+      const premiumStatus = hasStoredPremiumAccess() || profileData?.subscription_tier !== 'free';
+      setIsPremium(premiumStatus);
     }
   }, [user, profileData]);
 
@@ -73,8 +79,6 @@ export const UserMenu = () => {
     await signOut();
     navigate("/");
   };
-
-  const isPremium = profileData?.subscription_tier !== 'free';
 
   return (
     <div className="flex items-center gap-3">
