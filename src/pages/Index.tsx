@@ -40,15 +40,7 @@ const Index = () => {
           />
         )}
 
-        {/* Sports Picks Row - visually improved */}
-        <div>
-          <CategoryBanner category="sports" />
-          <ContentRow 
-            title="Live & Top Sports" 
-            category="sports" 
-            showViewAll={true}
-          />
-        </div>
+        {/* Remove Sports Section */}
         
         {/* Documentaries Row - visually improved */}
         <div>
@@ -72,3 +64,4 @@ const Index = () => {
 };
 
 export default Index;
+
