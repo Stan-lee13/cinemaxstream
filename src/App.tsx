@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -8,7 +9,7 @@ import Index from "./pages/Index";
 import ContentDetail from "./pages/ContentDetail";
 import Category from "./pages/Category";
 import NotFound from "./pages/NotFound";
-import Auth from "./pages/Auth";
+// import Auth from "./pages/Auth"; // removed unused Auth
 import UserProfile from "./pages/UserProfile";
 import SplashScreen from "./components/SplashScreen";
 import ResetPassword from "./pages/ResetPassword";
@@ -29,7 +30,7 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<Index />} />
-      <Route path="/auth" element={<Auth />} />
+      <Route path="/auth" element={<OnboardingAuth />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/password-update" element={<PasswordUpdate />} />
       <Route path="/content/:id" element={<ContentDetail />} />
@@ -131,7 +132,7 @@ const RoutedApp = () => {
   const location = useLocation();
   const [showLanding, setShowLanding] = React.useState(true);
 
-  // When user lands on /auth route, show auth page
+  // When user lands on /auth route, show onboarding auth page
   React.useEffect(() => {
     if (location.pathname === "/auth") {
       setShowLanding(false);
@@ -210,3 +211,5 @@ const App = () => {
 };
 
 export default App;
+
+// Note: src/App.tsx is now 213+ lines long - you may want to refactor it into smaller files for maintainability!
