@@ -63,10 +63,10 @@ const MobileMenu: React.FC = () => {
             <Play size={18} />
             <span>Anime</span>
           </Link>
-          <Link to="/sports" className="flex items-center gap-2 text-white hover:text-cinemax-400">
+          {/* <Link to="/sports" className="flex items-center gap-2 text-white hover:text-cinemax-400">
             <Play size={18} />
             <span>Sports</span>
-          </Link>
+          </Link> */}
           
           {isAuthenticated ? (
             <>

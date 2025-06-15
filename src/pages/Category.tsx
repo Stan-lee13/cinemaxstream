@@ -40,6 +40,20 @@ const CategoryPage = () => {
       if (category === 'recommendations' && user?.id) {
         return [];
       }
+      // Ensure only the *specific* category is shown on each Category page
+      if (category === 'movies') {
+        // Only return movies
+        return await tmdbApi.getContentByCategory('movies');
+      }
+      if (category === 'series') {
+        // Only return series
+        return await tmdbApi.getContentByCategory('series');
+      }
+      if (category === 'anime') {
+        // Only return anime
+        return await tmdbApi.getContentByCategory('anime');
+      }
+      // fallback/default
       return await tmdbApi.getContentByCategory(category || 'trending');
     },
     enabled: category !== 'recommendations' || !user?.id,

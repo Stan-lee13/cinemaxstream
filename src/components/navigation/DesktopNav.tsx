@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useLocation } from "react-router-dom";
 import NavItem from "./NavItem";
@@ -16,7 +15,7 @@ const DesktopNav: React.FC = () => {
       <NavItem href="/movies" isActive={isActive('/movies')}>Movies</NavItem>
       <NavItem href="/series" isActive={isActive('/series')}>TV Series</NavItem>
       <NavItem href="/anime" isActive={isActive('/anime')}>Anime</NavItem>
-      <NavItem href="/sports" isActive={isActive('/sports')}>Sports</NavItem>
+      {/* <NavItem href="/sports" isActive={isActive('/sports')}>Sports</NavItem> */}
     </nav>
   );
 };
