@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -132,14 +131,13 @@ const RoutedApp = () => {
   const location = useLocation();
   const [showLanding, setShowLanding] = React.useState(true);
 
-  // When user lands on /auth route, show onboarding auth page
+  // Show onboarding auth page only for /auth route
   React.useEffect(() => {
     if (location.pathname === "/auth") {
       setShowLanding(false);
     }
   }, [location.pathname]);
 
-  // Show loading spinner while checking auth state
   if (isLoading) {
     return (
       <div className="min-h-screen w-full flex items-center justify-center bg-background">
@@ -150,15 +148,12 @@ const RoutedApp = () => {
 
   // Not authenticated and on the main route: first landing, then auth after CTA
   if (!isAuthenticated) {
-    // If on /auth, show onboarding auth page
     if (location.pathname === "/auth") {
       return <OnboardingAuth />;
     }
-    // If landing not dismissed, show landing
     if (showLanding && location.pathname === "/") {
       return <OnboardingLanding />;
     }
-    // Otherwise, force landing for unknown/forgotten route
     if (!showLanding) {
       return <OnboardingAuth />;
     }
@@ -173,7 +168,6 @@ const RoutedApp = () => {
     return <Navigate to="/home" replace />;
   }
 
-  // Otherwise (authenticated, normal app)
   return <AppRoutes />;
 };
 
@@ -181,7 +175,6 @@ const App = () => {
   const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
-    // Automatically hide splash screen after 3 seconds
     const timer = setTimeout(() => {
       setShowSplash(false);
     }, 3000);
@@ -198,7 +191,6 @@ const App = () => {
     );
   }
 
-  // Always render BrowserRouter and all navigation logic inside
   return (
     <TooltipProvider>
       <Toaster />
@@ -212,4 +204,4 @@ const App = () => {
 
 export default App;
 
-// Note: src/App.tsx is now 213+ lines long - you may want to refactor it into smaller files for maintainability!
+// Note: src/App.tsx is now 200+ lines long. You should consider asking to refactor it after this update!
