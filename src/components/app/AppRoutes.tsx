@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 import Index from "@/pages/Index";
@@ -7,7 +6,7 @@ import Category from "@/pages/Category";
 import NotFound from "@/pages/NotFound";
 import UserProfile from "@/pages/UserProfile";
 import SplashScreen from "@/components/SplashScreen";
-import ResetPassword from "@/pages/ResetPassword";
+import PasswordUpdate from "@/pages/PasswordUpdate";
 import WatchHistory from "@/pages/WatchHistory";
 import FAQ from "@/pages/FAQ";
 import HelpCenter from "@/pages/HelpCenter";
@@ -17,6 +16,7 @@ import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
 import PasswordUpdate from "@/pages/PasswordUpdate";
 import OnboardingAuth from "@/pages/OnboardingAuth";
+import ModernResetPassword from "@/pages/ModernResetPassword";
 
 const DownloadsPage = () => (
   <div className="min-h-screen pt-20 px-4 container mx-auto">
@@ -108,7 +108,7 @@ const AppRoutes = () => (
   <Routes>
     <Route path="/" element={<Index />} />
     <Route path="/auth" element={<OnboardingAuth />} />
-    <Route path="/reset-password" element={<ResetPassword />} />
+    <Route path="/reset-password" element={<ModernResetPassword />} />
     <Route path="/password-update" element={<PasswordUpdate />} />
     <Route path="/content/:id" element={<ContentDetail />} />
     <Route path="/movies" element={<Category />} />

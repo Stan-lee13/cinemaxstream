@@ -1,19 +1,29 @@
+
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Users, LogIn, User } from "lucide-react";
-const features = [{
-  icon: <Users className="h-6 w-6 text-cinemax-400" />,
-  title: "Stream Everything",
-  description: "Access movies, series, anime, sports & more—all in one place."
-}, {
-  icon: <LogIn className="h-6 w-6 text-cinemax-400" />,
-  title: "Watch Instantly",
-  description: "No downloads, no waiting. Hit play and dive right in any time."
-}, {
-  icon: <User className="h-6 w-6 text-cinemax-400" />,
-  title: "Personalized Experience",
-  description: "Save favorites, continue watching, and get personal recommendations for you."
-}];
+import { ArrowRight, Users, LogIn, User, Film } from "lucide-react";
+const features = [
+  {
+    icon: <Users className="h-6 w-6 text-cinemax-400" />,
+    title: "Stream Everything",
+    description: "Access movies, series, anime & more—all in one place."
+  },
+  {
+    icon: <LogIn className="h-6 w-6 text-cinemax-400" />,
+    title: "Watch Instantly",
+    description: "No downloads, no waiting. Hit play and dive right in any time."
+  },
+  {
+    icon: <User className="h-6 w-6 text-cinemax-400" />,
+    title: "Personalized Experience",
+    description: "Save favorites, continue watching, and get personal recommendations for you."
+  },
+  {
+    icon: <Film className="h-6 w-6 text-cinemax-400" />,
+    title: "1080p Streaming, Low Data",
+    description: "Stream your favorite movie at 1080p with low data cost."
+  }
+];
 const OnboardingLanding: React.FC = () => {
   const navigate = useNavigate();
   return <div className="relative min-h-screen bg-gradient-to-tr from-zinc-900 via-[#25032a] to-cinemax-900 overflow-hidden flex flex-col items-center justify-center">
@@ -36,7 +46,6 @@ const OnboardingLanding: React.FC = () => {
         <button onClick={() => navigate('/auth')} className="group relative inline-flex items-center justify-center px-8 py-3 mt-2 text-base sm:text-lg font-semibold rounded-xl shadow-xl bg-gradient-to-r from-cinemax-600 to-cinemax-400 hover:from-cinemax-500 hover:to-cinemax-600 text-white transition-all focus:outline-none border-none backdrop-blur-xl border-[1.5px] border-white/10 hover:scale-102 active:scale-98">
           Get started now
           <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-          {/* Neuromorphic shadow */}
           <span className="absolute inset-0 rounded-xl pointer-events-none border-white/10 border blur-sm" />
         </button>
       </section>
