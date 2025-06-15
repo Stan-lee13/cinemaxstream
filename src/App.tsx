@@ -21,6 +21,7 @@ import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import { useAuth } from "@/hooks/useAuthState";
 import OnboardingAuth from "@/pages/OnboardingAuth";
+import OnboardingLanding from "@/pages/OnboardingLanding";
 
 // AppRoutes is now used only for main-app authenticated routes
 const AppRoutes = () => {
@@ -126,6 +127,14 @@ const AppRoutes = () => {
 const RoutedApp = () => {
   const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
+  const [showLanding, setShowLanding] = React.useState(true);
+
+  // When user lands on /auth route, show auth page
+  React.useEffect(() => {
+    if (location.pathname === "/auth") {
+      setShowLanding(false);
+    }
+  }, [location.pathname]);
 
   // Show loading spinner while checking auth state
   if (isLoading) {
@@ -136,24 +145,29 @@ const RoutedApp = () => {
     );
   }
 
-  // If not authenticated AND not on onboarding routes, show onboarding
+  // Not authenticated and on the main route: first landing, then auth after CTA
   if (!isAuthenticated) {
-    // Optionally: Only show onboarding on root, redirect otherwise
-    if (location.pathname !== "/auth" && location.pathname !== "/reset-password") {
-      return <Navigate to="/auth" replace />;
+    // If on /auth, show onboarding auth page
+    if (location.pathname === "/auth") {
+      return <OnboardingAuth />;
     }
-    // Show onboarding
-    return (
-      <OnboardingAuth />
-    );
+    // If landing not dismissed, show landing
+    if (showLanding && location.pathname === "/") {
+      return <OnboardingLanding />;
+    }
+    // Otherwise, force landing for unknown/forgotten route
+    if (!showLanding) {
+      return <OnboardingAuth />;
+    }
+    return <OnboardingLanding />;
   }
 
   // If authenticated but tries to go to onboarding, redirect to app
   if (
-    isAuthenticated && 
-    (location.pathname === "/auth" || location.pathname === "/reset-password")
+    isAuthenticated &&
+    (location.pathname === "/auth" || location.pathname === "/")
   ) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/home" replace />;
   }
 
   // Otherwise (authenticated, normal app)
