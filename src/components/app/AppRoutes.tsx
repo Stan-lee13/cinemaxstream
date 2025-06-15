@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 import Index from "@/pages/Index";
@@ -14,7 +15,7 @@ import Contact from "@/pages/Contact";
 import Account from "@/pages/Account";
 import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
-import PasswordUpdate from "@/pages/PasswordUpdate";
+// Removed duplicate import of PasswordUpdate
 import OnboardingAuth from "@/pages/OnboardingAuth";
 import ModernResetPassword from "@/pages/ModernResetPassword";
 
@@ -114,7 +115,7 @@ const AppRoutes = () => (
     <Route path="/movies" element={<Category />} />
     <Route path="/series" element={<Category />} />
     <Route path="/anime" element={<Category />} />
-    <Route path="/sports" element={<Category />} />
+    {/* You may want to remove sports route if it's deprecated from the landing page */}
     <Route path="/profile" element={<UserProfile />} />
     <Route path="/favorites" element={<Category />} />
     <Route path="/watch-history" element={<WatchHistory />} />
@@ -132,3 +133,4 @@ const AppRoutes = () => (
 );
 
 export default AppRoutes;
+
