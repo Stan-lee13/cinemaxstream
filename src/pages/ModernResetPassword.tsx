@@ -35,68 +35,87 @@ const ModernResetPassword: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-zinc-950 via-cinemax-900 to-zinc-800 relative py-8">
+    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-zinc-950 via-cinemax-900 to-zinc-800 relative p-4 sm:p-6 md:p-8">
+      {/* Background decorative elements */}
       <div className="absolute top-[-80px] left-[-80px] w-[220px] h-[220px] bg-gradient-to-tr from-cinemax-400 via-cinemax-700/60 to-transparent rounded-full blur-3xl opacity-30 z-0" />
       <div className="absolute bottom-[-60px] right-[-60px] w-[180px] h-[180px] bg-cinemax-700/40 rounded-full blur-2xl opacity-25 z-0" />
-      <div className="relative z-10 w-[95vw] max-w-sm mx-auto px-2 py-8 sm:py-10 backdrop-blur-lg bg-white/10 dark:bg-zinc-900/50 rounded-2xl shadow-2xl border border-white/10 dark:border-zinc-700/30">
-        <h2 className="text-2xl font-bold mb-4 text-center text-white">Reset Your Password</h2>
-        <p className="text-center text-cinemax-200/90 mb-5">
-          Enter your email and we’ll send you a reset link.
-        </p>
-        {isSent ? (
-          <div className="text-center text-green-400 space-y-5">
-            <div>
-              <span className="block mb-2">✅ Reset email sent!</span>
-              <span className="text-sm text-gray-300">
-                Check your inbox and follow the link to create a new password.
-              </span>
-            </div>
-            <Button variant="outline" className="w-full" onClick={() => navigate("/auth")}>
-              Return to Login
-            </Button>
+      <div className="absolute left-1/2 top-1/3 w-[130px] h-[80px] rounded-[2.5rem] bg-white/5 dark:bg-zinc-700/10 opacity-15 blur-2xl z-0" style={{ transform: "translate(-70%, 0)" }} />
+      
+      <div className="relative z-10 w-full max-w-sm mx-auto backdrop-blur-lg bg-white/10 dark:bg-zinc-900/50 rounded-2xl shadow-2xl border border-white/10 dark:border-zinc-700/30">
+        {/* Mobile optimized padding and spacing */}
+        <div className="p-6 sm:p-8">
+          <div className="text-center mb-6 sm:mb-8">
+            <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-white">Reset Your Password</h2>
+            <p className="text-sm sm:text-base text-cinemax-200/90 leading-relaxed">
+              Enter your email and we'll send you a reset link.
+            </p>
           </div>
-        ) : (
-          <form className="space-y-5" onSubmit={handleSubmit}>
-            <div>
-              <label htmlFor="reset-email" className="block mb-1 font-medium text-cinemax-400">
-                Email
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-cinemax-400 h-4 w-4" />
-                <Input
-                  id="reset-email"
-                  type="email"
-                  autoComplete="username"
-                  placeholder="Your email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  required
-                  className="pl-10 bg-white/80 dark:bg-zinc-900/40 border-none text-white"
-                  disabled={isLoading}
-                />
+
+          {isSent ? (
+            <div className="text-center space-y-4 sm:space-y-6">
+              <div className="space-y-3">
+                <div className="text-green-400 text-lg sm:text-xl">
+                  ✅ Reset email sent!
+                </div>
+                <div className="text-sm sm:text-base text-gray-300 leading-relaxed px-2">
+                  Check your inbox and follow the link to create a new password.
+                </div>
               </div>
+              <Button 
+                variant="outline" 
+                className="w-full h-11 sm:h-12 text-sm sm:text-base" 
+                onClick={() => navigate("/auth")}
+              >
+                Return to Login
+              </Button>
             </div>
-            <Button
-              type="submit"
-              className="w-full bg-cinemax-500 hover:bg-cinemax-600 transition-all shadow-lg"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <span className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full inline-block" />
-              ) : (
-                "Send Reset Link"
-              )}
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              className="w-full text-cinemax-400"
-              onClick={() => navigate("/auth")}
-            >
-              Back to Login
-            </Button>
-          </form>
-        )}
+          ) : (
+            <form className="space-y-5 sm:space-y-6" onSubmit={handleSubmit}>
+              <div className="space-y-2">
+                <label htmlFor="reset-email" className="block text-sm sm:text-base font-medium text-cinemax-400">
+                  Email
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-cinemax-400 h-4 w-4 sm:h-5 sm:w-5" />
+                  <Input
+                    id="reset-email"
+                    type="email"
+                    autoComplete="username"
+                    placeholder="Your email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    required
+                    className="h-11 sm:h-12 pl-10 sm:pl-12 pr-4 text-sm sm:text-base bg-white/80 dark:bg-zinc-900/40 border-none text-white placeholder:text-gray-400"
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-3 sm:space-y-4">
+                <Button
+                  type="submit"
+                  className="w-full h-11 sm:h-12 bg-cinemax-500 hover:bg-cinemax-600 transition-all shadow-lg text-sm sm:text-base font-medium"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <span className="animate-spin h-4 w-4 sm:h-5 sm:w-5 border-2 border-current border-t-transparent rounded-full inline-block" />
+                  ) : (
+                    "Send Reset Link"
+                  )}
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full h-10 sm:h-11 text-cinemax-400 hover:text-cinemax-300 text-sm sm:text-base"
+                  onClick={() => navigate("/auth")}
+                >
+                  Back to Login
+                </Button>
+              </div>
+            </form>
+          )}
+        </div>
       </div>
     </div>
   );
