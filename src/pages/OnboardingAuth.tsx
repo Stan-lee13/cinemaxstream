@@ -1,4 +1,3 @@
-
 // Responsive, clean, modernized login/signup screen with soft dark glassy/neuromorphic look
 import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
@@ -96,9 +95,22 @@ const OnboardingAuth: React.FC = () => {
             </div>
           </div>
           <div>
-            <label htmlFor="password-auth" className="block text-left mb-1 font-medium text-cinemax-400">
-              Password
-            </label>
+            <div className="flex items-center justify-between">
+              <label htmlFor="password-auth" className="block text-left mb-1 font-medium text-cinemax-400">
+                Password
+              </label>
+              {tab === "signin" && (
+                <button
+                  type="button"
+                  className="text-xs text-cinemax-400 hover:text-cinemax-300 transition"
+                  onClick={() => navigate('/reset-password')}
+                  tabIndex={0}
+                  disabled={isLoading}
+                >
+                  Forgot password?
+                </button>
+              )}
+            </div>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-cinemax-400 h-4 w-4" />
               <Input
@@ -152,4 +164,3 @@ const OnboardingAuth: React.FC = () => {
 };
 
 export default OnboardingAuth;
-
