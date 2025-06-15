@@ -1,4 +1,3 @@
-
 /**
  * API Service for fetching content from TMDB
  */
@@ -236,11 +235,65 @@ const getSimilarContent = async (id: string, type: string = 'movie'): Promise<Co
 };
 
 // Function to get content by category
+const getDocumentaries = async (): Promise<ContentItem[]> => {
+  try {
+    const url = `${TMDB_BASE_URL}/discover/movie?api_key=${API_KEY}&with_genres=99&sort_by=popularity.desc`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Failed to fetch documentaries: ${response.status}`);
+    const data = await response.json();
+    return data.results.map((item: any) => {
+      const content = formatContentItem(item, 'movie');
+      content.category = 'documentary';
+      content.type = 'documentary';
+      content.content_type = 'documentary';
+      return content;
+    });
+  } catch (error) {
+    console.error("Error fetching documentaries:", error);
+    toast.error("Failed to load documentaries");
+    return [];
+  }
+};
+
+// Try to get sports-related content by filtering movies/series/TV that mention 'sport'
+const getSports = async (): Promise<ContentItem[]> => {
+  try {
+    // Combine search from both movies and tv for 'sport'
+    const movieUrl = `${TMDB_BASE_URL}/discover/movie?api_key=${API_KEY}&with_keywords=1667&sort_by=popularity.desc`;
+    const tvUrl = `${TMDB_BASE_URL}/discover/tv?api_key=${API_KEY}&with_keywords=1667&sort_by=popularity.desc`;
+
+    // Keyword 1667 = "sport"
+    const [moviesRes, tvRes] = await Promise.all([fetch(movieUrl), fetch(tvUrl)]);
+    const movieData = moviesRes.ok ? await moviesRes.json() : { results: [] };
+    const tvData = tvRes.ok ? await tvRes.json() : { results: [] };
+    // Combine and mark their types
+    const sportsMovies = (movieData.results || []).map((item: any) => {
+      const content = formatContentItem(item, 'movie');
+      content.category = 'sport';
+      content.type = 'sport';
+      content.content_type = 'sport';
+      return content;
+    });
+    const sportsTv = (tvData.results || []).map((item: any) => {
+      const content = formatContentItem(item, 'series');
+      content.category = 'sport';
+      content.type = 'sport';
+      content.content_type = 'sport';
+      return content;
+    });
+    // Combine and limit to a reasonable number (20)
+    return [...sportsMovies, ...sportsTv].slice(0, 20);
+  } catch (error) {
+    console.error("Error fetching sports content:", error);
+    toast.error("Failed to load sports content");
+    return [];
+  }
+};
+
 const getContentByCategory = async (category: string): Promise<ContentItem[]> => {
   try {
     let url = '';
     let type = 'movie';
-    
     switch (category) {
       case 'movies':
         url = `${TMDB_BASE_URL}/movie/popular?api_key=${API_KEY}`;
@@ -256,24 +309,21 @@ const getContentByCategory = async (category: string): Promise<ContentItem[]> =>
         const trendingMovies = await getTrendingMovies();
         const trendingTvShows = await getTrendingTvShows();
         return [...trendingMovies, ...trendingTvShows];
+      case 'documentary':
+      case 'documentaries':
+        return getDocumentaries();
+      case 'sports':
+        return getSports();
       default:
         url = `${TMDB_BASE_URL}/trending/all/day?api_key=${API_KEY}`;
     }
-    
     const response = await fetch(url);
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch content by category: ${response.status}`);
-    }
-    
+    if (!response.ok) throw new Error(`Failed to fetch content by category: ${response.status}`);
     const data = await response.json();
-    
     return data.results.map((item: any) => {
-      // Determine type from media_type if available
       const itemType = item.media_type || type;
       const contentType = normalizeContentType(itemType === 'tv' ? 'series' : itemType);
-      const content = formatContentItem(item, contentType);
-      return content;
+      return formatContentItem(item, contentType);
     });
   } catch (error) {
     console.error(`Error fetching ${category} content:`, error);

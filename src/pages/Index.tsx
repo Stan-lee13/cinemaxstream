@@ -12,33 +12,26 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Auth Provider wrapper is in App.tsx */}
       <Navbar />
       <HeroSection />
       
-      {/* Content Sections */}
       <div className="py-16 space-y-16">
         <ContentRow 
           title="Trending Now" 
           category="trending" 
           showViewAll={true}
         />
-        
         <ContentRow 
           title="Popular Movies" 
           category="movies" 
           showViewAll={true}
         />
-        
-        {/* Series Section */}
         <SeriesSection />
-        
         <ContentRow 
           title="Featured Content" 
           category="featured" 
           showViewAll={true}
         />
-        
         {isAuthenticated && (
           <ContentRow 
             title="Recommended for You" 
@@ -46,20 +39,22 @@ const Index = () => {
             showViewAll={true}
           />
         )}
-        
         <ContentRow 
           title="Anime Collection" 
           category="anime" 
           showViewAll={true}
         />
-        
         <ContentRow 
-          title="Sports & Documentaries" 
+          title="Sports Picks" 
           category="sports" 
           showViewAll={true}
         />
+        <ContentRow 
+          title="Documentaries" 
+          category="documentary" 
+          showViewAll={true}
+        />
       </div>
-      
       <Footer />
     </div>
   );
