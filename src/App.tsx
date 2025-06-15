@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuthState";
 import Index from "./pages/Index";
 import ContentDetail from "./pages/ContentDetail";
@@ -22,6 +22,7 @@ import Terms from "./pages/Terms";
 import { useAuth } from "@/hooks/useAuthState";
 import OnboardingAuth from "@/pages/OnboardingAuth";
 
+// AppRoutes is now used only for main-app authenticated routes
 const AppRoutes = () => {
   return (
     <Routes>
@@ -121,9 +122,46 @@ const AppRoutes = () => {
   );
 };
 
+// This component handles gating the app for onboarding/auth flow
+const RoutedApp = () => {
+  const { isAuthenticated, isLoading } = useAuth();
+  const location = useLocation();
+
+  // Show loading spinner while checking auth state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-4 border-cinemax-400 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  // If not authenticated AND not on onboarding routes, show onboarding
+  if (!isAuthenticated) {
+    // Optionally: Only show onboarding on root, redirect otherwise
+    if (location.pathname !== "/auth" && location.pathname !== "/reset-password") {
+      return <Navigate to="/auth" replace />;
+    }
+    // Show onboarding
+    return (
+      <OnboardingAuth />
+    );
+  }
+
+  // If authenticated but tries to go to onboarding, redirect to app
+  if (
+    isAuthenticated && 
+    (location.pathname === "/auth" || location.pathname === "/reset-password")
+  ) {
+    return <Navigate to="/" replace />;
+  }
+
+  // Otherwise (authenticated, normal app)
+  return <AppRoutes />;
+};
+
 const App = () => {
   const [showSplash, setShowSplash] = useState(true);
-  const { isAuthenticated, isLoading } = useAuth();
 
   useEffect(() => {
     // Automatically hide splash screen after 3 seconds
@@ -143,33 +181,13 @@ const App = () => {
     );
   }
 
-  // While auth state is loading, show nothing (or a loader)
-  if (isLoading) {
-    return (
-      <div className="min-h-screen w-full flex items-center justify-center bg-background">
-        <div className="w-8 h-8 border-4 border-cinemax-400 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
-  // If not authenticated, show onboarding auth
-  if (!isAuthenticated) {
-    return (
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <OnboardingAuth />
-      </TooltipProvider>
-    );
-  }
-
-  // Authenticated - show main app
+  // Always render BrowserRouter and all navigation logic inside
   return (
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <AppRoutes />
+        <RoutedApp />
       </BrowserRouter>
     </TooltipProvider>
   );
