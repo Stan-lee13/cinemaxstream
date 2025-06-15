@@ -29,7 +29,7 @@ const PasswordUpdate: React.FC = () => {
     }
     setIsLoading(true);
     try {
-      // Supabase uses updateUser for this token-based flow
+      // Supabase uses updateUser for this token-based flow, which immediately updates password
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
       setIsReset(true);

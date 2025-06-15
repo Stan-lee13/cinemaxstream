@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from '@supabase/supabase-js';
@@ -120,26 +119,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Updated signUp: remove emailRedirectTo, create account directly
   const signUp = async (email: string, password: string) => {
     try {
       setIsLoading(true);
       const { error, data } = await supabase.auth.signUp({ 
         email: email.trim().toLowerCase(), 
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth`
-        }
+        password
+        // Don't pass options: { emailRedirectTo } so account is immediately active if allowed by Supabase project.
       });
       
       if (error) {
         throw error;
       }
       
-      if (data.user && !data.user.email_confirmed_at) {
-        toast.success('Account created! Please check your email for verification link');
-      } else {
-        toast.success('Account created successfully!');
-      }
+      // Account is created, no need to confirm via email
+      toast.success('Account created successfully!');
     } catch (error: any) {
       console.error("Signup error:", error);
       toast.error(error.message || 'Error creating account');

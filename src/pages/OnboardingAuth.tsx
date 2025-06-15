@@ -1,3 +1,4 @@
+
 // Responsive, clean, modernized login/signup screen with soft dark glassy/neuromorphic look
 import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
@@ -27,14 +28,13 @@ const OnboardingAuth: React.FC = () => {
       if (tab === "signin") {
         await signIn(formVals.email, formVals.password);
         toast.success("Welcome back!");
+        navigate("/");
       } else {
         await signUp(formVals.email, formVals.password);
-        toast.success("Account created! Please check your email.");
+        toast.success("Account created! You can now sign in.");
         setTab("signin");
         setFormVals({ email: "", password: "" });
       }
-      // return to home
-      navigate("/");
     } catch {
       // error toast in hook
     }
@@ -164,3 +164,4 @@ const OnboardingAuth: React.FC = () => {
 };
 
 export default OnboardingAuth;
+
