@@ -6,6 +6,7 @@ import ContentRow from "@/components/ContentRow";
 import SeriesSection from "@/components/SeriesSection";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuthState";
+import CategoryBanner from "@/components/CategoryBanner";
 
 const Index = () => {
   const { isAuthenticated } = useAuth();
@@ -14,7 +15,6 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <HeroSection />
-      
       <div className="py-16 space-y-16">
         <ContentRow 
           title="Trending Now" 
@@ -39,19 +39,30 @@ const Index = () => {
             showViewAll={true}
           />
         )}
+
+        {/* Sports Picks Row - visually improved */}
+        <div>
+          <CategoryBanner category="sports" />
+          <ContentRow 
+            title="Live & Top Sports" 
+            category="sports" 
+            showViewAll={true}
+          />
+        </div>
+        
+        {/* Documentaries Row - visually improved */}
+        <div>
+          <CategoryBanner category="documentary" />
+          <ContentRow 
+            title="Explore Documentaries" 
+            category="documentary" 
+            showViewAll={true}
+          />
+        </div>
+
         <ContentRow 
           title="Anime Collection" 
           category="anime" 
-          showViewAll={true}
-        />
-        <ContentRow 
-          title="Sports Picks" 
-          category="sports" 
-          showViewAll={true}
-        />
-        <ContentRow 
-          title="Documentaries" 
-          category="documentary" 
           showViewAll={true}
         />
       </div>
