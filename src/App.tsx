@@ -22,6 +22,7 @@ import Terms from "./pages/Terms";
 import { useAuth } from "@/hooks/useAuthState";
 import OnboardingAuth from "@/pages/OnboardingAuth";
 import OnboardingLanding from "@/pages/OnboardingLanding";
+import PasswordUpdate from "./pages/PasswordUpdate";
 
 // AppRoutes is now used only for main-app authenticated routes
 const AppRoutes = () => {
@@ -30,6 +31,7 @@ const AppRoutes = () => {
       <Route path="/" element={<Index />} />
       <Route path="/auth" element={<Auth />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/password-update" element={<PasswordUpdate />} />
       <Route path="/content/:id" element={<ContentDetail />} />
       <Route path="/movies" element={<Category />} />
       <Route path="/series" element={<Category />} />
