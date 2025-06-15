@@ -1,10 +1,11 @@
-
 import React from 'react';
+import BackButton from "@/components/BackButton";
 
 const Terms = () => {
   return (
     <div className="min-h-screen bg-background pt-20 pb-12">
       <div className="container mx-auto px-4">
+        <BackButton className="mb-6" />
         <div className="max-w-4xl mx-auto">
           <h1 className="text-4xl font-bold mb-4">Terms of Service</h1>
           <p className="text-gray-400 mb-8">Last updated: {new Date().toLocaleDateString()}</p>

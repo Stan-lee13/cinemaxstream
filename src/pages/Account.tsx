@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/hooks/useAuthState';
 import { User, Settings, CreditCard, Download, Bell, Shield } from 'lucide-react';
+import BackButton from "@/components/BackButton";
 
 const Account = () => {
   const { user } = useAuth();
@@ -12,6 +12,7 @@ const Account = () => {
     return (
       <div className="min-h-screen bg-background pt-20 pb-12">
         <div className="container mx-auto px-4">
+          <BackButton className="mb-6" />
           <div className="max-w-2xl mx-auto text-center">
             <h1 className="text-4xl font-bold mb-4">Account</h1>
             <p className="text-gray-400 mb-8">Please sign in to access your account settings</p>
@@ -69,6 +70,7 @@ const Account = () => {
   return (
     <div className="min-h-screen bg-background pt-20 pb-12">
       <div className="container mx-auto px-4">
+        <BackButton className="mb-6" />
         <div className="max-w-4xl mx-auto">
           <h1 className="text-4xl font-bold mb-2">Account Settings</h1>
           <p className="text-gray-400 mb-8">Manage your CinemaxStream account</p>
