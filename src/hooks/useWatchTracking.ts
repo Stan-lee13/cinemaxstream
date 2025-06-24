@@ -58,21 +58,32 @@ export const useWatchTracking = () => {
         credit_deducted: false
       };
 
-      // Save session to database
+      // Save session to database - convert watch_events to JSONB format
       const { data, error } = await supabase
         .from('watch_sessions')
-        .insert(session)
+        .insert({
+          ...session,
+          watch_events: JSON.stringify(session.watch_events)
+        })
         .select()
         .single();
 
       if (error) throw error;
 
-      setCurrentSession(data);
+      // Transform back to our interface
+      const sessionData: WatchSession = {
+        ...data,
+        watch_events: Array.isArray(data.watch_events) 
+          ? data.watch_events as WatchEvent[]
+          : JSON.parse(data.watch_events as string || '[]')
+      };
+
+      setCurrentSession(sessionData);
       setIsTracking(true);
       watchTimeRef.current = 0;
       lastPlayTimeRef.current = Date.now();
 
-      return data;
+      return sessionData;
     } catch (error) {
       console.error('Error starting watch session:', error);
       return null;
@@ -117,7 +128,7 @@ export const useWatchTracking = () => {
       await supabase
         .from('watch_sessions')
         .update({
-          watch_events: updatedEvents,
+          watch_events: JSON.stringify(updatedEvents),
           total_watched_time: Math.round(watchTimeRef.current)
         })
         .eq('id', currentSession.id);
@@ -205,16 +216,13 @@ export const useWatchTracking = () => {
 // Get content duration from AI
 const getContentDurationFromAI = async (title: string): Promise<number | undefined> => {
   try {
-    const response = await fetch('/api/get-content-duration', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title })
+    const response = await supabase.functions.invoke('get-content-duration', {
+      body: { title }
     });
 
-    if (!response.ok) return undefined;
+    if (response.error) return undefined;
     
-    const data = await response.json();
-    return data.duration;
+    return response.data?.duration;
   } catch (error) {
     console.error('Error getting content duration from AI:', error);
     return undefined;
@@ -236,10 +244,8 @@ const analyzeWatchSessionWithAI = async (session: WatchSession): Promise<boolean
     }
 
     // Use AI for more complex analysis
-    const response = await fetch('/api/analyze-watch-session', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    const response = await supabase.functions.invoke('analyze-watch-session', {
+      body: {
         movie: {
           title: session.content_title,
           duration: session.content_duration
@@ -248,13 +254,12 @@ const analyzeWatchSessionWithAI = async (session: WatchSession): Promise<boolean
           events: session.watch_events,
           total_watched_time: session.total_watched_time
         }
-      })
+      }
     });
 
-    if (!response.ok) return false;
+    if (response.error) return false;
     
-    const data = await response.json();
-    return data.shouldDeduct === 'YES';
+    return response.data?.shouldDeduct === 'YES';
   } catch (error) {
     console.error('Error analyzing watch session with AI:', error);
     // Fallback to basic rules

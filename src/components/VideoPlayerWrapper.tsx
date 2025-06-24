@@ -152,8 +152,8 @@ const VideoPlayerWrapper = ({
     addWatchEvent('seek', currentTime);
   };
 
-  const handleEnded = (currentTime: number) => {
-    addWatchEvent('ended', currentTime);
+  const handleEnded = () => {
+    addWatchEvent('ended', 0);
     endWatchSession();
     if (onEnded) onEnded();
   };

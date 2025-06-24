@@ -85,7 +85,17 @@ export const useCreditSystem = () => {
           throw profileError;
         }
 
-        setUserProfile(profile);
+        // Transform profile to match our interface
+        const transformedProfile: UserProfile = {
+          id: profile.id,
+          role: (profile.role as 'free' | 'pro' | 'premium') || 'free',
+          timezone: profile.timezone || 'UTC',
+          priority_level: profile.priority_level || 3,
+          username: profile.username,
+          avatar_url: profile.avatar_url
+        };
+
+        setUserProfile(transformedProfile);
 
         // Get or create user usage
         let { data: usage, error: usageError } = await supabase
@@ -114,7 +124,7 @@ export const useCreditSystem = () => {
         }
 
         // Check if we need to reset daily limits
-        await checkAndResetDailyLimits(usage, profile.timezone);
+        await checkAndResetDailyLimits(usage, transformedProfile.timezone);
         
       } catch (error) {
         console.error('Error initializing user:', error);
