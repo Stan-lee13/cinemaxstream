@@ -28,10 +28,10 @@ export const useAIRecommendations = () => {
     if (!user) return [];
 
     try {
-      // Get watch history
+      // Get watch history with content_id included
       const { data: watchHistory } = await supabase
         .from('watch_sessions')
-        .select('content_title, total_watched_time, content_duration')
+        .select('content_id, content_title, total_watched_time, content_duration')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(20);
