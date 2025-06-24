@@ -8,21 +8,28 @@ import TrailerModal from "@/components/TrailerModal";
 import EpisodeSelector from "@/components/EpisodeSelector";
 import PremiumCodeModal from "@/components/PremiumCodeModal";
 import MovieDetail from "@/components/MovieDetail";
+import CreditUsageBar from "@/components/CreditUsageBar";
+import UpgradeModal from "@/components/UpgradeModal";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, List, Grid3X3 } from "lucide-react";
 import useContentDetail from "@/hooks/useContentDetail";
+import { useCreditSystem } from "@/hooks/useCreditSystem";
 import LoadingState from "@/components/LoadingState";
 import PlaySplashScreen from "@/components/PlaySplashScreen";
 import NeonEdgeEffect from "@/components/NeonEdgeEffect";
 import VideoAssistant from "@/components/VideoAssistant";
 import StreamingProviderSelector from "@/components/StreamingProviderSelector";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import { useState } from "react";
 
 const ContentDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const cleanupRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeReason, setUpgradeReason] = useState<'streaming' | 'download'>('streaming');
   
   const {
     content,
@@ -45,13 +52,44 @@ const ContentDetail = () => {
     isPremiumContent,
     canAccessPremium,
     availableProviders,
-    startWatching,
+    startWatching: originalStartWatching,
     handleEpisodeSelect,
     loadEpisodesForSeason,
     showSplashScreen,
     showNeonEffect,
     user
   } = useContentDetail(id);
+
+  // Credit system integration
+  const { userProfile, canStream, canDownload } = useCreditSystem();
+
+  // Enhanced start watching with credit check
+  const startWatching = () => {
+    if (!canStream()) {
+      setUpgradeReason('streaming');
+      setShowUpgradeModal(true);
+      return;
+    }
+    originalStartWatching();
+  };
+
+  // Handle download with credit check
+  const handleDownload = () => {
+    if (!canDownload()) {
+      if (userProfile?.role === 'free') {
+        setUpgradeReason('download');
+        setShowUpgradeModal(true);
+      } else {
+        toast.error('Daily download limit reached');
+        setUpgradeReason('download');
+        setShowUpgradeModal(true);
+      }
+      return;
+    }
+    
+    // Implement actual download logic here
+    toast.success('Download started');
+  };
 
   // Handle back navigation
   const handleGoBack = () => {
@@ -67,18 +105,15 @@ const ContentDetail = () => {
     }
   };
 
-  // Load episodes for first season when seasons change
   useEffect(() => {
     if (seasons.length > 0) {
       loadEpisodesForSeason(seasons[0].season_number);
     }
   }, [seasons.length]);
   
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       cleanupRef.current = true;
-      // Force cleanup of any remaining player resources
       if (setIsPlaying) {
         setIsPlaying(false);
       }
@@ -106,7 +141,6 @@ const ContentDetail = () => {
   }
 
   const handleSkipPlayback = (seconds: number) => {
-    // This would be handled by the video player
     console.log(`Skipping ${seconds} seconds`);
   };
 
@@ -115,16 +149,13 @@ const ContentDetail = () => {
       <Navbar />
       
       <main>
-        {/* Splash screen animation */}
         <PlaySplashScreen 
           isShowing={showSplashScreen} 
           contentTitle={content.title} 
         />
         
-        {/* Neon edge effect for immersive viewing */}
         <NeonEdgeEffect isActive={showNeonEffect && isPlaying} color="multi" />
         
-        {/* Video Player (shown when isPlaying is true) */}
         {isPlaying && !cleanupRef.current ? (
           <div ref={containerRef} className="container mx-auto px-4 py-8 relative">
             <div className="max-w-5xl mx-auto">
@@ -170,7 +201,6 @@ const ContentDetail = () => {
                 usePlyr={true}
               />
               
-              {/* Episode selector for series/anime */}
               {(content.content_type === 'series' || content.content_type === 'anime') && seasons.length > 0 && (
                 <div className="mt-8">
                   <EpisodeSelector
@@ -181,7 +211,6 @@ const ContentDetail = () => {
               )}
             </div>
             
-            {/* Video Assistant */}
             <VideoAssistant 
               contentTitle={content.title}
               contentType={content.content_type}
@@ -191,7 +220,6 @@ const ContentDetail = () => {
           </div>
         ) : (
           <>
-            {/* Hero Banner */}
             <MovieDetail 
               content={content}
               liked={liked}
@@ -200,10 +228,11 @@ const ContentDetail = () => {
               startWatching={startWatching}
             />
             
-            {/* Content Details */}
             <div className="py-8">
               <div className="container mx-auto px-4">
-                {/* Content Details Tabs */}
+                {/* Credit Usage Bar for authenticated users */}
+                {user && <CreditUsageBar />}
+                
                 <Tabs defaultValue="overview" className="w-full">
                   <TabsList className="mb-6 border-b border-gray-800 w-full justify-start rounded-none bg-transparent">
                     <TabsTrigger value="overview" className="data-[state=active]:border-b-2 data-[state=active]:border-cinemax-500 rounded-none">
@@ -221,16 +250,13 @@ const ContentDetail = () => {
                   </TabsList>
                   
                   <TabsContent value="overview">
-                    {/* Content layout with two columns */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                       <div className="lg:col-span-2">
-                        {/* Synopsis */}
                         <h2 className="text-xl font-bold mb-4">Synopsis</h2>
                         <p className="text-gray-300 mb-8">
                           {content.description}
                         </p>
                         
-                        {/* Preview thumbnail */}
                         <div 
                           className="aspect-video bg-gray-900 rounded-lg overflow-hidden mb-6 cursor-pointer"
                           onClick={startWatching}
@@ -246,7 +272,6 @@ const ContentDetail = () => {
                           </div>
                         </div>
                         
-                        {/* Episode selector for series/anime */}
                         {(content.content_type === 'series' || content.content_type === 'anime') && seasons.length > 0 && (
                           <div className="mt-8">
                             <EpisodeSelector
@@ -257,7 +282,6 @@ const ContentDetail = () => {
                         )}
                       </div>
                       
-                      {/* Right sidebar - Streaming sources, premium info */}
                       <div>
                         <div className="mt-6">
                           <div className="flex items-center justify-between mb-4">
@@ -279,9 +303,24 @@ const ContentDetail = () => {
                             onProviderChange={setActiveProvider}
                             variant="grid"
                           />
+
+                          {/* Download Button */}
+                          <div className="mt-4">
+                            <Button 
+                              onClick={handleDownload}
+                              className="w-full bg-green-600 hover:bg-green-700"
+                              disabled={userProfile?.role === 'free'}
+                            >
+                              Download
+                            </Button>
+                            {userProfile?.role === 'free' && (
+                              <p className="text-xs text-gray-400 mt-1 text-center">
+                                Downloads available for Pro and Premium users
+                              </p>
+                            )}
+                          </div>
                         </div>
                         
-                        {/* Premium content notice */}
                         {isPremiumContent && !canAccessPremium && (
                           <div className="mt-6 p-4 bg-cinemax-500/10 border border-cinemax-500/30 rounded-lg">
                             <div className="flex items-start gap-3">
@@ -306,7 +345,6 @@ const ContentDetail = () => {
                           </div>
                         )}
                         
-                        {/* Category */}
                         <div className="mt-6">
                           <h3 className="text-lg font-bold mb-4">Category</h3>
                           <Button 
@@ -436,7 +474,6 @@ const ContentDetail = () => {
         )}
       </main>
       
-      {/* Modals */}
       {showTrailer && trailerUrl && (
         <TrailerModal
           isOpen={showTrailer}
@@ -452,10 +489,19 @@ const ContentDetail = () => {
           onClose={() => setShowPremiumModal(false)}
         />
       )}
+
+      {/* Upgrade Modal */}
+      {showUpgradeModal && userProfile && (
+        <UpgradeModal
+          isOpen={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(false)}
+          reason={upgradeReason}
+          currentRole={userProfile.role}
+        />
+      )}
       
       <Footer />
       
-      {/* AI Video Assistant (only when not playing) */}
       {!isPlaying && (
         <VideoAssistant 
           contentTitle={content.title}

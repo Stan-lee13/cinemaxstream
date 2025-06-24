@@ -4,8 +4,11 @@ import VideoPlayer from "./VideoPlayer";
 import VideoPlayerPlyr from "./VideoPlayerPlyr";
 import VideoPlayerVideoJS from "./VideoPlayerVideoJS";
 import VideoPlayerIframe from "./VideoPlayerIframe";
+import UpgradeModal from "./UpgradeModal";
 import { getAvailableProviders, getBestProviderForContentType } from "@/utils/contentUtils";
 import { getStreamingUrl, isIframeSource } from "@/utils/streamingUtils";
+import { useCreditSystem } from "@/hooks/useCreditSystem";
+import { useWatchTracking } from "@/hooks/useWatchTracking";
 import { toast } from "sonner";
 
 interface VideoPlayerWrapperProps {
@@ -35,25 +38,34 @@ const VideoPlayerWrapper = ({
   poster,
   title,
   usePlyr = false,
-  useVideoJS = true // Default to VideoJS
+  useVideoJS = true
 }: VideoPlayerWrapperProps) => {
   const availableProviders = getAvailableProviders(contentId, contentType);
-  const [activeProvider, setActiveProvider] = useState<string>('vidsrc_su'); // Default to vidsrc.su
+  const [activeProvider, setActiveProvider] = useState<string>('vidsrc_su');
   const [videoSrc, setVideoSrc] = useState<string>("");
-  const [key, setKey] = useState<number>(0); // Key to force re-mount of player components
+  const [key, setKey] = useState<number>(0);
   const [requiresIframe, setRequiresIframe] = useState<boolean>(false);
   const [isError, setIsError] = useState<boolean>(false);
   const [errorCount, setErrorCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [showUpgradeModal, setShowUpgradeModal] = useState<boolean>(false);
   const loadingTimerRef = useRef<number | null>(null);
   
+  // Credit system hooks
+  const { userProfile, canStream } = useCreditSystem();
+  const { startWatchSession, addWatchEvent, endWatchSession } = useWatchTracking();
+  
+  // Check streaming eligibility before loading
   useEffect(() => {
-    // Update source when provider or content changes
+    if (userProfile && !canStream()) {
+      setShowUpgradeModal(true);
+      return;
+    }
+    
     const loadSource = async () => {
       setIsLoading(true);
       setIsError(false);
       
-      // Clear any previous loading timer
       if (loadingTimerRef.current) {
         clearTimeout(loadingTimerRef.current);
         loadingTimerRef.current = null;
@@ -64,7 +76,6 @@ const VideoPlayerWrapper = ({
         autoplay: autoPlay
       };
       
-      // Ensure we're passing valid numbers, not NaN
       if (episodeId) options.episode = episodeId;
       if (typeof seasonNumber === 'number' && !isNaN(seasonNumber)) options.season = seasonNumber;
       if (typeof episodeNumber === 'number' && !isNaN(episodeNumber)) options.episodeNum = episodeNumber;
@@ -74,20 +85,19 @@ const VideoPlayerWrapper = ({
         const src = getStreamingUrl(contentId, activeProvider, options);
         setVideoSrc(src);
         
-        // Check if this is an iframe source
         const isIframe = isIframeSource(activeProvider);
         setRequiresIframe(isIframe);
         
-        // Increment key to force remount of player when source changes
         setKey(prev => prev + 1);
-
-        // Reset error count when source changes successfully
         setErrorCount(0);
         
-        // Set up loading timer - wait 15 seconds before auto-switching
+        // Start watch session
+        if (canStream()) {
+          await startWatchSession(contentId, title);
+        }
+        
         loadingTimerRef.current = window.setTimeout(() => {
           if (isLoading) {
-            // If still loading after 15s, try another provider
             toast.error(`${activeProvider} is taking too long to load. Trying another provider...`);
             handleError();
           }
@@ -108,7 +118,7 @@ const VideoPlayerWrapper = ({
         loadingTimerRef.current = null;
       }
     };
-  }, [contentId, contentType, activeProvider, episodeId, seasonNumber, episodeNumber, title, autoPlay]);
+  }, [contentId, contentType, activeProvider, episodeId, seasonNumber, episodeNumber, title, autoPlay, userProfile, canStream, startWatchSession]);
   
   const handleProviderChange = (providerId: string) => {
     setActiveProvider(providerId);
@@ -123,97 +133,95 @@ const VideoPlayerWrapper = ({
   const handleLoaded = () => {
     setIsLoading(false);
     
-    // Clear the loading timer
     if (loadingTimerRef.current) {
       clearTimeout(loadingTimerRef.current);
       loadingTimerRef.current = null;
     }
   };
+
+  // Video event handlers with watch tracking
+  const handlePlay = (currentTime: number) => {
+    addWatchEvent('play', currentTime);
+  };
+
+  const handlePause = (currentTime: number) => {
+    addWatchEvent('pause', currentTime);
+  };
+
+  const handleSeek = (currentTime: number) => {
+    addWatchEvent('seek', currentTime);
+  };
+
+  const handleEnded = (currentTime: number) => {
+    addWatchEvent('ended', currentTime);
+    endWatchSession();
+    if (onEnded) onEnded();
+  };
+
+  // Show upgrade modal if user can't stream
+  if (userProfile && !canStream()) {
+    return (
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        reason="streaming"
+        currentRole={userProfile.role}
+      />
+    );
+  }
   
-  // Determine which player to use based on source type and props
   const renderPlayer = () => {
-    // If source requires an iframe, use the iframe player regardless of other settings
+    const playerProps = {
+      src: videoSrc,
+      contentId,
+      contentType,
+      userId,
+      episodeId,
+      autoPlay,
+      onEnded: handleEnded,
+      poster,
+      title,
+      availableProviders,
+      activeProvider,
+      onProviderChange: handleProviderChange,
+      onError: handleError,
+      onLoaded: handleLoaded,
+      onPlay: handlePlay,
+      onPause: handlePause,
+      onSeek: handleSeek
+    };
+
     if (requiresIframe) {
       return (
         <VideoPlayerIframe
           key={`iframe-${contentId}-${activeProvider}-${key}`}
-          src={videoSrc}
-          contentId={contentId}
-          contentType={contentType}
-          userId={userId}
-          episodeId={episodeId}
-          autoPlay={autoPlay}
-          onEnded={onEnded}
-          poster={poster}
-          title={title}
-          availableProviders={availableProviders}
-          activeProvider={activeProvider}
-          onProviderChange={handleProviderChange}
-          onError={handleError}
-          onLoaded={handleLoaded}
+          {...playerProps}
         />
       );
     }
     
-    // For direct video sources, use the specified player
     if (useVideoJS) {
       return (
         <VideoPlayerVideoJS
           key={`vjs-${contentId}-${activeProvider}-${key}`}
-          src={videoSrc}
-          contentId={contentId}
-          contentType={contentType}
-          userId={userId}
-          episodeId={episodeId}
-          autoPlay={autoPlay}
-          onEnded={onEnded}
-          poster={poster}
-          title={title}
-          availableProviders={availableProviders}
-          activeProvider={activeProvider}
-          onProviderChange={handleProviderChange}
-          onError={handleError}
-          onLoaded={handleLoaded}
+          {...playerProps}
         />
       );
     }
     
-    // If using Plyr
     if (usePlyr) {
       return (
         <VideoPlayerPlyr
           key={`plyr-${contentId}-${activeProvider}-${key}`}
-          src={videoSrc}
-          contentId={contentId}
-          contentType={contentType}
-          userId={userId}
-          episodeId={episodeId}
-          autoPlay={autoPlay}
-          onEnded={onEnded}
-          poster={poster}
-          title={title}
-          availableProviders={availableProviders}
-          activeProvider={activeProvider}
-          onProviderChange={handleProviderChange}
-          onError={handleError}
-          onLoaded={handleLoaded}
+          {...playerProps}
         />
       );
     }
     
-    // Default fallback to basic player
     return (
       <VideoPlayer
         key={`basic-${contentId}-${activeProvider}-${key}`}
-        src={videoSrc}
-        contentId={contentId}
-        userId={userId}
-        episodeId={episodeId}
-        autoPlay={autoPlay}
-        onEnded={onEnded}
-        poster={poster}
-        onError={handleError}
-        onLoaded={handleLoaded}
+        {...playerProps}
       />
     );
   };
@@ -221,7 +229,6 @@ const VideoPlayerWrapper = ({
   // If there's an error and there are other providers, try to suggest an alternative
   useEffect(() => {
     if (isError && availableProviders.length > 1 && errorCount < 3) {
-      // Find the next provider that isn't the current one
       const currentIndex = availableProviders.findIndex(p => p.id === activeProvider);
       const nextIndex = (currentIndex + 1) % availableProviders.length;
       const nextProvider = availableProviders[nextIndex];

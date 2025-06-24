@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import CreditUsageBar from "@/components/CreditUsageBar";
 import { useAuth } from "@/hooks/useAuthState";
 import { Button } from "@/components/ui/button";
 import { Play, Trash2, Clock } from "lucide-react";
@@ -42,7 +43,6 @@ const WatchHistory = () => {
     const fetchHistory = async () => {
       setIsLoading(true);
       try {
-        // First try to fetch from Supabase
         const { data: dbHistory, error } = await supabase
           .from('user_watch_history')
           .select('*, content:content_id(*)')
@@ -65,14 +65,10 @@ const WatchHistory = () => {
           
           setHistory(formattedHistory);
         } else {
-          // Fallback to localStorage if no DB history or error
           const localHistory = JSON.parse(localStorage.getItem('watch_history') || '[]');
           
-          // If we have local history, format it
           if (localHistory.length > 0) {
-            // Map local history to a consistent format
             const formattedLocalHistory = await Promise.all(localHistory.map(async (item: any) => {
-              // Try to get content details
               try {
                 const { data: content } = await supabase
                   .from('content')
@@ -131,7 +127,6 @@ const WatchHistory = () => {
   // Handle remove from history
   const handleRemoveFromHistory = async (item: WatchHistoryItem) => {
     try {
-      // Remove from Supabase if available
       if (user) {
         await supabase
           .from('user_watch_history')
@@ -139,7 +134,6 @@ const WatchHistory = () => {
           .eq('id', item.id);
       }
       
-      // Also remove from local storage
       try {
         const localHistory = JSON.parse(localStorage.getItem('watch_history') || '[]');
         const updatedHistory = localHistory.filter((historyItem: any) => 
@@ -150,7 +144,6 @@ const WatchHistory = () => {
         // Ignore localStorage errors
       }
       
-      // Update state
       setHistory(prev => prev.filter(historyItem => historyItem.id !== item.id));
       
       toast.success('Removed from watch history');
@@ -191,6 +184,9 @@ const WatchHistory = () => {
       
       <div className="container mx-auto px-4 pt-24 pb-12">
         <h1 className="text-3xl font-bold mb-8">Watch History</h1>
+        
+        {/* Credit Usage Bar */}
+        {user && <CreditUsageBar />}
         
         {history.length === 0 ? (
           <div className="text-center py-12">

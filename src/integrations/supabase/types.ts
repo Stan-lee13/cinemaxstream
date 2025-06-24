@@ -203,8 +203,11 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           id: string
+          priority_level: number | null
+          role: string | null
           subscription_expires_at: string | null
           subscription_tier: string | null
+          timezone: string | null
           updated_at: string
           username: string | null
         }
@@ -212,8 +215,11 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           id: string
+          priority_level?: number | null
+          role?: string | null
           subscription_expires_at?: string | null
           subscription_tier?: string | null
+          timezone?: string | null
           updated_at?: string
           username?: string | null
         }
@@ -221,12 +227,53 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           id?: string
+          priority_level?: number | null
+          role?: string | null
           subscription_expires_at?: string | null
           subscription_tier?: string | null
+          timezone?: string | null
           updated_at?: string
           username?: string | null
         }
         Relationships: []
+      }
+      user_usage: {
+        Row: {
+          created_at: string | null
+          downloads_today: number | null
+          id: string
+          last_reset: string | null
+          updated_at: string | null
+          user_id: string
+          watched_today: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          downloads_today?: number | null
+          id?: string
+          last_reset?: string | null
+          updated_at?: string | null
+          user_id: string
+          watched_today?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          downloads_today?: number | null
+          id?: string
+          last_reset?: string | null
+          updated_at?: string | null
+          user_id?: string
+          watched_today?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_usage_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_watch_history: {
         Row: {
@@ -272,6 +319,56 @@ export type Database = {
             columns: ["episode_id"]
             isOneToOne: false
             referencedRelation: "episodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      watch_sessions: {
+        Row: {
+          content_duration: number | null
+          content_id: string
+          content_title: string | null
+          created_at: string | null
+          credit_deducted: boolean | null
+          id: string
+          session_end: string | null
+          session_start: string | null
+          total_watched_time: number | null
+          user_id: string
+          watch_events: Json | null
+        }
+        Insert: {
+          content_duration?: number | null
+          content_id: string
+          content_title?: string | null
+          created_at?: string | null
+          credit_deducted?: boolean | null
+          id?: string
+          session_end?: string | null
+          session_start?: string | null
+          total_watched_time?: number | null
+          user_id: string
+          watch_events?: Json | null
+        }
+        Update: {
+          content_duration?: number | null
+          content_id?: string
+          content_title?: string | null
+          created_at?: string | null
+          credit_deducted?: boolean | null
+          id?: string
+          session_end?: string | null
+          session_start?: string | null
+          total_watched_time?: number | null
+          user_id?: string
+          watch_events?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "watch_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
         ]
