@@ -5,6 +5,8 @@ import HeroSection from "@/components/HeroSection";
 import ContentRow from "@/components/ContentRow";
 import SeriesSection from "@/components/SeriesSection";
 import Footer from "@/components/Footer";
+import ResponsiveLayout from "@/components/layout/ResponsiveLayout";
+import PersonalizedSections from "@/components/PersonalizedSections";
 import { useAuth } from "@/hooks/useAuthState";
 import CategoryBanner from "@/components/CategoryBanner";
 
@@ -12,10 +14,13 @@ const Index = () => {
   const { isAuthenticated } = useAuth();
 
   return (
-    <div className="min-h-screen bg-background">
+    <ResponsiveLayout>
       <Navbar />
       <HeroSection />
-      <div className="py-16 space-y-16">
+      <div className="py-8 md:py-16 space-y-8 md:space-y-16">
+        {/* Personalized sections for authenticated users */}
+        {isAuthenticated && <PersonalizedSections />}
+        
         <ContentRow 
           title="Trending Now" 
           category="trending" 
@@ -32,17 +37,8 @@ const Index = () => {
           category="featured" 
           showViewAll={true}
         />
-        {isAuthenticated && (
-          <ContentRow 
-            title="Recommended for You" 
-            category="recommended" 
-            showViewAll={true}
-          />
-        )}
 
-        {/* Remove Sports Section */}
-        
-        {/* Documentaries Row - visually improved */}
+        {/* Documentaries Row */}
         <div>
           <CategoryBanner category="documentary" />
           <ContentRow 
@@ -59,9 +55,8 @@ const Index = () => {
         />
       </div>
       <Footer />
-    </div>
+    </ResponsiveLayout>
   );
 };
 
 export default Index;
-

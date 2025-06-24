@@ -17,7 +17,8 @@ import {
   LogOut,
   User,
   Settings,
-  Home
+  Home,
+  Clock
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuthState";
 
@@ -86,6 +87,13 @@ const MobileMenu: React.FC = () => {
               >
                 <Heart size={20} />
                 <span className="text-base font-medium">Favorites</span>
+              </Link>
+              <Link 
+                to="/watch-history" 
+                className="flex items-center gap-3 text-white hover:text-cinemax-400 py-3 px-2 rounded-lg hover:bg-white/5 transition-colors"
+              >
+                <Clock size={20} />
+                <span className="text-base font-medium">Watch History</span>
               </Link>
               <Link 
                 to="/downloads" 

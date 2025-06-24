@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 import Index from "@/pages/Index";
@@ -6,8 +5,7 @@ import ContentDetail from "@/pages/ContentDetail";
 import Category from "@/pages/Category";
 import NotFound from "@/pages/NotFound";
 import UserProfile from "@/pages/UserProfile";
-import SplashScreen from "@/components/SplashScreen";
-import PasswordUpdate from "@/pages/PasswordUpdate";
+import Favorites from "@/pages/Favorites";
 import WatchHistory from "@/pages/WatchHistory";
 import FAQ from "@/pages/FAQ";
 import HelpCenter from "@/pages/HelpCenter";
@@ -15,7 +13,7 @@ import Contact from "@/pages/Contact";
 import Account from "@/pages/Account";
 import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
-// Removed duplicate import of PasswordUpdate
+import PasswordUpdate from "@/pages/PasswordUpdate";
 import OnboardingAuth from "@/pages/OnboardingAuth";
 import ModernResetPassword from "@/pages/ModernResetPassword";
 
@@ -115,9 +113,8 @@ const AppRoutes = () => (
     <Route path="/movies" element={<Category />} />
     <Route path="/series" element={<Category />} />
     <Route path="/anime" element={<Category />} />
-    {/* You may want to remove sports route if it's deprecated from the landing page */}
     <Route path="/profile" element={<UserProfile />} />
-    <Route path="/favorites" element={<Category />} />
+    <Route path="/favorites" element={<Favorites />} />
     <Route path="/watch-history" element={<WatchHistory />} />
     <Route path="/faq" element={<FAQ />} />
     <Route path="/help-center" element={<HelpCenter />} />
@@ -133,4 +130,3 @@ const AppRoutes = () => (
 );
 
 export default AppRoutes;
-
