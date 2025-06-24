@@ -70,12 +70,12 @@ export const useWatchTracking = () => {
 
       if (error) throw error;
 
-      // Transform back to our interface
+      // Transform back to our interface with proper type handling
       const sessionData: WatchSession = {
         ...data,
         watch_events: Array.isArray(data.watch_events) 
-          ? data.watch_events as WatchEvent[]
-          : JSON.parse(data.watch_events as string || '[]')
+          ? (data.watch_events as unknown as WatchEvent[])
+          : JSON.parse(data.watch_events as string || '[]') as WatchEvent[]
       };
 
       setCurrentSession(sessionData);
