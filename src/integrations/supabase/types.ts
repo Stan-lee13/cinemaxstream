@@ -119,6 +119,93 @@ export type Database = {
         }
         Relationships: []
       }
+      download_requests: {
+        Row: {
+          completed_at: string | null
+          content_title: string
+          content_type: string
+          created_at: string
+          download_url: string | null
+          episode_number: number | null
+          error_message: string | null
+          file_size: string | null
+          id: string
+          nkiri_url: string | null
+          quality: string | null
+          search_query: string | null
+          season_number: number | null
+          status: string
+          user_id: string
+          year: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          content_title: string
+          content_type: string
+          created_at?: string
+          download_url?: string | null
+          episode_number?: number | null
+          error_message?: string | null
+          file_size?: string | null
+          id?: string
+          nkiri_url?: string | null
+          quality?: string | null
+          search_query?: string | null
+          season_number?: number | null
+          status?: string
+          user_id: string
+          year?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          content_title?: string
+          content_type?: string
+          created_at?: string
+          download_url?: string | null
+          episode_number?: number | null
+          error_message?: string | null
+          file_size?: string | null
+          id?: string
+          nkiri_url?: string | null
+          quality?: string | null
+          search_query?: string | null
+          season_number?: number | null
+          status?: string
+          user_id?: string
+          year?: string | null
+        }
+        Relationships: []
+      }
+      download_search_cache: {
+        Row: {
+          created_at: string
+          failure_count: number | null
+          id: string
+          last_verified: string | null
+          nkiri_url: string | null
+          search_query: string
+          success_count: number | null
+        }
+        Insert: {
+          created_at?: string
+          failure_count?: number | null
+          id?: string
+          last_verified?: string | null
+          nkiri_url?: string | null
+          search_query: string
+          success_count?: number | null
+        }
+        Update: {
+          created_at?: string
+          failure_count?: number | null
+          id?: string
+          last_verified?: string | null
+          nkiri_url?: string | null
+          search_query?: string
+          success_count?: number | null
+        }
+        Relationships: []
+      }
       episodes: {
         Row: {
           content_id: string | null

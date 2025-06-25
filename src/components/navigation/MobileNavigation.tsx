@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Film, Tv, Play, Heart, User, Search } from "lucide-react";
+import { Home, Film, Tv, Play, Heart, User, Search, Download } from "lucide-react";
 import { useAuth } from "@/hooks/useAuthState";
 
 const MobileNavigation: React.FC = () => {
@@ -14,6 +14,7 @@ const MobileNavigation: React.FC = () => {
     { path: "/series", icon: Tv, label: "Series" },
     { path: "/anime", icon: Play, label: "Anime" },
     ...(isAuthenticated ? [
+      { path: "/downloads", icon: Download, label: "Downloads" },
       { path: "/favorites", icon: Heart, label: "Favorites" },
       { path: "/profile", icon: User, label: "Profile" }
     ] : [])

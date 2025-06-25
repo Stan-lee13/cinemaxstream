@@ -10,6 +10,7 @@ import PremiumCodeModal from "@/components/PremiumCodeModal";
 import MovieDetail from "@/components/MovieDetail";
 import CreditUsageBar from "@/components/CreditUsageBar";
 import UpgradeModal from "@/components/UpgradeModal";
+import DownloadButton from "@/components/DownloadButton";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, List, Grid3X3 } from "lucide-react";
 import useContentDetail from "@/hooks/useContentDetail";
@@ -71,24 +72,6 @@ const ContentDetail = () => {
       return;
     }
     originalStartWatching();
-  };
-
-  // Handle download with credit check
-  const handleDownload = () => {
-    if (!canDownload()) {
-      if (userProfile?.role === 'free') {
-        setUpgradeReason('download');
-        setShowUpgradeModal(true);
-      } else {
-        toast.error('Daily download limit reached');
-        setUpgradeReason('download');
-        setShowUpgradeModal(true);
-      }
-      return;
-    }
-    
-    // Implement actual download logic here
-    toast.success('Download started');
   };
 
   // Handle back navigation
@@ -304,18 +287,20 @@ const ContentDetail = () => {
                             variant="grid"
                           />
 
-                          {/* Download Button */}
+                          {/* Smart Download System */}
                           <div className="mt-4">
-                            <Button 
-                              onClick={handleDownload}
-                              className="w-full bg-green-600 hover:bg-green-700"
-                              disabled={userProfile?.role === 'free'}
-                            >
-                              Download
-                            </Button>
+                            <DownloadButton
+                              contentTitle={content.title}
+                              contentType={content.content_type}
+                              seasonNumber={currentSeason}
+                              episodeNumber={currentEpisode}
+                              year={content.year}
+                              className="w-full"
+                            />
+                            
                             {userProfile?.role === 'free' && (
                               <p className="text-xs text-gray-400 mt-1 text-center">
-                                Downloads available for Pro and Premium users
+                                AI-powered downloads available for Pro and Premium users
                               </p>
                             )}
                           </div>
