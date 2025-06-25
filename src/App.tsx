@@ -5,6 +5,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { BrowserRouter } from "react-router-dom";
 import RoutedApp from "@/components/app/RoutedApp";
+import InstallPrompt from "@/components/InstallPrompt";
 
 // Show splash screen briefly on initial app load
 const App = () => {
@@ -36,6 +37,7 @@ const App = () => {
       <Sonner />
       <BrowserRouter>
         <RoutedApp />
+        <InstallPrompt />
       </BrowserRouter>
     </TooltipProvider>
   );

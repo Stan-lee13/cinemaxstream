@@ -23,6 +23,7 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<Index />} />
+      <Route path="/home" element={<Index />} />
       <Route path="/content/:id" element={<ContentDetail />} />
       <Route path="/movies" element={<Category />} />
       <Route path="/series" element={<Category />} />
