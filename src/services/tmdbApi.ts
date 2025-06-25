@@ -46,7 +46,8 @@ const searchContent = async (query: string, page: number = 1): Promise<ContentIt
     const response = await fetch(url);
     
     if (!response.ok) {
-      throw new Error(`Search failed with status: ${response.status}`);
+      console.error(`Search failed with status: ${response.status}`);
+      return [];
     }
     
     const data = await response.json();
@@ -56,7 +57,6 @@ const searchContent = async (query: string, page: number = 1): Promise<ContentIt
       .map((item: any) => formatContentItem(item, item.media_type === 'tv' ? 'series' : item.media_type));
   } catch (error) {
     console.error("Error searching content:", error);
-    toast.error("Failed to search content");
     return [];
   }
 };
@@ -64,11 +64,12 @@ const searchContent = async (query: string, page: number = 1): Promise<ContentIt
 // Function to get trending movies with pagination
 const getTrendingMovies = async (page: number = 1): Promise<ContentItem[]> => {
   try {
-    const url = `${TMDB_BASE_URL}/trending/movie/day?api_key=${API_KEY}&page=${page}`;
+    const url = `${TMDB_BASE_URL}/trending/movie/week?api_key=${API_KEY}&page=${page}`;
     const response = await fetch(url);
     
     if (!response.ok) {
-      throw new Error(`Failed to fetch trending movies: ${response.status}`);
+      console.error(`Failed to fetch trending movies: ${response.status}`);
+      return [];
     }
     
     const data = await response.json();
@@ -76,7 +77,6 @@ const getTrendingMovies = async (page: number = 1): Promise<ContentItem[]> => {
     return data.results.map((item: any) => formatContentItem(item, 'movie'));
   } catch (error) {
     console.error("Error fetching trending movies:", error);
-    toast.error("Failed to load trending movies");
     return [];
   }
 };
@@ -84,11 +84,12 @@ const getTrendingMovies = async (page: number = 1): Promise<ContentItem[]> => {
 // Function to get trending TV shows with pagination
 const getTrendingTvShows = async (page: number = 1): Promise<ContentItem[]> => {
   try {
-    const url = `${TMDB_BASE_URL}/trending/tv/day?api_key=${API_KEY}&page=${page}`;
+    const url = `${TMDB_BASE_URL}/trending/tv/week?api_key=${API_KEY}&page=${page}`;
     const response = await fetch(url);
     
     if (!response.ok) {
-      throw new Error(`Failed to fetch trending TV shows: ${response.status}`);
+      console.error(`Failed to fetch trending TV shows: ${response.status}`);
+      return [];
     }
     
     const data = await response.json();
@@ -96,7 +97,6 @@ const getTrendingTvShows = async (page: number = 1): Promise<ContentItem[]> => {
     return data.results.map((item: any) => formatContentItem(item, 'series'));
   } catch (error) {
     console.error("Error fetching trending TV shows:", error);
-    toast.error("Failed to load trending TV shows");
     return [];
   }
 };
@@ -108,7 +108,8 @@ const getPopularMovies = async (page: number = 1): Promise<ContentItem[]> => {
     const response = await fetch(url);
     
     if (!response.ok) {
-      throw new Error(`Failed to fetch popular movies: ${response.status}`);
+      console.error(`Failed to fetch popular movies: ${response.status}`);
+      return [];
     }
     
     const data = await response.json();
@@ -116,7 +117,6 @@ const getPopularMovies = async (page: number = 1): Promise<ContentItem[]> => {
     return data.results.map((item: any) => formatContentItem(item, 'movie'));
   } catch (error) {
     console.error("Error fetching popular movies:", error);
-    toast.error("Failed to load popular movies");
     return [];
   }
 };
@@ -128,7 +128,8 @@ const getPopularTvShows = async (page: number = 1): Promise<ContentItem[]> => {
     const response = await fetch(url);
     
     if (!response.ok) {
-      throw new Error(`Failed to fetch popular TV shows: ${response.status}`);
+      console.error(`Failed to fetch popular TV shows: ${response.status}`);
+      return [];
     }
     
     const data = await response.json();
@@ -136,7 +137,6 @@ const getPopularTvShows = async (page: number = 1): Promise<ContentItem[]> => {
     return data.results.map((item: any) => formatContentItem(item, 'series'));
   } catch (error) {
     console.error("Error fetching popular TV shows:", error);
-    toast.error("Failed to load popular TV shows");
     return [];
   }
 };
@@ -145,11 +145,12 @@ const getPopularTvShows = async (page: number = 1): Promise<ContentItem[]> => {
 const getAnime = async (page: number = 1): Promise<ContentItem[]> => {
   try {
     // Using animation genre ID (16) to filter for anime-like content
-    const url = `${TMDB_BASE_URL}/discover/tv?api_key=${API_KEY}&with_genres=16&sort_by=popularity.desc&page=${page}`;
+    const url = `${TMDB_BASE_URL}/discover/tv?api_key=${API_KEY}&with_genres=16&sort_by=popularity.desc&page=${page}&with_original_language=ja`;
     const response = await fetch(url);
     
     if (!response.ok) {
-      throw new Error(`Failed to fetch anime: ${response.status}`);
+      console.error(`Failed to fetch anime: ${response.status}`);
+      return [];
     }
     
     const data = await response.json();
@@ -163,7 +164,6 @@ const getAnime = async (page: number = 1): Promise<ContentItem[]> => {
     });
   } catch (error) {
     console.error("Error fetching anime:", error);
-    toast.error("Failed to load anime");
     return [];
   }
 };
@@ -186,7 +186,7 @@ const getContentDetails = async (id: string, type: string = 'movie'): Promise<Co
       } else if (normalizedType === 'series') {
         return getContentDetails(id, 'movie');
       }
-      throw new Error(`Failed to fetch content details: ${response.status}`);
+      return null;
     }
     
     const data = await response.json();
@@ -218,7 +218,8 @@ const getSimilarContent = async (id: string, type: string = 'movie'): Promise<Co
     const response = await fetch(url);
     
     if (!response.ok) {
-      throw new Error(`Failed to fetch similar content: ${response.status}`);
+      console.error(`Failed to fetch similar content: ${response.status}`);
+      return [];
     }
     
     const data = await response.json();
@@ -226,7 +227,6 @@ const getSimilarContent = async (id: string, type: string = 'movie'): Promise<Co
     return data.results.map((item: any) => formatContentItem(item, normalizedType));
   } catch (error) {
     console.error("Error fetching similar content:", error);
-    toast.error("Failed to load similar content");
     return [];
   }
 };
@@ -235,7 +235,10 @@ const getDocumentaries = async (page: number = 1): Promise<ContentItem[]> => {
   try {
     const url = `${TMDB_BASE_URL}/discover/movie?api_key=${API_KEY}&with_genres=99&sort_by=popularity.desc&page=${page}`;
     const response = await fetch(url);
-    if (!response.ok) throw new Error(`Failed to fetch documentaries: ${response.status}`);
+    if (!response.ok) {
+      console.error(`Failed to fetch documentaries: ${response.status}`);
+      return [];
+    }
     const data = await response.json();
     return data.results.map((item: any) => {
       const content = formatContentItem(item, 'movie');
@@ -246,18 +249,16 @@ const getDocumentaries = async (page: number = 1): Promise<ContentItem[]> => {
     });
   } catch (error) {
     console.error("Error fetching documentaries:", error);
-    toast.error("Failed to load documentaries");
     return [];
   }
 };
 
 const getSports = async (page: number = 1): Promise<ContentItem[]> => {
   try {
-    // Combine search from both movies and tv for 'sport'
-    const movieUrl = `${TMDB_BASE_URL}/discover/movie?api_key=${API_KEY}&with_keywords=1667&sort_by=popularity.desc&page=${page}`;
-    const tvUrl = `${TMDB_BASE_URL}/discover/tv?api_key=${API_KEY}&with_keywords=1667&sort_by=popularity.desc&page=${page}`;
+    // Search for sports-related content using keywords
+    const movieUrl = `${TMDB_BASE_URL}/search/movie?api_key=${API_KEY}&query=sport&sort_by=popularity.desc&page=${page}`;
+    const tvUrl = `${TMDB_BASE_URL}/search/tv?api_key=${API_KEY}&query=sport&sort_by=popularity.desc&page=${page}`;
 
-    // Keyword 1667 = "sport"
     const [moviesRes, tvRes] = await Promise.all([fetch(movieUrl), fetch(tvUrl)]);
     const movieData = moviesRes.ok ? await moviesRes.json() : { results: [] };
     const tvData = tvRes.ok ? await tvRes.json() : { results: [] };
@@ -282,7 +283,6 @@ const getSports = async (page: number = 1): Promise<ContentItem[]> => {
     return [...sportsMovies, ...sportsTv].slice(0, 20);
   } catch (error) {
     console.error("Error fetching sports content:", error);
-    toast.error("Failed to load sports content");
     return [];
   }
 };
@@ -293,6 +293,7 @@ const getContentByCategory = async (category: string, page: number = 1): Promise
     let type = 'movie';
     switch (category) {
       case 'movies':
+      case 'featured':
         url = `${TMDB_BASE_URL}/movie/popular?api_key=${API_KEY}&page=${page}`;
         type = 'movie';
         break;
@@ -305,17 +306,22 @@ const getContentByCategory = async (category: string, page: number = 1): Promise
       case 'trending':
         const trendingMovies = await getTrendingMovies(page);
         const trendingTvShows = await getTrendingTvShows(page);
-        return [...trendingMovies, ...trendingTvShows];
+        return [...trendingMovies.slice(0, 10), ...trendingTvShows.slice(0, 10)];
       case 'documentary':
       case 'documentaries':
         return getDocumentaries(page);
       case 'sports':
         return getSports(page);
       default:
-        url = `${TMDB_BASE_URL}/trending/all/day?api_key=${API_KEY}&page=${page}`;
+        url = `${TMDB_BASE_URL}/trending/all/week?api_key=${API_KEY}&page=${page}`;
     }
+    
     const response = await fetch(url);
-    if (!response.ok) throw new Error(`Failed to fetch content by category: ${response.status}`);
+    if (!response.ok) {
+      console.error(`Failed to fetch content by category: ${response.status}`);
+      return [];
+    }
+    
     const data = await response.json();
     return data.results.map((item: any) => {
       const itemType = item.media_type || type;
@@ -324,7 +330,29 @@ const getContentByCategory = async (category: string, page: number = 1): Promise
     });
   } catch (error) {
     console.error(`Error fetching ${category} content:`, error);
-    toast.error(`Failed to load ${category} content`);
+    return [];
+  }
+};
+
+// Function to get featured content for hero section
+const getFeaturedContent = async (): Promise<ContentItem[]> => {
+  try {
+    const url = `${TMDB_BASE_URL}/trending/all/day?api_key=${API_KEY}&page=1`;
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      console.error(`Failed to fetch featured content: ${response.status}`);
+      return [];
+    }
+    
+    const data = await response.json();
+    
+    return data.results.slice(0, 10).map((item: any) => {
+      const itemType = item.media_type === 'tv' ? 'series' : 'movie';
+      return formatContentItem(item, itemType);
+    });
+  } catch (error) {
+    console.error("Error fetching featured content:", error);
     return [];
   }
 };
@@ -406,6 +434,7 @@ export const tmdbApi = {
   getContentDetails,
   getSimilarContent,
   getContentByCategory,
+  getFeaturedContent,
   getTvShowSeasons,
   getTvShowEpisodes
 };
