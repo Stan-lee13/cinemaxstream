@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuthState';
@@ -243,6 +242,26 @@ export const useCreditSystem = () => {
     }
   };
 
+  // Get remaining downloads for the day
+  const getDownloadsRemaining = (): number => {
+    if (!userProfile || !userUsage) return 0;
+    
+    const limits = getCreditLimits(userProfile.role);
+    if (limits.unlimited || userProfile.role === 'free') return 0;
+    
+    return Math.max(0, limits.maxDownloads - userUsage.downloads_today);
+  };
+
+  // Get remaining streams for the day
+  const getStreamsRemaining = (): number => {
+    if (!userProfile || !userUsage) return 0;
+    
+    const limits = getCreditLimits(userProfile.role);
+    if (limits.unlimited) return 0;
+    
+    return Math.max(0, limits.maxStreams - userUsage.watched_today);
+  };
+
   return {
     userProfile,
     userUsage,
@@ -251,6 +270,8 @@ export const useCreditSystem = () => {
     canDownload,
     deductStreamingCredit,
     deductDownloadCredit,
-    getCreditLimits: () => userProfile ? getCreditLimits(userProfile.role) : null
+    getCreditLimits: () => userProfile ? getCreditLimits(userProfile.role) : null,
+    getDownloadsRemaining,
+    getStreamsRemaining
   };
 };
