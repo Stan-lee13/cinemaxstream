@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -13,17 +13,25 @@ import { useAuth } from "@/hooks/useAuthState";
 import { getPersonalizedRecommendations } from "@/utils/videoUtils";
 
 const CategoryPage = () => {
-  const { category } = useParams<{ category: string }>();
+  const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<ContentItem[]>([]);
   const [page, setPage] = useState(1);
+  const [allContent, setAllContent] = useState<ContentItem[]>([]);
+  const [hasMoreContent, setHasMoreContent] = useState(true);
+  
+  // Get category from URL path
+  const category = location.pathname.slice(1); // Remove leading slash
   
   // Scroll to top on page load
   useEffect(() => {
     window.scrollTo(0, 0);
+    setPage(1);
+    setAllContent([]);
+    setHasMoreContent(true);
   }, [category]);
   
   // Get personalized recommendations if user is logged in
@@ -33,31 +41,56 @@ const CategoryPage = () => {
     enabled: !!user?.id && category === 'recommendations',
   });
   
-  // Fetch data based on category
+  // Fetch data based on category with pagination
   const { data, isLoading, error } = useQuery({
     queryKey: ['category', category, page],
     queryFn: async () => {
       if (category === 'recommendations' && user?.id) {
         return [];
       }
-      // Ensure only the *specific* category is shown on each Category page
+      
+      let result: ContentItem[] = [];
+      
       if (category === 'movies') {
-        // Only return movies
-        return await tmdbApi.getContentByCategory('movies');
+        result = await tmdbApi.getPopularMovies();
+      } else if (category === 'series') {
+        // Get both popular TV shows and mix in some animated series
+        const tvShows = await tmdbApi.getPopularTvShows();
+        const animeShows = await tmdbApi.getAnime();
+        // Mix them for "best of both worlds" - 70% regular series, 30% anime
+        const mixedSeries = [
+          ...tvShows.slice(0, 14),
+          ...animeShows.slice(0, 6)
+        ].sort(() => Math.random() - 0.5); // Shuffle for variety
+        result = mixedSeries;
+      } else if (category === 'anime') {
+        result = await tmdbApi.getAnime();
+      } else {
+        result = await tmdbApi.getContentByCategory(category || 'trending');
       }
-      if (category === 'series') {
-        // Only return series
-        return await tmdbApi.getContentByCategory('series');
-      }
-      if (category === 'anime') {
-        // Only return anime
-        return await tmdbApi.getContentByCategory('anime');
-      }
-      // fallback/default
-      return await tmdbApi.getContentByCategory(category || 'trending');
+      
+      // Limit to 20 items per page
+      const startIndex = (page - 1) * 20;
+      const paginatedResult = result.slice(startIndex, startIndex + 20);
+      
+      // Check if there's more content
+      setHasMoreContent(result.length > page * 20);
+      
+      return paginatedResult;
     },
     enabled: category !== 'recommendations' || !user?.id,
   });
+  
+  // Update content list when new data comes in
+  useEffect(() => {
+    if (data && data.length > 0) {
+      if (page === 1) {
+        setAllContent(data);
+      } else {
+        setAllContent(prev => [...prev, ...data]);
+      }
+    }
+  }, [data, page]);
   
   // Handle search
   const handleSearch = async (e?: React.FormEvent) => {
@@ -68,11 +101,11 @@ const CategoryPage = () => {
     try {
       const results = await tmdbApi.searchContent(searchQuery);
       
-      // Filter results if we're on a specific category page
+      // Filter results based on current category
       if (category && category !== 'trending' && category !== 'recommendations') {
         const filteredResults = results.filter(item => {
           if (category === 'movies') return item.category === 'movie';
-          if (category === 'series') return item.category === 'series';
+          if (category === 'series') return item.category === 'series' || item.category === 'anime';
           if (category === 'anime') return item.category === 'anime' || 
             (item.category === 'series' && item.description?.toLowerCase().includes('anime'));
           return true;
@@ -94,6 +127,13 @@ const CategoryPage = () => {
     setSearchResults([]);
   };
   
+  // Load more content
+  const loadMoreContent = () => {
+    if (!isLoading && hasMoreContent) {
+      setPage(prev => prev + 1);
+    }
+  };
+  
   // Determine title and description based on category
   const getCategoryInfo = () => {
     switch (category) {
@@ -105,7 +145,7 @@ const CategoryPage = () => {
       case 'series':
         return { 
           title: "TV Series",
-          description: "Dive into captivating TV series across all genres, from drama to comedy and beyond."
+          description: "Dive into captivating TV series and anime - the best of both worlds in entertainment."
         };
       case 'anime':
         return { 
@@ -116,6 +156,11 @@ const CategoryPage = () => {
         return {
           title: "Sports",
           description: "Catch up on the latest sports content, highlights, and documentaries."
+        };
+      case 'documentary':
+        return {
+          title: "Documentaries",
+          description: "Explore real stories and fascinating documentaries from around the world."
         };
       case 'trending':
         return { 
@@ -142,10 +187,10 @@ const CategoryPage = () => {
     navigate(`/content/${id}`);
   };
 
-  // Loading state for search
-  const renderSearchSkeleton = () => (
+  // Loading skeleton
+  const renderSkeleton = () => (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-      {Array(5).fill(0).map((_, i) => (
+      {Array(20).fill(0).map((_, i) => (
         <div key={i} className="flex flex-col gap-2">
           <Skeleton className="w-full aspect-[2/3] rounded-lg bg-gray-800" />
           <Skeleton className="h-4 w-2/3 bg-gray-800" />
@@ -169,6 +214,8 @@ const CategoryPage = () => {
       </div>
     );
   }
+
+  const contentToDisplay = searchQuery ? searchResults : allContent;
 
   return (
     <div className="min-h-screen bg-background">
@@ -207,7 +254,7 @@ const CategoryPage = () => {
             </form>
           </div>
           
-          {/* Search Results */}
+          {/* Search Results or Main Content */}
           {searchQuery && (
             <div className="mb-10">
               <h2 className="text-xl font-semibold mb-4">
@@ -218,9 +265,7 @@ const CategoryPage = () => {
                     : `No results found for "${searchQuery}"`}
               </h2>
               
-              {isSearching ? (
-                renderSearchSkeleton()
-              ) : (
+              {isSearching ? renderSkeleton() : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
                   {searchResults.map((item) => (
                     <div 
@@ -275,17 +320,7 @@ const CategoryPage = () => {
             <>
               {category === 'recommendations' && user?.id ? (
                 <>
-                  {loadingRecommendations ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                      {Array(10).fill(0).map((_, i) => (
-                        <div key={i} className="flex flex-col gap-2">
-                          <Skeleton className="w-full aspect-[2/3] rounded-lg bg-gray-800" />
-                          <Skeleton className="h-4 w-2/3 bg-gray-800" />
-                          <Skeleton className="h-4 w-1/2 bg-gray-800" />
-                        </div>
-                      ))}
-                    </div>
-                  ) : recommendations && recommendations.length > 0 ? (
+                  {loadingRecommendations ? renderSkeleton() : recommendations && recommendations.length > 0 ? (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
                       {recommendations.map((item) => (
                         <div 
@@ -337,54 +372,66 @@ const CategoryPage = () => {
                 </>
               ) : (
                 <>
-                  {isLoading ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                      {Array(20).fill(0).map((_, i) => (
-                        <div key={i} className="flex flex-col gap-2">
-                          <Skeleton className="w-full aspect-[2/3] rounded-lg bg-gray-800" />
-                          <Skeleton className="h-4 w-2/3 bg-gray-800" />
-                          <Skeleton className="h-4 w-1/2 bg-gray-800" />
-                        </div>
-                      ))}
-                    </div>
-                  ) : data && data.length > 0 ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-                      {data.map((item) => (
-                        <div 
-                          key={item.id} 
-                          className="movie-card cursor-pointer animate-fade-in"
-                          onClick={() => handleContentClick(item.id, item.category)}
-                        >
-                          <img 
-                            src={item.image} 
-                            alt={item.title} 
-                            className="w-full aspect-[2/3] object-cover rounded-lg"
-                          />
-                          <div className="movie-overlay">
-                            <div className="flex justify-between items-center mb-1">
-                              <span className="text-xs bg-yellow-500/20 px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                                <svg className="w-3 h-3 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-                                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                                </svg>
-                                <span className="text-yellow-500 font-medium">{item.rating}</span>
-                              </span>
-                              <span className="text-xs">{item.year}</span>
-                            </div>
-                            <h3 className="font-medium line-clamp-1">{item.title}</h3>
-                            
-                            <div className="flex gap-2 mt-2">
-                              <Button variant="secondary" size="sm" className="w-full gap-1 bg-white/10 hover:bg-white/20 border-none">
-                                <Play size={14} />
-                                <span>Play</span>
-                              </Button>
-                              <Button variant="secondary" size="sm" className="w-8 h-8 p-0 bg-white/10 hover:bg-white/20 border-none">
-                                <Download size={14} />
-                              </Button>
+                  {isLoading && page === 1 ? renderSkeleton() : contentToDisplay.length > 0 ? (
+                    <>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                        {contentToDisplay.map((item) => (
+                          <div 
+                            key={item.id} 
+                            className="movie-card cursor-pointer animate-fade-in"
+                            onClick={() => handleContentClick(item.id, item.category)}
+                          >
+                            <img 
+                              src={item.image} 
+                              alt={item.title} 
+                              className="w-full aspect-[2/3] object-cover rounded-lg"
+                            />
+                            <div className="movie-overlay">
+                              <div className="flex justify-between items-center mb-1">
+                                <span className="text-xs bg-yellow-500/20 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                                  <svg className="w-3 h-3 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                  </svg>
+                                  <span className="text-yellow-500 font-medium">{item.rating}</span>
+                                </span>
+                                <span className="text-xs">{item.year}</span>
+                              </div>
+                              <h3 className="font-medium line-clamp-1">{item.title}</h3>
+                              
+                              <div className="flex gap-2 mt-2">
+                                <Button variant="secondary" size="sm" className="w-full gap-1 bg-white/10 hover:bg-white/20 border-none">
+                                  <Play size={14} />
+                                  <span>Play</span>
+                                </Button>
+                                <Button variant="secondary" size="sm" className="w-8 h-8 p-0 bg-white/10 hover:bg-white/20 border-none">
+                                  <Download size={14} />
+                                </Button>
+                              </div>
                             </div>
                           </div>
+                        ))}
+                      </div>
+                      
+                      {/* Load More Button */}
+                      {hasMoreContent && (
+                        <div className="mt-12 flex justify-center">
+                          <Button 
+                            className="bg-cinemax-500 hover:bg-cinemax-600 px-8"
+                            onClick={loadMoreContent}
+                            disabled={isLoading}
+                          >
+                            {isLoading ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                Loading...
+                              </>
+                            ) : (
+                              'Load More'
+                            )}
+                          </Button>
                         </div>
-                      ))}
-                    </div>
+                      )}
+                    </>
                   ) : (
                     <div className="text-center py-12">
                       <h3 className="text-xl font-medium mb-2">No content found</h3>
@@ -398,16 +445,6 @@ const CategoryPage = () => {
                   )}
                 </>
               )}
-              
-              <div className="mt-12 flex justify-center">
-                <Button 
-                  className="bg-secondary hover:bg-secondary/80 px-8"
-                  onClick={() => setPage(page + 1)}
-                  disabled={isLoading || !data || data.length === 0}
-                >
-                  {isLoading ? 'Loading...' : 'Load More'}
-                </Button>
-              </div>
             </>
           )}
         </div>

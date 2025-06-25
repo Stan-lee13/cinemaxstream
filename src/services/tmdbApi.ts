@@ -5,6 +5,7 @@
 import { toast } from "sonner";
 import { getImageUrl, normalizeContentType } from "@/utils/urlUtils";
 import { ContentItem, Season, Episode } from "@/types/content";
+import { getTrailerUrlImpl } from "@/utils/providers/trailerProviders";
 
 // Re-export for compatibility with other modules
 export type { ContentItem } from "@/types/content";
@@ -34,14 +35,14 @@ const formatContentItem = (item: any, type: string = 'movie'): ContentItem => {
     category: contentType,
     type: contentType,
     content_type: contentType,
-    trailer_key: item.id.toString() // Will be replaced if we find an actual trailer
+    trailer_key: item.id.toString() // Will be replaced with actual trailer key when needed
   };
 };
 
-// Function to search content
-const searchContent = async (query: string): Promise<ContentItem[]> => {
+// Function to search content with proper pagination
+const searchContent = async (query: string, page: number = 1): Promise<ContentItem[]> => {
   try {
-    const url = `${TMDB_BASE_URL}/search/multi?api_key=${API_KEY}&query=${encodeURIComponent(query)}`;
+    const url = `${TMDB_BASE_URL}/search/multi?api_key=${API_KEY}&query=${encodeURIComponent(query)}&page=${page}`;
     const response = await fetch(url);
     
     if (!response.ok) {
@@ -60,10 +61,10 @@ const searchContent = async (query: string): Promise<ContentItem[]> => {
   }
 };
 
-// Function to get trending movies
-const getTrendingMovies = async (): Promise<ContentItem[]> => {
+// Function to get trending movies with pagination
+const getTrendingMovies = async (page: number = 1): Promise<ContentItem[]> => {
   try {
-    const url = `${TMDB_BASE_URL}/trending/movie/day?api_key=${API_KEY}`;
+    const url = `${TMDB_BASE_URL}/trending/movie/day?api_key=${API_KEY}&page=${page}`;
     const response = await fetch(url);
     
     if (!response.ok) {
@@ -80,10 +81,10 @@ const getTrendingMovies = async (): Promise<ContentItem[]> => {
   }
 };
 
-// Function to get trending TV shows
-const getTrendingTvShows = async (): Promise<ContentItem[]> => {
+// Function to get trending TV shows with pagination
+const getTrendingTvShows = async (page: number = 1): Promise<ContentItem[]> => {
   try {
-    const url = `${TMDB_BASE_URL}/trending/tv/day?api_key=${API_KEY}`;
+    const url = `${TMDB_BASE_URL}/trending/tv/day?api_key=${API_KEY}&page=${page}`;
     const response = await fetch(url);
     
     if (!response.ok) {
@@ -100,10 +101,10 @@ const getTrendingTvShows = async (): Promise<ContentItem[]> => {
   }
 };
 
-// Function to get popular movies
-const getPopularMovies = async (): Promise<ContentItem[]> => {
+// Function to get popular movies with pagination
+const getPopularMovies = async (page: number = 1): Promise<ContentItem[]> => {
   try {
-    const url = `${TMDB_BASE_URL}/movie/popular?api_key=${API_KEY}`;
+    const url = `${TMDB_BASE_URL}/movie/popular?api_key=${API_KEY}&page=${page}`;
     const response = await fetch(url);
     
     if (!response.ok) {
@@ -120,10 +121,10 @@ const getPopularMovies = async (): Promise<ContentItem[]> => {
   }
 };
 
-// Function to get popular TV shows
-const getPopularTvShows = async (): Promise<ContentItem[]> => {
+// Function to get popular TV shows with pagination
+const getPopularTvShows = async (page: number = 1): Promise<ContentItem[]> => {
   try {
-    const url = `${TMDB_BASE_URL}/tv/popular?api_key=${API_KEY}`;
+    const url = `${TMDB_BASE_URL}/tv/popular?api_key=${API_KEY}&page=${page}`;
     const response = await fetch(url);
     
     if (!response.ok) {
@@ -141,10 +142,10 @@ const getPopularTvShows = async (): Promise<ContentItem[]> => {
 };
 
 // Function to get anime (using animation genre and filtering)
-const getAnime = async (): Promise<ContentItem[]> => {
+const getAnime = async (page: number = 1): Promise<ContentItem[]> => {
   try {
     // Using animation genre ID (16) to filter for anime-like content
-    const url = `${TMDB_BASE_URL}/discover/tv?api_key=${API_KEY}&with_genres=16&sort_by=popularity.desc`;
+    const url = `${TMDB_BASE_URL}/discover/tv?api_key=${API_KEY}&with_genres=16&sort_by=popularity.desc&page=${page}`;
     const response = await fetch(url);
     
     if (!response.ok) {
@@ -167,7 +168,7 @@ const getAnime = async (): Promise<ContentItem[]> => {
   }
 };
 
-// Function to get content details
+// Function to get content details with proper trailer integration
 const getContentDetails = async (id: string, type: string = 'movie'): Promise<ContentItem | null> => {
   try {
     const normalizedType = normalizeContentType(type);
@@ -191,16 +192,13 @@ const getContentDetails = async (id: string, type: string = 'movie'): Promise<Co
     const data = await response.json();
     const formattedItem = formatContentItem(data, normalizedType);
     
-    // Set trailer key if available in the response
-    if (data.videos && data.videos.results && data.videos.results.length > 0) {
-      // Find a trailer, teaser, or any video
-      const trailer = data.videos.results.find((v: any) => 
-        v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser')
-      );
-      
-      if (trailer) {
-        formattedItem.trailer_key = trailer.key;
-      }
+    // Get actual trailer key using the trailer provider
+    try {
+      const trailerKey = await getTrailerUrlImpl(id, endpoint);
+      formattedItem.trailer_key = trailerKey;
+    } catch (trailerError) {
+      console.error("Error fetching trailer for content:", trailerError);
+      formattedItem.trailer_key = 'dQw4w9WgXcQ'; // Fallback
     }
     
     return formattedItem;
@@ -210,7 +208,6 @@ const getContentDetails = async (id: string, type: string = 'movie'): Promise<Co
   }
 };
 
-// Function to get similar content
 const getSimilarContent = async (id: string, type: string = 'movie'): Promise<ContentItem[]> => {
   try {
     const normalizedType = normalizeContentType(type);
@@ -234,10 +231,9 @@ const getSimilarContent = async (id: string, type: string = 'movie'): Promise<Co
   }
 };
 
-// Function to get content by category
-const getDocumentaries = async (): Promise<ContentItem[]> => {
+const getDocumentaries = async (page: number = 1): Promise<ContentItem[]> => {
   try {
-    const url = `${TMDB_BASE_URL}/discover/movie?api_key=${API_KEY}&with_genres=99&sort_by=popularity.desc`;
+    const url = `${TMDB_BASE_URL}/discover/movie?api_key=${API_KEY}&with_genres=99&sort_by=popularity.desc&page=${page}`;
     const response = await fetch(url);
     if (!response.ok) throw new Error(`Failed to fetch documentaries: ${response.status}`);
     const data = await response.json();
@@ -255,17 +251,17 @@ const getDocumentaries = async (): Promise<ContentItem[]> => {
   }
 };
 
-// Try to get sports-related content by filtering movies/series/TV that mention 'sport'
-const getSports = async (): Promise<ContentItem[]> => {
+const getSports = async (page: number = 1): Promise<ContentItem[]> => {
   try {
     // Combine search from both movies and tv for 'sport'
-    const movieUrl = `${TMDB_BASE_URL}/discover/movie?api_key=${API_KEY}&with_keywords=1667&sort_by=popularity.desc`;
-    const tvUrl = `${TMDB_BASE_URL}/discover/tv?api_key=${API_KEY}&with_keywords=1667&sort_by=popularity.desc`;
+    const movieUrl = `${TMDB_BASE_URL}/discover/movie?api_key=${API_KEY}&with_keywords=1667&sort_by=popularity.desc&page=${page}`;
+    const tvUrl = `${TMDB_BASE_URL}/discover/tv?api_key=${API_KEY}&with_keywords=1667&sort_by=popularity.desc&page=${page}`;
 
     // Keyword 1667 = "sport"
     const [moviesRes, tvRes] = await Promise.all([fetch(movieUrl), fetch(tvUrl)]);
     const movieData = moviesRes.ok ? await moviesRes.json() : { results: [] };
     const tvData = tvRes.ok ? await tvRes.json() : { results: [] };
+    
     // Combine and mark their types
     const sportsMovies = (movieData.results || []).map((item: any) => {
       const content = formatContentItem(item, 'movie');
@@ -281,6 +277,7 @@ const getSports = async (): Promise<ContentItem[]> => {
       content.content_type = 'sport';
       return content;
     });
+    
     // Combine and limit to a reasonable number (20)
     return [...sportsMovies, ...sportsTv].slice(0, 20);
   } catch (error) {
@@ -290,32 +287,32 @@ const getSports = async (): Promise<ContentItem[]> => {
   }
 };
 
-const getContentByCategory = async (category: string): Promise<ContentItem[]> => {
+const getContentByCategory = async (category: string, page: number = 1): Promise<ContentItem[]> => {
   try {
     let url = '';
     let type = 'movie';
     switch (category) {
       case 'movies':
-        url = `${TMDB_BASE_URL}/movie/popular?api_key=${API_KEY}`;
+        url = `${TMDB_BASE_URL}/movie/popular?api_key=${API_KEY}&page=${page}`;
         type = 'movie';
         break;
       case 'series':
-        url = `${TMDB_BASE_URL}/tv/popular?api_key=${API_KEY}`;
+        url = `${TMDB_BASE_URL}/tv/popular?api_key=${API_KEY}&page=${page}`;
         type = 'series';
         break;
       case 'anime':
-        return getAnime();
+        return getAnime(page);
       case 'trending':
-        const trendingMovies = await getTrendingMovies();
-        const trendingTvShows = await getTrendingTvShows();
+        const trendingMovies = await getTrendingMovies(page);
+        const trendingTvShows = await getTrendingTvShows(page);
         return [...trendingMovies, ...trendingTvShows];
       case 'documentary':
       case 'documentaries':
-        return getDocumentaries();
+        return getDocumentaries(page);
       case 'sports':
-        return getSports();
+        return getSports(page);
       default:
-        url = `${TMDB_BASE_URL}/trending/all/day?api_key=${API_KEY}`;
+        url = `${TMDB_BASE_URL}/trending/all/day?api_key=${API_KEY}&page=${page}`;
     }
     const response = await fetch(url);
     if (!response.ok) throw new Error(`Failed to fetch content by category: ${response.status}`);
@@ -332,7 +329,6 @@ const getContentByCategory = async (category: string): Promise<ContentItem[]> =>
   }
 };
 
-// Function to get TV show seasons and episodes
 const getTvShowSeasons = async (id: string): Promise<Season[]> => {
   try {
     const url = `${TMDB_BASE_URL}/tv/${id}?api_key=${API_KEY}&append_to_response=season/1,season/2,season/3`;
@@ -367,7 +363,6 @@ const getTvShowSeasons = async (id: string): Promise<Season[]> => {
   }
 };
 
-// Function to get TV show season episodes
 const getTvShowEpisodes = async (id: string, seasonNumber: number): Promise<Episode[]> => {
   try {
     const url = `${TMDB_BASE_URL}/tv/${id}/season/${seasonNumber}?api_key=${API_KEY}`;
