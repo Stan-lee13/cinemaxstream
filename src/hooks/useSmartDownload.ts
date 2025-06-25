@@ -79,7 +79,25 @@ export const useSmartDownload = () => {
 
       if (requestError) throw requestError;
 
-      setCurrentRequest(requestData);
+      // Map database response to DownloadRequest interface
+      const mappedRequest: DownloadRequest = {
+        id: requestData.id,
+        contentTitle: requestData.content_title,
+        contentType: requestData.content_type,
+        seasonNumber: requestData.season_number,
+        episodeNumber: requestData.episode_number,
+        year: requestData.year,
+        searchQuery: requestData.search_query,
+        nkiriUrl: requestData.nkiri_url,
+        downloadUrl: requestData.download_url,
+        quality: requestData.quality,
+        fileSize: requestData.file_size,
+        status: requestData.status as 'pending' | 'searching' | 'found' | 'failed' | 'completed',
+        errorMessage: requestData.error_message,
+        createdAt: requestData.created_at
+      };
+
+      setCurrentRequest(mappedRequest);
 
       // Step 1: AI Smart Search
       const searchResult = await performAISearch(requestData.id, contentTitle, contentType, seasonNumber, episodeNumber, year);

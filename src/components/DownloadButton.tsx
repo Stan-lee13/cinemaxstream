@@ -12,7 +12,7 @@ interface DownloadButtonProps {
   year?: string;
   className?: string;
   variant?: 'default' | 'outline' | 'ghost';
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'lg' | 'default';
 }
 
 const DownloadButton: React.FC<DownloadButtonProps> = ({
@@ -23,7 +23,7 @@ const DownloadButton: React.FC<DownloadButtonProps> = ({
   year,
   className = '',
   variant = 'default',
-  size = 'md'
+  size = 'default'
 }) => {
   const [showModal, setShowModal] = useState(false);
 

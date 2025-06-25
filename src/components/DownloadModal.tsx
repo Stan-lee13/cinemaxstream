@@ -27,7 +27,7 @@ const DownloadModal: React.FC<DownloadModalProps> = ({
   year
 }) => {
   const { initiateDownload, isProcessing } = useSmartDownload();
-  const { userProfile, canDownload } = useCreditSystem();
+  const { userProfile, canDownload, getDownloadsRemaining } = useCreditSystem();
   const [downloadResult, setDownloadResult] = useState<DownloadResult | null>(null);
   const [currentStep, setCurrentStep] = useState<'initial' | 'searching' | 'scraping' | 'complete'>('initial');
 
@@ -211,7 +211,7 @@ const DownloadModal: React.FC<DownloadModalProps> = ({
             <div className="text-xs text-gray-400 text-center">
               {userProfile.role === 'premium' 
                 ? 'Unlimited downloads' 
-                : `Downloads remaining today: ${5 - (userProfile?.downloads_today || 0)}`}
+                : `Downloads remaining today: ${getDownloadsRemaining()}`}
             </div>
           )}
         </div>
