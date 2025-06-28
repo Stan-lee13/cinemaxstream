@@ -19,15 +19,10 @@ const TrailerButton = ({
 }: TrailerButtonProps) => {
   const [showTrailer, setShowTrailer] = useState(false);
   
-  // If no trailer key is provided, don't render the component
-  if (!trailerKey) {
-    return null;
-  }
-
   const handleShowTrailer = (e: React.MouseEvent) => {
-    // Prevent any parent elements from receiving the click event
     e.preventDefault();
     e.stopPropagation();
+    console.log("Trailer button clicked for:", title, "with key:", trailerKey);
     setShowTrailer(true);
   };
 

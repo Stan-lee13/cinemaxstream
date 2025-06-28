@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Play, Heart, Info, Plus } from 'lucide-react';
 import BackButton from "./BackButton";
 import PremiumBadge from "./PremiumBadge";
+import TrailerButton from "./TrailerButton";
 import { hasPremiumAccess } from "@/utils/videoUtils";
 import { toast } from "sonner";
-import AiTrailerButton from "./AiTrailerButton";
 
 interface MovieDetailProps {
   content: any;
@@ -29,13 +29,8 @@ const MovieDetail = ({
   const handleWatchButtonClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    console.log("Watch Now clicked for content:", content.id);
     startWatching();
-  };
-
-  const handleTrailerButtonClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    showTrailer();
   };
 
   const handleFavoriteButtonClick = (e: React.MouseEvent) => {
@@ -99,17 +94,12 @@ const MovieDetail = ({
               <span>Watch Now</span>
             </Button>
             
-            {content.trailer_key && (
-              <AiTrailerButton
-                trailerKey={content.trailer_key}
-                title={content.title}
-                contentId={content.id}
-                variant="outline"
-                size="lg"
-              />
-            )}
-            
-            {/* No Download button; streaming only */}
+            <TrailerButton
+              trailerKey={content.trailer_key}
+              title={content.title}
+              variant="outline"
+              size="lg"
+            />
             
             <Button 
               variant="ghost" 

@@ -17,7 +17,6 @@ const TrailerModal = ({ isOpen, onClose, trailerKey, title }: TrailerModalProps)
   const [error, setError] = useState<string | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   
-  // Clean up iframe content when modal is closed
   const cleanupIframe = () => {
     if (iframeRef.current) {
       iframeRef.current.src = '';
@@ -26,29 +25,25 @@ const TrailerModal = ({ isOpen, onClose, trailerKey, title }: TrailerModalProps)
   };
   
   useEffect(() => {
-    // Only prepare trailer when modal is open and we have a key
+    console.log("TrailerModal opened with key:", trailerKey, "title:", title);
+    
     if (isOpen && trailerKey) {
       setIsLoading(true);
       setError(null);
       
       try {
-        // YouTube is the only source for trailers
-        // If the key is already a full URL, extract the video ID
-        if (trailerKey.includes('youtube.com') || trailerKey.includes('youtu.be')) {
-          let videoId = trailerKey;
-          
-          if (trailerKey.includes('youtube.com/watch?v=')) {
-            videoId = trailerKey.split('v=')[1].split('&')[0];
-          } else if (trailerKey.includes('youtu.be/')) {
-            videoId = trailerKey.split('youtu.be/')[1];
-          }
-          
-          setTrailerSrc(`https://www.youtube.com/embed/${videoId}?autoplay=1&origin=${window.location.origin}`);
-        } else {
-          // Assume trailerKey is already a video ID
-          setTrailerSrc(`https://www.youtube.com/embed/${trailerKey}?autoplay=1&origin=${window.location.origin}`);
+        let videoId = trailerKey;
+        
+        // Handle different trailer key formats
+        if (trailerKey.includes('youtube.com/watch?v=')) {
+          videoId = trailerKey.split('v=')[1].split('&')[0];
+        } else if (trailerKey.includes('youtu.be/')) {
+          videoId = trailerKey.split('youtu.be/')[1];
         }
         
+        const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&origin=${window.location.origin}`;
+        console.log("Setting trailer URL:", embedUrl);
+        setTrailerSrc(embedUrl);
         setIsLoading(false);
       } catch (error) {
         console.error("Error setting up trailer URL:", error);
@@ -56,22 +51,21 @@ const TrailerModal = ({ isOpen, onClose, trailerKey, title }: TrailerModalProps)
         setIsLoading(false);
       }
     } else {
-      // Reset trailer source when modal is closed
       cleanupIframe();
     }
     
-    // Cleanup on unmount or when modal closes
     return () => {
       cleanupIframe();
     };
-  }, [isOpen, trailerKey]);
+  }, [isOpen, trailerKey, title]);
 
-  // If no trailer key is provided, don't render anything
   if (!trailerKey) {
+    console.warn("No trailer key provided to TrailerModal");
     return null;
   }
 
   const handleCloseModal = () => {
+    console.log("Closing trailer modal");
     cleanupIframe();
     onClose();
   };
