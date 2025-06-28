@@ -7,29 +7,35 @@ import { toast } from 'sonner';
 export const useUserProfile = () => {
   const [profileData, setProfileData] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
   const fetchProfile = async () => {
     if (!user) {
       setIsLoading(false);
+      setError(null);
+      setProfileData(null);
       return;
     }
 
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
+      setError(null);
+      
+      const { data, error: fetchError } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (error) {
-        console.error('Error fetching profile:', error);
+      if (fetchError) {
+        console.error('Error fetching profile:', fetchError);
+        setError('Failed to load profile data');
         return;
       }
 
       // If profile doesn't exist yet, create it
-      if (!data) {
+      if (!data && user) {
         const newProfile = {
           id: user.id,
           username: user.email?.split('@')[0] || 'User',
@@ -41,19 +47,21 @@ export const useUserProfile = () => {
           .from('user_profiles')
           .insert(newProfile)
           .select()
-          .single();
+          .maybeSingle();
 
         if (createError) {
           console.error('Error creating profile:', createError);
+          setError('Failed to create profile');
           return;
         }
 
         setProfileData(createdProfile as UserProfile);
-      } else {
+      } else if (data) {
         setProfileData(data as UserProfile);
       }
     } catch (error) {
       console.error('Unexpected error:', error);
+      setError('An unexpected error occurred');
     } finally {
       setIsLoading(false);
     }
@@ -85,7 +93,7 @@ export const useUserProfile = () => {
 
   useEffect(() => {
     fetchProfile();
-  }, [user]);
+  }, [user?.id]);
 
-  return { profileData, isLoading, updateProfile, fetchProfile };
+  return { profileData, isLoading, error, updateProfile, fetchProfile };
 };

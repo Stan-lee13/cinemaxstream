@@ -32,12 +32,21 @@ const SmartSearch: React.FC = () => {
     }
   }, []);
 
-  // Fetch search suggestions
-  const { data: suggestions = [], isLoading } = useQuery({
+  // Fetch search suggestions with better error handling
+  const { data: suggestions = [], isLoading, error } = useQuery({
     queryKey: ['search-suggestions', searchQuery],
-    queryFn: () => tmdbApi.searchContent(searchQuery, 1),
+    queryFn: async () => {
+      try {
+        const results = await tmdbApi.searchContent(searchQuery, 1);
+        return Array.isArray(results) ? results : [];
+      } catch (error) {
+        console.error("Search error:", error);
+        return [];
+      }
+    },
     enabled: searchQuery.length >= 2,
-    staleTime: 30000, // 30 seconds
+    staleTime: 30000,
+    retry: 1,
   });
 
   // Handle click outside to close suggestions
@@ -148,6 +157,10 @@ const SmartSearch: React.FC = () => {
                 <div className="p-4 text-center text-gray-400">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-cinemax-500 mx-auto"></div>
                 </div>
+              ) : error ? (
+                <div className="p-4 text-center text-red-400">
+                  Search temporarily unavailable
+                </div>
               ) : suggestions.length > 0 ? (
                 <div className="p-2">
                   <div className="text-xs text-gray-400 px-2 py-1 mb-2">Search Results</div>
@@ -159,7 +172,7 @@ const SmartSearch: React.FC = () => {
                     >
                       <div className="w-12 h-16 flex-shrink-0 rounded overflow-hidden bg-gray-700">
                         <img
-                          src={item.poster || item.image}
+                          src={item.poster || item.image || '/placeholder.svg'}
                           alt={item.title}
                           className="w-full h-full object-cover"
                           onError={(e) => {

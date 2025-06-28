@@ -29,8 +29,24 @@ const MovieDetail = ({
   const handleWatchButtonClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log("Watch Now clicked for content:", content.id);
-    startWatching();
+    console.log("Watch Now clicked for content:", content.id, content.title);
+    
+    try {
+      startWatching();
+    } catch (error) {
+      console.error("Error starting watching:", error);
+      toast.error("Failed to start watching. Please try again.");
+    }
+  };
+
+  const handleTrailerButtonClick = () => {
+    console.log("Trailer button clicked for:", content.title);
+    try {
+      showTrailer();
+    } catch (error) {
+      console.error("Error showing trailer:", error);
+      toast.error("Failed to load trailer. Please try again.");
+    }
   };
 
   const handleFavoriteButtonClick = (e: React.MouseEvent) => {
@@ -94,12 +110,16 @@ const MovieDetail = ({
               <span>Watch Now</span>
             </Button>
             
-            <TrailerButton
-              trailerKey={content.trailer_key}
-              title={content.title}
-              variant="outline"
+            <Button 
+              variant="outline" 
               size="lg"
-            />
+              className="gap-2 border-gray-600 hover:bg-secondary hover:text-white px-6" 
+              onClick={handleTrailerButtonClick}
+              aria-label="Watch Trailer"
+            >
+              <Info size={18} />
+              <span>Watch Trailer</span>
+            </Button>
             
             <Button 
               variant="ghost" 
