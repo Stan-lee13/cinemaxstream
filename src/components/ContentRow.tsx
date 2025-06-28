@@ -1,3 +1,4 @@
+
 import React, { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { tmdbApi } from "@/services/tmdbApi";
@@ -16,19 +17,23 @@ interface ContentRowProps {
 const getFetchFnForCategory = (category: string) => {
   switch (category) {
     case "trending":
-      return tmdbApi.getContentByCategory.bind(null, "trending");
+      return () => tmdbApi.getContentByCategory("trending");
     case "movies":
     case "featured":
+      return () => tmdbApi.getContentByCategory("movies");
     case "recommended":
-      return tmdbApi.getContentByCategory.bind(null, "movies");
+      return () => tmdbApi.getContentByCategory("movies");
     case "anime":
-      return tmdbApi.getContentByCategory.bind(null, "anime");
+      return () => tmdbApi.getContentByCategory("anime");
     case "sports":
-      return tmdbApi.getContentByCategory.bind(null, "sports");
+      return () => tmdbApi.getContentByCategory("sports");
     case "series":
-      return tmdbApi.getContentByCategory.bind(null, "series");
+      return () => tmdbApi.getContentByCategory("series");
+    case "documentary":
+    case "documentaries":
+      return () => tmdbApi.getContentByCategory("documentary");
     default:
-      return tmdbApi.getContentByCategory.bind(null, category);
+      return () => tmdbApi.getContentByCategory(category);
   }
 };
 
@@ -49,6 +54,8 @@ const ContentRow: React.FC<ContentRowProps> = ({
   } = useQuery<Content[]>({
     queryKey: ["content", category],
     queryFn: getFetchFnForCategory(category),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 3,
   });
 
   const items: Content[] = propItems ?? fetchedItems ?? [];
@@ -104,11 +111,21 @@ const ContentRow: React.FC<ContentRowProps> = ({
     );
   }
 
-  if (error || !items || items.length === 0) {
+  if (error) {
+    console.error(`Error loading ${category} content:`, error);
     return (
       <div className="container mx-auto px-4 py-8">
         <ContentRowHeader title={title} showViewAll={showViewAll} viewAllLink={viewAllLink} />
-        <div className="text-gray-600">No content available.</div>
+        <div className="text-gray-600">Failed to load content. Please try again later.</div>
+      </div>
+    );
+  }
+
+  if (!items || items.length === 0) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <ContentRowHeader title={title} showViewAll={showViewAll} viewAllLink={viewAllLink} />
+        <div className="text-gray-600">No content available for this category.</div>
       </div>
     );
   }

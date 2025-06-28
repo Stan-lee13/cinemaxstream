@@ -2,13 +2,46 @@
 import React from "react";
 import { useAIRecommendations } from "@/hooks/useAIRecommendations";
 import { useContinueWatching } from "@/hooks/useContinueWatching";
-import { Sparkles, Clock, Heart } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { tmdbApi } from "@/services/tmdbApi";
+import { Sparkles, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import LoadingState from "@/components/LoadingState";
+import ContentCard from "@/components/ContentCard";
+import { ContentItem } from "@/types/content";
 
 const PersonalizedSections: React.FC = () => {
   const { recommendations, isLoading: aiLoading } = useAIRecommendations();
   const { continueWatchingItems, isLoading: continueLoading } = useContinueWatching();
+
+  // Get actual content based on AI recommendations
+  const { data: recommendedContent, isLoading: contentLoading } = useQuery({
+    queryKey: ['ai-recommended-content', recommendations],
+    queryFn: async () => {
+      if (!recommendations || recommendations.length === 0) return [];
+      
+      const titles = recommendations.map(rec => rec.title);
+      const content = await tmdbApi.getContentByTitles(titles);
+      
+      // If we don't get enough content from search, supplement with mixed trending content
+      if (content.length < 5) {
+        const trendingMovies = await tmdbApi.getTrendingMovies(1);
+        const trendingSeries = await tmdbApi.getTrendingTvShows(1);
+        const anime = await tmdbApi.getAnime(1);
+        
+        const mixedContent = [
+          ...trendingMovies.slice(0, 2),
+          ...trendingSeries.slice(0, 2),
+          ...anime.slice(0, 1)
+        ];
+        
+        return [...content, ...mixedContent].slice(0, 10);
+      }
+      
+      return content;
+    },
+    enabled: recommendations.length > 0
+  });
 
   return (
     <div className="space-y-12">
@@ -22,28 +55,14 @@ const PersonalizedSections: React.FC = () => {
           </span>
         </div>
         
-        {aiLoading ? (
+        {aiLoading || contentLoading ? (
           <div className="flex items-center justify-center py-8">
             <div className="w-8 h-8 border-4 border-cinemax-400 border-t-transparent rounded-full animate-spin"></div>
           </div>
-        ) : recommendations.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-            {recommendations.map((rec, index) => (
-              <div key={index} className="bg-card rounded-lg p-4 hover:bg-card/80 transition-colors">
-                <div className="aspect-[2/3] bg-gray-800 rounded mb-3 flex items-center justify-center">
-                  <span className="text-gray-400 text-sm text-center px-2">
-                    {rec.title}
-                  </span>
-                </div>
-                <h3 className="font-semibold text-sm mb-1 line-clamp-2">{rec.title}</h3>
-                <p className="text-xs text-gray-400 mb-2 line-clamp-2">{rec.reason}</p>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-cinemax-400">{rec.genre}</span>
-                  <span className="text-xs text-gray-500">
-                    {Math.round(rec.confidence * 100)}% match
-                  </span>
-                </div>
-              </div>
+        ) : recommendedContent && recommendedContent.length > 0 ? (
+          <div className="flex gap-4 overflow-x-auto scrollbar-none pb-2 -mx-4 px-4">
+            {recommendedContent.map((item: ContentItem) => (
+              <ContentCard key={item.id} item={item} />
             ))}
           </div>
         ) : (

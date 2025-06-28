@@ -28,6 +28,7 @@ const formatContentItem = (item: any, type: string = 'movie'): ContentItem => {
     title: isMovie ? item.title : item.name,
     description: item.overview,
     image: item.poster_path ? `${TMDB_POSTER_BASE_URL}${item.poster_path}` : '/placeholder.svg',
+    poster: item.poster_path ? `${TMDB_POSTER_BASE_URL}${item.poster_path}` : '/placeholder.svg',
     backdrop: item.backdrop_path ? `${TMDB_IMAGE_BASE_URL}${item.backdrop_path}` : undefined,
     year: (isMovie ? item.release_date : item.first_air_date)?.substring(0, 4) || 'N/A',
     duration: isMovie ? '120 min' : 'Seasons: ' + (item.number_of_seasons || 'N/A'),
@@ -289,45 +290,40 @@ const getSports = async (page: number = 1): Promise<ContentItem[]> => {
 
 const getContentByCategory = async (category: string, page: number = 1): Promise<ContentItem[]> => {
   try {
-    let url = '';
-    let type = 'movie';
+    console.log(`Fetching content for category: ${category}, page: ${page}`);
+    
     switch (category) {
       case 'movies':
       case 'featured':
-        url = `${TMDB_BASE_URL}/movie/popular?api_key=${API_KEY}&page=${page}`;
-        type = 'movie';
-        break;
+        return await getPopularMovies(page);
       case 'series':
-        url = `${TMDB_BASE_URL}/tv/popular?api_key=${API_KEY}&page=${page}`;
-        type = 'series';
-        break;
+        return await getPopularTvShows(page);
       case 'anime':
-        return getAnime(page);
+        return await getAnime(page);
       case 'trending':
         const trendingMovies = await getTrendingMovies(page);
         const trendingTvShows = await getTrendingTvShows(page);
         return [...trendingMovies.slice(0, 10), ...trendingTvShows.slice(0, 10)];
       case 'documentary':
       case 'documentaries':
-        return getDocumentaries(page);
+        return await getDocumentaries(page);
       case 'sports':
-        return getSports(page);
+        return await getSports(page);
       default:
-        url = `${TMDB_BASE_URL}/trending/all/week?api_key=${API_KEY}&page=${page}`;
+        // Fallback to trending
+        const fallbackUrl = `${TMDB_BASE_URL}/trending/all/week?api_key=${API_KEY}&page=${page}`;
+        const response = await fetch(fallbackUrl);
+        if (!response.ok) {
+          console.error(`Failed to fetch content by category: ${response.status}`);
+          return [];
+        }
+        const data = await response.json();
+        return data.results.map((item: any) => {
+          const itemType = item.media_type || 'movie';
+          const contentType = normalizeContentType(itemType === 'tv' ? 'series' : itemType);
+          return formatContentItem(item, contentType);
+        });
     }
-    
-    const response = await fetch(url);
-    if (!response.ok) {
-      console.error(`Failed to fetch content by category: ${response.status}`);
-      return [];
-    }
-    
-    const data = await response.json();
-    return data.results.map((item: any) => {
-      const itemType = item.media_type || type;
-      const contentType = normalizeContentType(itemType === 'tv' ? 'series' : itemType);
-      return formatContentItem(item, contentType);
-    });
   } catch (error) {
     console.error(`Error fetching ${category} content:`, error);
     return [];
@@ -353,6 +349,35 @@ const getFeaturedContent = async (): Promise<ContentItem[]> => {
     });
   } catch (error) {
     console.error("Error fetching featured content:", error);
+    return [];
+  }
+};
+
+// Function to get content based on AI recommendations 
+const getContentByTitles = async (titles: string[]): Promise<ContentItem[]> => {
+  try {
+    const searchPromises = titles.map(async (title) => {
+      const url = `${TMDB_BASE_URL}/search/multi?api_key=${API_KEY}&query=${encodeURIComponent(title)}`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        console.error(`Failed to search for title: ${title}`);
+        return null;
+      }
+      
+      const data = await response.json();
+      if (data.results && data.results.length > 0) {
+        const item = data.results[0];
+        const itemType = item.media_type === 'tv' ? 'series' : 'movie';
+        return formatContentItem(item, itemType);
+      }
+      return null;
+    });
+    
+    const results = await Promise.all(searchPromises);
+    return results.filter(item => item !== null) as ContentItem[];
+  } catch (error) {
+    console.error("Error fetching content by titles:", error);
     return [];
   }
 };
@@ -435,6 +460,7 @@ export const tmdbApi = {
   getSimilarContent,
   getContentByCategory,
   getFeaturedContent,
+  getContentByTitles,
   getTvShowSeasons,
   getTvShowEpisodes
 };
