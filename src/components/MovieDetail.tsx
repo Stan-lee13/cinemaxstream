@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Play, Heart, Info, Plus } from 'lucide-react';
@@ -66,14 +65,13 @@ const MovieDetail = ({
     toast.info("Added to watchlist");
   };
 
-  // Get trailer URL for the content
-  const getTrailerUrl = () => {
-    if (content?.title) {
-      // Create a YouTube search URL for the trailer
-      const searchQuery = `${content.title} ${content.year || ''} trailer`;
-      return `https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}`;
+  // Get trailer key for the content
+  const getTrailerKey = () => {
+    if (content?.trailer_key) {
+      return content.trailer_key;
     }
-    return null;
+    // Fallback trailer key
+    return 'dQw4w9WgXcQ';
   };
 
   return (
@@ -167,8 +165,8 @@ const MovieDetail = ({
       <TrailerModal
         isOpen={showTrailerModal}
         onClose={() => setShowTrailerModal(false)}
-        content={content}
-        trailerUrl={getTrailerUrl()}
+        trailerKey={getTrailerKey()}
+        title={content.title || "Untitled"}
       />
     </div>
   );

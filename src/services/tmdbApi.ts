@@ -41,24 +41,26 @@ const formatContentItem = (item: any, type: string = 'movie'): ContentItem => {
 };
 
 // Function to search content with proper pagination
-const searchContent = async (query: string, page: number = 1): Promise<ContentItem[]> => {
+export const searchContent = async (query: string, page: number = 1): Promise<any> => {
   try {
     const url = `${TMDB_BASE_URL}/search/multi?api_key=${API_KEY}&query=${encodeURIComponent(query)}&page=${page}`;
     const response = await fetch(url);
     
     if (!response.ok) {
       console.error(`Search failed with status: ${response.status}`);
-      return [];
+      return { results: [] };
     }
     
     const data = await response.json();
     
-    return data.results
-      .filter((item: any) => item.media_type === 'movie' || item.media_type === 'tv')
-      .map((item: any) => formatContentItem(item, item.media_type === 'tv' ? 'series' : item.media_type));
+    return {
+      results: data.results
+        .filter((item: any) => item.media_type === 'movie' || item.media_type === 'tv')
+        .map((item: any) => formatContentItem(item, item.media_type === 'tv' ? 'series' : item.media_type))
+    };
   } catch (error) {
     console.error("Error searching content:", error);
-    return [];
+    return { results: [] };
   }
 };
 
