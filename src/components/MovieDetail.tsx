@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Play, Heart, Info, Plus } from 'lucide-react';
 import BackButton from "./BackButton";
 import PremiumBadge from "./PremiumBadge";
-import TrailerButton from "./TrailerButton";
+import TrailerModal from "./TrailerModal";
 import { hasPremiumAccess } from "@/utils/videoUtils";
 import { toast } from "sonner";
 
@@ -23,6 +23,7 @@ const MovieDetail = ({
   showTrailer,
   startWatching
 }: MovieDetailProps) => {
+  const [showTrailerModal, setShowTrailerModal] = useState(false);
   const isPremiumContent = content?.is_premium || (content?.rating && parseFloat(content.rating) > 8.0);
   const canAccessPremium = hasPremiumAccess();
 
@@ -32,6 +33,10 @@ const MovieDetail = ({
     console.log("Watch Now clicked for content:", content.id, content.title);
     
     try {
+      if (isPremiumContent && !canAccessPremium) {
+        toast.error("Premium subscription required to watch this content");
+        return;
+      }
       startWatching();
     } catch (error) {
       console.error("Error starting watching:", error);
@@ -42,7 +47,7 @@ const MovieDetail = ({
   const handleTrailerButtonClick = () => {
     console.log("Trailer button clicked for:", content.title);
     try {
-      showTrailer();
+      setShowTrailerModal(true);
     } catch (error) {
       console.error("Error showing trailer:", error);
       toast.error("Failed to load trailer. Please try again.");
@@ -59,6 +64,16 @@ const MovieDetail = ({
     e.preventDefault();
     e.stopPropagation();
     toast.info("Added to watchlist");
+  };
+
+  // Get trailer URL for the content
+  const getTrailerUrl = () => {
+    if (content?.title) {
+      // Create a YouTube search URL for the trailer
+      const searchQuery = `${content.title} ${content.year || ''} trailer`;
+      return `https://www.youtube.com/results?search_query=${encodeURIComponent(searchQuery)}`;
+    }
+    return null;
   };
 
   return (
@@ -147,6 +162,14 @@ const MovieDetail = ({
           </div>
         </div>
       </div>
+
+      {/* Trailer Modal */}
+      <TrailerModal
+        isOpen={showTrailerModal}
+        onClose={() => setShowTrailerModal(false)}
+        content={content}
+        trailerUrl={getTrailerUrl()}
+      />
     </div>
   );
 };

@@ -45,14 +45,18 @@ const Favorites = () => {
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error fetching favorites:', error);
+          toast.error('Failed to load favorites');
+          return;
+        }
 
         // Transform to our interface
         const favoriteItems: FavoriteItem[] = (data || []).map(item => ({
           id: item.id,
           content_id: item.content_id || '',
           title: `Content ${item.content_id}`, // We'll enhance this with actual content data
-          image: '/placeholder.jpg',
+          image: '/placeholder.svg',
           created_at: item.created_at
         }));
 
@@ -70,14 +74,20 @@ const Favorites = () => {
 
   // Remove from favorites
   const handleRemoveFavorite = async (favoriteId: string, contentId: string) => {
+    if (!user) return;
+    
     try {
       const { error } = await supabase
         .from('user_favorites')
         .delete()
         .eq('id', favoriteId)
-        .eq('user_id', user?.id);
+        .eq('user_id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error removing favorite:', error);
+        toast.error('Failed to remove from favorites');
+        return;
+      }
 
       setFavorites(prev => prev.filter(fav => fav.id !== favoriteId));
       toast.success('Removed from favorites');
@@ -113,7 +123,7 @@ const Favorites = () => {
             </p>
             <Button 
               className="bg-cinemax-500 hover:bg-cinemax-600"
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/home')}
             >
               Browse Content
             </Button>
@@ -126,10 +136,12 @@ const Favorites = () => {
                   <div 
                     className="h-full w-full bg-cover bg-center flex items-center justify-center"
                     style={{ 
-                      backgroundImage: favorite.image ? `url(${favorite.image})` : undefined 
+                      backgroundImage: favorite.image && favorite.image !== '/placeholder.svg' 
+                        ? `url(${favorite.image})` 
+                        : undefined 
                     }}
                   >
-                    {!favorite.image && (
+                    {(!favorite.image || favorite.image === '/placeholder.svg') && (
                       <span className="text-gray-400 text-sm text-center p-2">
                         {favorite.title}
                       </span>

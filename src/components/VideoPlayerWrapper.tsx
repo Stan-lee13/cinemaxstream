@@ -93,12 +93,17 @@ const VideoPlayerWrapper = ({
         
         // Start watch session
         if (canStream()) {
-          await startWatchSession(contentId, title);
+          try {
+            await startWatchSession(contentId, title);
+          } catch (error) {
+            console.error('Failed to start watch session:', error);
+            // Don't block video playback if tracking fails
+          }
         }
         
         loadingTimerRef.current = window.setTimeout(() => {
           if (isLoading) {
-            toast.error(`${activeProvider} is taking too long to load. Trying another provider...`);
+            console.log(`${activeProvider} is taking too long to load. Trying another provider...`);
             handleError();
           }
         }, 15000);
@@ -118,7 +123,7 @@ const VideoPlayerWrapper = ({
         loadingTimerRef.current = null;
       }
     };
-  }, [contentId, contentType, activeProvider, episodeId, seasonNumber, episodeNumber, title, autoPlay, userProfile, canStream, startWatchSession]);
+  }, [contentId, contentType, activeProvider, episodeId, seasonNumber, episodeNumber, title, autoPlay]);
   
   const handleProviderChange = (providerId: string) => {
     setActiveProvider(providerId);
@@ -141,20 +146,36 @@ const VideoPlayerWrapper = ({
 
   // Video event handlers with watch tracking
   const handlePlay = (currentTime: number) => {
-    addWatchEvent('play', currentTime);
+    try {
+      addWatchEvent('play', currentTime);
+    } catch (error) {
+      console.error('Failed to track play event:', error);
+    }
   };
 
   const handlePause = (currentTime: number) => {
-    addWatchEvent('pause', currentTime);
+    try {
+      addWatchEvent('pause', currentTime);
+    } catch (error) {
+      console.error('Failed to track pause event:', error);
+    }
   };
 
   const handleSeek = (currentTime: number) => {
-    addWatchEvent('seek', currentTime);
+    try {
+      addWatchEvent('seek', currentTime);
+    } catch (error) {
+      console.error('Failed to track seek event:', error);
+    }
   };
 
   const handleEnded = () => {
-    addWatchEvent('ended', 0);
-    endWatchSession();
+    try {
+      addWatchEvent('ended', 0);
+      endWatchSession();
+    } catch (error) {
+      console.error('Failed to track end event:', error);
+    }
     if (onEnded) onEnded();
   };
 

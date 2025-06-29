@@ -30,8 +30,11 @@ export const useUserProfile = () => {
 
       if (fetchError) {
         console.error('Error fetching profile:', fetchError);
-        setError('Failed to load profile data');
-        return;
+        // Don't show error toast for missing profile, we'll create it
+        if (!fetchError.message.includes('No rows')) {
+          setError('Failed to load profile data');
+          return;
+        }
       }
 
       // If profile doesn't exist yet, create it
@@ -40,14 +43,15 @@ export const useUserProfile = () => {
           id: user.id,
           username: user.email?.split('@')[0] || 'User',
           avatar_url: null,
-          subscription_tier: 'free'
+          subscription_tier: 'free',
+          role: 'free' as const
         };
 
         const { data: createdProfile, error: createError } = await supabase
           .from('user_profiles')
           .insert(newProfile)
           .select()
-          .maybeSingle();
+          .single();
 
         if (createError) {
           console.error('Error creating profile:', createError);
