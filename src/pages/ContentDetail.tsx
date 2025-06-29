@@ -66,12 +66,27 @@ const ContentDetail = () => {
 
   // Enhanced start watching with credit check
   const startWatching = () => {
-    if (!canStream()) {
+    console.log("Start watching clicked", { userProfile, canStream: canStream() });
+    
+    if (userProfile && !canStream()) {
       setUpgradeReason('streaming');
       setShowUpgradeModal(true);
       return;
     }
+    
+    if (isPremiumContent && !canAccessPremium) {
+      setShowPremiumModal(true);
+      return;
+    }
+    
+    console.log("Starting to watch content:", content.title);
     originalStartWatching();
+  };
+
+  // Handle trailer watching
+  const handleShowTrailer = () => {
+    console.log("Show trailer clicked for:", content.title);
+    setShowTrailer(true);
   };
 
   // Handle back navigation
@@ -181,7 +196,7 @@ const ContentDetail = () => {
                 onEnded={() => setIsPlaying(false)}
                 poster={content.image_url || content.image}
                 title={content.title}
-                usePlyr={true}
+                useVideoJS={true}
               />
               
               {(content.content_type === 'series' || content.content_type === 'anime') && seasons.length > 0 && (
@@ -207,7 +222,7 @@ const ContentDetail = () => {
               content={content}
               liked={liked}
               toggleFavorite={toggleFavorite}
-              showTrailer={() => setShowTrailer(true)}
+              showTrailer={handleShowTrailer}
               startWatching={startWatching}
             />
             
@@ -459,11 +474,11 @@ const ContentDetail = () => {
         )}
       </main>
       
-      {showTrailer && trailerUrl && (
+      {showTrailer && (
         <TrailerModal
           isOpen={showTrailer}
           onClose={() => setShowTrailer(false)}
-          trailerKey={trailerUrl}
+          trailerKey={content.trailer_key || 'dQw4w9WgXcQ'}
           title={content.title}
         />
       )}

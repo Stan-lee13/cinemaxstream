@@ -57,12 +57,8 @@ const VideoPlayerWrapper = ({
   
   // Check streaming eligibility before loading
   useEffect(() => {
-    if (userProfile && !canStream()) {
-      setShowUpgradeModal(true);
-      return;
-    }
-    
     const loadSource = async () => {
+      console.log(`Loading video source for content: ${contentId}, provider: ${activeProvider}`);
       setIsLoading(true);
       setIsError(false);
       
@@ -83,6 +79,7 @@ const VideoPlayerWrapper = ({
       
       try {
         const src = getStreamingUrl(contentId, activeProvider, options);
+        console.log(`Generated streaming URL: ${src}`);
         setVideoSrc(src);
         
         const isIframe = isIframeSource(activeProvider);
@@ -91,8 +88,8 @@ const VideoPlayerWrapper = ({
         setKey(prev => prev + 1);
         setErrorCount(0);
         
-        // Start watch session
-        if (canStream()) {
+        // Start watch session if user can stream
+        if (canStream() && userProfile) {
           try {
             await startWatchSession(contentId, title);
           } catch (error) {
@@ -101,12 +98,20 @@ const VideoPlayerWrapper = ({
           }
         }
         
+        // Set a timeout to detect if the video fails to load
         loadingTimerRef.current = window.setTimeout(() => {
           if (isLoading) {
             console.log(`${activeProvider} is taking too long to load. Trying another provider...`);
             handleError();
           }
-        }, 15000);
+        }, 10000); // Reduced timeout to 10 seconds
+        
+        // Mark as loaded immediately for iframe sources
+        if (isIframe) {
+          setTimeout(() => {
+            setIsLoading(false);
+          }, 2000);
+        }
       } catch (error) {
         console.error("Error getting streaming URL:", error);
         setIsError(true);
@@ -114,6 +119,12 @@ const VideoPlayerWrapper = ({
         toast.error(`Failed to load video from ${activeProvider}. Trying another provider...`);
       }
     };
+
+    // Check if user can stream before loading
+    if (userProfile && !canStream()) {
+      setShowUpgradeModal(true);
+      return;
+    }
     
     loadSource();
     
@@ -123,9 +134,10 @@ const VideoPlayerWrapper = ({
         loadingTimerRef.current = null;
       }
     };
-  }, [contentId, contentType, activeProvider, episodeId, seasonNumber, episodeNumber, title, autoPlay]);
+  }, [contentId, contentType, activeProvider, episodeId, seasonNumber, episodeNumber, title, autoPlay, userProfile]);
   
   const handleProviderChange = (providerId: string) => {
+    console.log(`Changing provider from ${activeProvider} to ${providerId}`);
     setActiveProvider(providerId);
   };
   
@@ -133,9 +145,15 @@ const VideoPlayerWrapper = ({
     setIsError(true);
     setErrorCount(prev => prev + 1);
     console.error(`Failed to load video from provider: ${activeProvider}`);
+    
+    if (loadingTimerRef.current) {
+      clearTimeout(loadingTimerRef.current);
+      loadingTimerRef.current = null;
+    }
   };
   
   const handleLoaded = () => {
+    console.log(`Video loaded successfully from ${activeProvider}`);
     setIsLoading(false);
     
     if (loadingTimerRef.current) {
@@ -147,7 +165,9 @@ const VideoPlayerWrapper = ({
   // Video event handlers with watch tracking
   const handlePlay = (currentTime: number) => {
     try {
-      addWatchEvent('play', currentTime);
+      if (canStream() && userProfile) {
+        addWatchEvent('play', currentTime);
+      }
     } catch (error) {
       console.error('Failed to track play event:', error);
     }
@@ -155,7 +175,9 @@ const VideoPlayerWrapper = ({
 
   const handlePause = (currentTime: number) => {
     try {
-      addWatchEvent('pause', currentTime);
+      if (canStream() && userProfile) {
+        addWatchEvent('pause', currentTime);
+      }
     } catch (error) {
       console.error('Failed to track pause event:', error);
     }
@@ -163,7 +185,9 @@ const VideoPlayerWrapper = ({
 
   const handleSeek = (currentTime: number) => {
     try {
-      addWatchEvent('seek', currentTime);
+      if (canStream() && userProfile) {
+        addWatchEvent('seek', currentTime);
+      }
     } catch (error) {
       console.error('Failed to track seek event:', error);
     }
@@ -171,8 +195,10 @@ const VideoPlayerWrapper = ({
 
   const handleEnded = () => {
     try {
-      addWatchEvent('ended', 0);
-      endWatchSession();
+      if (canStream() && userProfile) {
+        addWatchEvent('ended', 0);
+        endWatchSession();
+      }
     } catch (error) {
       console.error('Failed to track end event:', error);
     }
@@ -211,6 +237,8 @@ const VideoPlayerWrapper = ({
       onPause: handlePause,
       onSeek: handleSeek
     };
+
+    console.log(`Rendering player - iframe: ${requiresIframe}, src: ${videoSrc}`);
 
     if (requiresIframe) {
       return (
@@ -254,7 +282,7 @@ const VideoPlayerWrapper = ({
       const nextIndex = (currentIndex + 1) % availableProviders.length;
       const nextProvider = availableProviders[nextIndex];
       
-      if (nextProvider) {
+      if (nextProvider && nextProvider.id !== activeProvider) {
         console.log(`Trying alternative provider: ${nextProvider.id}`);
         toast.info(`Switching to ${nextProvider.name}...`);
         
@@ -263,12 +291,21 @@ const VideoPlayerWrapper = ({
         }, 1000);
       }
     } else if (errorCount >= 3) {
-      toast.error("Multiple providers failed. Please try again later or select a different provider manually.");
+      toast.error("Multiple providers failed. Please try selecting a different provider manually.");
+      setIsLoading(false);
     }
   }, [isError, availableProviders, activeProvider, errorCount]);
   
   return (
-    <div className="player-container">
+    <div className="player-container relative">
+      {isLoading && (
+        <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-10">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cinemax-500 mx-auto mb-4"></div>
+            <p className="text-white">Loading video from {activeProvider}...</p>
+          </div>
+        </div>
+      )}
       {renderPlayer()}
     </div>
   );
