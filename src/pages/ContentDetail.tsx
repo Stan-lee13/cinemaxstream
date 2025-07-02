@@ -1,3 +1,4 @@
+
 import { useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -196,7 +197,6 @@ const ContentDetail = () => {
                 onEnded={() => setIsPlaying(false)}
                 poster={content.image_url || content.image}
                 title={content.title}
-                useVideoJS={true}
               />
               
               {(content.content_type === 'series' || content.content_type === 'anime') && seasons.length > 0 && (
