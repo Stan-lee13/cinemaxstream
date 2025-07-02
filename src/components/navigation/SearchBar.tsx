@@ -146,25 +146,30 @@ const SearchBar: React.FC = () => {
           {!isLoading && !error && results.length > 0 && (
             <div className="py-2">
               {results.map((result) => (
-                <button
+                <div
                   key={result.id}
                   onClick={() => handleResultClick(result)}
-                  className="w-full flex items-center gap-3 p-3 hover:bg-gray-800/50 transition-colors text-left"
+                  className="flex items-center gap-3 p-3 hover:bg-gray-800/50 transition-colors cursor-pointer group"
                 >
-                  <img
-                    src={getImageUrl(result.poster_path)}
-                    alt={getTitle(result)}
-                    className="w-12 h-16 object-cover rounded bg-gray-800"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = '/placeholder.svg';
-                    }}
-                  />
+                  <div className="relative flex-shrink-0">
+                    <img
+                      src={getImageUrl(result.poster_path)}
+                      alt={getTitle(result)}
+                      className="w-12 h-16 object-cover rounded bg-gray-800 group-hover:ring-2 group-hover:ring-cinemax-500 transition-all"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/placeholder.svg';
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 rounded transition-colors"></div>
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-white truncate">
+                    <h4 className="font-medium text-white truncate group-hover:text-cinemax-400 transition-colors">
                       {getTitle(result)}
                     </h4>
                     <div className="flex items-center gap-2 text-sm text-gray-400">
-                      <span>{getMediaType(result)}</span>
+                      <span className="px-2 py-0.5 bg-gray-700 rounded text-xs">
+                        {getMediaType(result)}
+                      </span>
                       {getYear(result) && (
                         <>
                           <span>•</span>
@@ -182,7 +187,7 @@ const SearchBar: React.FC = () => {
                       )}
                     </div>
                   </div>
-                </button>
+                </div>
               ))}
             </div>
           )}

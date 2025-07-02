@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, X, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { searchContent } from '@/services/tmdbApi';
 import { toast } from 'sonner';
@@ -147,43 +146,48 @@ const SmartSearch = () => {
           {!isLoading && !error && results.length > 0 && (
             <div className="py-2">
               {results.map((result) => (
-                <button
+                <div
                   key={result.id}
                   onClick={() => handleResultClick(result)}
-                  className="w-full flex items-center gap-3 p-3 hover:bg-gray-800/50 transition-colors text-left"
+                  className="flex items-center gap-3 p-3 hover:bg-gray-800/50 transition-colors cursor-pointer group rounded-lg mx-2"
                 >
-                  <img
-                    src={getImageUrl(result.poster_path)}
-                    alt={getTitle(result)}
-                    className="w-12 h-16 object-cover rounded bg-gray-800"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = '/placeholder.svg';
-                    }}
-                  />
+                  <div className="relative flex-shrink-0">
+                    <img
+                      src={getImageUrl(result.poster_path)}
+                      alt={getTitle(result)}
+                      className="w-12 h-16 object-cover rounded bg-gray-800 group-hover:ring-2 group-hover:ring-cinemax-500 transition-all"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/placeholder.svg';
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded group-hover:from-cinemax-500/20 transition-colors"></div>
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-white truncate">
+                    <h4 className="font-medium text-white truncate group-hover:text-cinemax-400 transition-colors">
                       {getTitle(result)}
                     </h4>
-                    <div className="flex items-center gap-2 text-sm text-gray-400">
-                      <span>{getMediaType(result)}</span>
+                    <div className="flex items-center gap-2 text-sm text-gray-400 mt-1">
+                      <span className="px-2 py-0.5 bg-gray-700/50 rounded text-xs font-medium">
+                        {getMediaType(result)}
+                      </span>
                       {getYear(result) && (
                         <>
-                          <span>•</span>
-                          <span>{getYear(result)}</span>
+                          <span className="text-gray-600">•</span>
+                          <span className="text-gray-300">{getYear(result)}</span>
                         </>
                       )}
                       {result.vote_average && result.vote_average > 0 && (
                         <>
-                          <span>•</span>
+                          <span className="text-gray-600">•</span>
                           <span className="flex items-center gap-1">
                             <span className="text-yellow-500">★</span>
-                            {result.vote_average.toFixed(1)}
+                            <span className="text-yellow-400 font-medium">{result.vote_average.toFixed(1)}</span>
                           </span>
                         </>
                       )}
                     </div>
                   </div>
-                </button>
+                </div>
               ))}
             </div>
           )}

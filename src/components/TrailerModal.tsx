@@ -73,6 +73,18 @@ const TrailerModal = ({ isOpen, onClose, trailerKey, title }: TrailerModalProps)
     onClose();
   };
 
+  const handleIframeLoad = () => {
+    console.log("Trailer iframe loaded successfully");
+    setIsLoading(false);
+    setError(null);
+  };
+
+  const handleIframeError = () => {
+    console.error("Trailer iframe failed to load");
+    setIsLoading(false);
+    setError("Failed to load trailer");
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleCloseModal()}>
       <DialogContent className="sm:max-w-4xl p-0 overflow-hidden bg-black border-gray-800">
@@ -109,7 +121,9 @@ const TrailerModal = ({ isOpen, onClose, trailerKey, title }: TrailerModalProps)
                 title={`${title} Trailer`}
                 className="w-full h-full min-h-[300px]"
                 allowFullScreen
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                onLoad={handleIframeLoad}
+                onError={handleIframeError}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
                 style={{ border: 'none' }}
               />
             ) : (
