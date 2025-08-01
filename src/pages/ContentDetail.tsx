@@ -1,5 +1,5 @@
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -23,7 +23,6 @@ import VideoAssistant from "@/components/VideoAssistant";
 import StreamingProviderSelector from "@/components/StreamingProviderSelector";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { useState } from "react";
 
 const ContentDetail = () => {
   const { id } = useParams<{ id: string }>();

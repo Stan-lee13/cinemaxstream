@@ -1,5 +1,5 @@
 
-import React from "react";
+import { useState, useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuthState";
 import AppRoutes from "./AppRoutes";
@@ -10,10 +10,10 @@ import OnboardingLanding from "@/pages/OnboardingLanding";
 const RoutedApp = () => {
   const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
-  const [showLanding, setShowLanding] = React.useState(true);
+  const [showLanding, setShowLanding] = useState(true);
 
   // Show onboarding auth page only for /auth route
-  React.useEffect(() => {
+  useEffect(() => {
     if (location.pathname === "/auth") {
       setShowLanding(false);
     }
