@@ -8,6 +8,7 @@ import { AuthProvider } from './hooks/useAuthState';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import ErrorBoundary from './components/ErrorBoundary';
+import { productionMonitor } from './utils/productionUtils';
 
 const queryClient = new QueryClient({
   defaultOptions: {
