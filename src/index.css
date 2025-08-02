@@ -234,4 +234,9 @@
   [data-theme="midnight"] .accent-text {
     @apply text-purple-400;
   }
+  
+  /* Safe area insets for mobile navigation */
+  .safe-area-inset-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }

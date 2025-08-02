@@ -15,6 +15,11 @@ export function PremiumPromoModal({ children }: PremiumPromoModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { activatePremium, isPremium } = useAuth();
 
+  // Prevent auto-close when opening
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const success = activatePremium(promoCode);
@@ -34,7 +39,7 @@ export function PremiumPromoModal({ children }: PremiumPromoModalProps) {
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>

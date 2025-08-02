@@ -18,7 +18,8 @@ import {
   User,
   Settings,
   Home,
-  Clock
+  Clock,
+  ArrowLeft
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -48,7 +49,18 @@ const MobileMenu: React.FC = () => {
         </Button>
       </SheetTrigger>
       <SheetContent className="bg-background border-gray-800 w-[280px] p-6">
-        <nav className="flex flex-col gap-4 mt-8">
+        <div className="flex items-center gap-3 mb-6 pt-2">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => navigate(-1)}
+            className="p-2 hover:bg-white/10"
+          >
+            <ArrowLeft size={20} className="text-white" />
+          </Button>
+          <span className="text-white font-medium">Menu</span>
+        </div>
+        <nav className="flex flex-col gap-4">
           <Link 
             to="/" 
             className="flex items-center gap-3 text-white hover:text-cinemax-400 py-3 px-2 rounded-lg hover:bg-white/5 transition-colors"
