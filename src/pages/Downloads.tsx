@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuthState';
+import { useAuth } from '@/contexts/AuthContext';
 import ResponsiveLayout from '@/components/layout/ResponsiveLayout';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';

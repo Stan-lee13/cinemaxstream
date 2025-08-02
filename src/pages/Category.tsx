@@ -9,7 +9,7 @@ import { Play, Download, Search } from "lucide-react";
 import { tmdbApi, ContentItem } from "@/services/tmdbApi";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAuth } from "@/hooks/useAuthState";
+import { useAuth } from "@/contexts/AuthContext";
 import { getPersonalizedRecommendations } from "@/utils/videoUtils";
 
 const CategoryPage = () => {

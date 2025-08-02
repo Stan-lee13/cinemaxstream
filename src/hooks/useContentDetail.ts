@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuthState";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from 'sonner';
 import { tmdbApi } from "@/services/tmdbApi";
 import { getTrailerUrl, hasPremiumAccess, getAvailableProviders } from "@/utils/videoUtils";

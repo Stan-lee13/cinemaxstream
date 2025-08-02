@@ -3,8 +3,9 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useAuth } from "@/hooks/useAuthState";
+import { useAuth } from "@/contexts/AuthContext";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { PremiumPromoModal } from "@/components/PremiumPromoModal";
 import { hasStoredPremiumAccess } from "@/utils/premiumUtils";
 import {
   DropdownMenu,
@@ -19,7 +20,7 @@ import { ChevronDown, LogOut, Settings, User as UserIcon, History, Crown } from 
 import ThemeSwitcher from "../ThemeSwitcher";
 
 export const UserMenu = () => {
-  const { user, signOut, isAuthenticated } = useAuth();
+  const { user, signOut, isAuthenticated, isPremium: authPremium } = useAuth();
   const { profileData } = useUserProfile();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
@@ -47,10 +48,10 @@ export const UserMenu = () => {
       }
 
       // Check premium status
-      const premiumStatus = hasStoredPremiumAccess() || profileData?.subscription_tier !== 'free';
+      const premiumStatus = authPremium || hasStoredPremiumAccess() || profileData?.subscription_tier !== 'free';
       setIsPremium(premiumStatus);
     }
-  }, [user, profileData]);
+  }, [user, profileData, authPremium]);
 
   if (!isAuthenticated) {
     return (
@@ -133,6 +134,16 @@ export const UserMenu = () => {
               <Settings className="mr-2 h-4 w-4" />
               <span>Settings</span>
             </DropdownMenuItem>
+            {!isPremium && (
+              <DropdownMenuItem>
+                <PremiumPromoModal>
+                  <div className="flex items-center w-full cursor-pointer">
+                    <Crown className="mr-2 h-4 w-4 text-yellow-500" />
+                    <span>Activate Premium</span>
+                  </div>
+                </PremiumPromoModal>
+              </DropdownMenuItem>
+            )}
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleSignOut}>

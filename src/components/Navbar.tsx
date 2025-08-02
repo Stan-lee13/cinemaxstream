@@ -8,7 +8,7 @@ import DesktopNav from './navigation/DesktopNav';
 import FavoritesButton from './navigation/FavoritesButton';
 import UserMenu from './navigation/UserMenu';
 import SearchBar from './navigation/SearchBar';
-import { useAuth } from '@/hooks/useAuthState';
+import { useAuth } from '@/contexts/AuthContext';
 import NotificationBar from './NotificationBar';
 
 const Navbar: React.FC = () => {

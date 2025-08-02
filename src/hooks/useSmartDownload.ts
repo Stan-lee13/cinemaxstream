@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuthState';
+import { useAuth } from '@/contexts/AuthContext';
 import { useCreditSystem } from '@/hooks/useCreditSystem';
 import { toast } from 'sonner';
 

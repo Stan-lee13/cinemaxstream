@@ -1,7 +1,7 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuthState';
+import { useAuth } from '@/contexts/AuthContext';
 import { useCreditSystem } from './useCreditSystem';
 
 export interface WatchEvent {

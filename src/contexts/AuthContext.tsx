@@ -13,6 +13,8 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   isAuthenticated: boolean;
   signInAsTestUser: () => Promise<void>;
+  isPremium: boolean;
+  activatePremium: (promoCode: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,6 +23,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPremium, setIsPremium] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -39,6 +42,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setSession(currentSession);
           setUser(currentSession?.user ?? null);
           setIsLoading(false);
+          
+          // Check for premium status
+          const premiumStatus = localStorage.getItem('premium-status');
+          setIsPremium(premiumStatus === 'active');
         }
       } catch (error) {
         console.error('Unexpected error getting session:', error);
@@ -64,6 +71,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             toast.success('Successfully signed in!');
           } else if (event === 'SIGNED_OUT') {
             toast.success('Successfully signed out!');
+            setIsPremium(false);
+            localStorage.removeItem('premium-status');
           } else if (event === 'TOKEN_REFRESHED') {
             console.log('Token refreshed');
           }
@@ -76,6 +85,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       subscription.unsubscribe();
     };
   }, []);
+
+  const activatePremium = (promoCode: string): boolean => {
+    if (promoCode === "Stanley123.") {
+      setIsPremium(true);
+      localStorage.setItem('premium-status', 'active');
+      toast.success('Premium features activated! 🎉');
+      return true;
+    }
+    toast.error('Invalid promo code');
+    return false;
+  };
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -192,7 +212,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signUp,
     signOut,
     isAuthenticated: !!user,
-    signInAsTestUser
+    signInAsTestUser,
+    isPremium,
+    activatePremium
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

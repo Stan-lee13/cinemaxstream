@@ -20,7 +20,7 @@ import {
   Home,
   Clock
 } from "lucide-react";
-import { useAuth } from "@/hooks/useAuthState";
+import { useAuth } from "@/contexts/AuthContext";
 
 const MobileMenu: React.FC = () => {
   const navigate = useNavigate();

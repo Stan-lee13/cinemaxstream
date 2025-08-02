@@ -2,7 +2,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Home, Film, Tv, Play, Heart, User, Search, Download } from "lucide-react";
-import { useAuth } from "@/hooks/useAuthState";
+import { useAuth } from "@/contexts/AuthContext";
 
 const MobileNavigation: React.FC = () => {
   const location = useLocation();

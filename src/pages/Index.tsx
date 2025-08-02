@@ -7,7 +7,7 @@ import SeriesSection from "@/components/SeriesSection";
 import Footer from "@/components/Footer";
 import ResponsiveLayout from "@/components/layout/ResponsiveLayout";
 import PersonalizedSections from "@/components/PersonalizedSections";
-import { useAuth } from "@/hooks/useAuthState";
+import { useAuth } from "@/contexts/AuthContext";
 import CategoryBanner from "@/components/CategoryBanner";
 
 const Index = () => {

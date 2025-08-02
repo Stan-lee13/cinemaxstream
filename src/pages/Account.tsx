@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useAuth } from '@/hooks/useAuthState';
+import { useAuth } from '@/contexts/AuthContext';
 import { User, Settings, CreditCard, Download, Bell, Shield } from 'lucide-react';
 import BackButton from "@/components/BackButton";
 

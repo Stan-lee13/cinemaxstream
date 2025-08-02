@@ -29,7 +29,7 @@ const MovieDetail = ({
   const handleWatchButtonClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log("Watch Now clicked for content:", content.id, content.title);
+    // Navigate to content detail page
     
     try {
       if (isPremiumContent && !canAccessPremium) {
@@ -44,7 +44,7 @@ const MovieDetail = ({
   };
 
   const handleTrailerButtonClick = () => {
-    console.log("Trailer button clicked for:", content.title);
+    setShowTrailerModal(true);
     try {
       setShowTrailerModal(true);
     } catch (error) {

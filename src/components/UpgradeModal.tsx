@@ -1,8 +1,9 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Crown, Play, Download, Star } from 'lucide-react';
+import { Crown, Play, Download, Star, Check } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { PremiumPromoModal } from '@/components/PremiumPromoModal';
 
 interface UpgradeModalProps {
   isOpen: boolean;
@@ -17,6 +18,14 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
   reason, 
   currentRole 
 }) => {
+  const { isPremium } = useAuth();
+  const [isUpgrading, setIsUpgrading] = useState(false);
+
+  // Don't show modal if user already has premium
+  if (isPremium) {
+    return null;
+  }
+
   const getUpgradeOptions = () => {
     if (currentRole === 'free') {
       return [
@@ -76,11 +85,23 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
     }
   };
 
+  const handleUpgrade = async (planName: string) => {
+    setIsUpgrading(true);
+    // TODO: Implement actual payment flow
+    console.log(`Upgrading to ${planName}`);
+    
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    setIsUpgrading(false);
+    onClose();
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] bg-gray-900 border-gray-800">
+      <DialogContent className="sm:max-w-[600px] bg-gradient-to-br from-background via-background to-secondary/20 border-2 border-primary/20">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-center text-white">
+          <DialogTitle className="text-xl font-bold text-center">
             {reason === 'streaming' ? (
               <div className="flex items-center justify-center gap-2">
                 <Play className="text-cinemax-500" />
@@ -96,8 +117,8 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
         </DialogHeader>
 
         <div className="text-center mb-6">
-          <p className="text-gray-300">{getMessage()}</p>
-          <p className="text-sm text-gray-400 mt-2">
+          <p className="text-foreground">{getMessage()}</p>
+          <p className="text-sm text-muted-foreground mt-2">
             Upgrade your plan to continue enjoying unlimited entertainment.
           </p>
         </div>
@@ -106,15 +127,15 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
           {getUpgradeOptions().map((plan) => (
             <div 
               key={plan.name}
-              className={`relative border rounded-lg p-6 ${
+              className={`relative border rounded-lg p-6 transition-all duration-200 hover:shadow-lg ${
                 plan.recommended 
-                  ? 'border-cinemax-500 bg-cinemax-500/5' 
-                  : 'border-gray-700 bg-gray-800/50'
+                  ? 'border-cinemax-500 bg-cinemax-500/5 shadow-cinemax-500/20' 
+                  : 'border-border bg-secondary/30'
               }`}
             >
               {plan.recommended && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <div className="bg-cinemax-500 text-white px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+                  <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
                     <Star size={12} />
                     Recommended
                   </div>
@@ -124,40 +145,43 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
               <div className="text-center mb-4">
                 <div className="flex items-center justify-center mb-2">
                   {plan.name === 'Premium' && <Crown className="text-yellow-500 mr-2" size={20} />}
-                  <h3 className="text-lg font-bold text-white">{plan.name}</h3>
+                  <h3 className="text-lg font-bold">{plan.name}</h3>
                 </div>
                 <div className="text-2xl font-bold text-cinemax-500">{plan.price}</div>
               </div>
 
               <ul className="space-y-2 mb-6">
                 {plan.features.map((feature, index) => (
-                  <li key={index} className="flex items-center text-sm text-gray-300">
-                    <div className="w-1.5 h-1.5 bg-cinemax-500 rounded-full mr-3"></div>
+                  <li key={index} className="flex items-center text-sm">
+                    <Check className="w-4 h-4 text-green-500 mr-3 flex-shrink-0" />
                     {feature}
                   </li>
                 ))}
               </ul>
 
               <Button 
-                className={`w-full ${
+                className={`w-full transition-all duration-200 ${
                   plan.recommended 
-                    ? 'bg-cinemax-500 hover:bg-cinemax-600' 
-                    : 'bg-gray-700 hover:bg-gray-600'
+                    ? 'bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-semibold' 
+                    : 'bg-secondary hover:bg-secondary/80'
                 }`}
-                onClick={() => {
-                  // Handle upgrade logic here
-                  console.log(`Upgrading to ${plan.name}`);
-                  onClose();
-                }}
+                onClick={() => handleUpgrade(plan.name)}
+                disabled={isUpgrading}
               >
-                Upgrade to {plan.name}
+                {isUpgrading ? 'Processing...' : `Upgrade to ${plan.name}`}
               </Button>
             </div>
           ))}
         </div>
 
-        <div className="text-center mt-6">
-          <Button variant="ghost" onClick={onClose} className="text-gray-400">
+        <div className="flex flex-col items-center gap-3 mt-6">
+          <PremiumPromoModal>
+            <Button variant="link" className="text-sm text-muted-foreground hover:text-foreground">
+              Have a promo code? Click here to activate premium
+            </Button>
+          </PremiumPromoModal>
+          
+          <Button variant="ghost" onClick={onClose} className="text-muted-foreground hover:text-foreground">
             Maybe Later
           </Button>
         </div>
