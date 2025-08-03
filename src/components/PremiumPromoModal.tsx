@@ -39,7 +39,14 @@ export function PremiumPromoModal({ children }: PremiumPromoModalProps) {
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      // Only allow closing if user clicks outside or explicitly closes
+      if (!open && isOpen) {
+        handleOpenChange(false);
+      } else if (open && !isOpen) {
+        handleOpenChange(true);
+      }
+    }}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>

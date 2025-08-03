@@ -98,7 +98,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={() => {}}>
       <DialogContent className="sm:max-w-[600px] bg-gradient-to-br from-background via-background to-secondary/20 border-2 border-primary/20">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-center">

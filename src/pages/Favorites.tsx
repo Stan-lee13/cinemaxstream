@@ -32,37 +32,29 @@ const Favorites = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  // Fetch favorites
+  // Fetch favorites from localStorage
   useEffect(() => {
     if (!user) return;
 
-    const fetchFavorites = async () => {
+    const fetchFavorites = () => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
-          .from('user_favorites')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (error) {
-          console.error('Error fetching favorites:', error);
-          toast.error('Failed to load favorites');
-          return;
-        }
-
+        const stored = localStorage.getItem(`favorites_${user.id}`);
+        const favoriteItems = stored ? JSON.parse(stored) : [];
+        
         // Transform to our interface
-        const favoriteItems: FavoriteItem[] = (data || []).map(item => ({
-          id: item.id,
-          content_id: item.content_id || '',
-          title: `Content ${item.content_id}`, // We'll enhance this with actual content data
-          image: '/placeholder.svg',
-          created_at: item.created_at
+        const transformedFavorites: FavoriteItem[] = favoriteItems.map((item: any) => ({
+          id: item.id || `fav_${Date.now()}_${Math.random()}`,
+          content_id: item.id,
+          title: item.title || item.name || `Content ${item.id}`,
+          image: item.image_url || item.image || item.poster_path ? 
+            `https://image.tmdb.org/t/p/w500${item.poster_path}` : '/placeholder.svg',
+          created_at: item.added_at || new Date().toISOString()
         }));
 
-        setFavorites(favoriteItems);
+        setFavorites(transformedFavorites);
       } catch (error) {
-        console.error('Error fetching favorites:', error);
+        console.error('Error loading favorites:', error);
         toast.error('Failed to load favorites');
       } finally {
         setIsLoading(false);
@@ -73,23 +65,19 @@ const Favorites = () => {
   }, [user]);
 
   // Remove from favorites
-  const handleRemoveFavorite = async (favoriteId: string, contentId: string) => {
+  const handleRemoveFavorite = (favoriteId: string, contentId: string) => {
     if (!user) return;
     
     try {
-      const { error } = await supabase
-        .from('user_favorites')
-        .delete()
-        .eq('id', favoriteId)
-        .eq('user_id', user.id);
-
-      if (error) {
-        console.error('Error removing favorite:', error);
-        toast.error('Failed to remove from favorites');
-        return;
-      }
-
-      setFavorites(prev => prev.filter(fav => fav.id !== favoriteId));
+      const stored = localStorage.getItem(`favorites_${user.id}`);
+      const currentFavorites = stored ? JSON.parse(stored) : [];
+      
+      // Remove the item
+      const updatedFavorites = currentFavorites.filter((item: any) => item.id !== contentId);
+      localStorage.setItem(`favorites_${user.id}`, JSON.stringify(updatedFavorites));
+      
+      // Update state
+      setFavorites(prev => prev.filter(fav => fav.content_id !== contentId));
       toast.success('Removed from favorites');
     } catch (error) {
       console.error('Error removing favorite:', error);

@@ -54,9 +54,9 @@ const MobileMenu: React.FC = () => {
             variant="ghost" 
             size="icon"
             onClick={() => navigate(-1)}
-            className="p-2 hover:bg-white/10"
+            className="p-2 hover:bg-white/10 text-white"
           >
-            <ArrowLeft size={20} className="text-white" />
+            <ArrowLeft size={20} />
           </Button>
           <span className="text-white font-medium">Menu</span>
         </div>
