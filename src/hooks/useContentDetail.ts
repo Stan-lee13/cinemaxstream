@@ -80,7 +80,7 @@ export const useContentDetail = (contentId: string | undefined) => {
               const trailer = await getTrailerUrl(contentId, tmdbContent.type || 'movie');
               setTrailerUrl(trailer);
             } catch (e) {
-              console.error('Error fetching trailer:', e);
+            // Error fetching trailer - continue without trailer
             }
             
             // Fetch related content from TMDB
@@ -109,7 +109,7 @@ export const useContentDetail = (contentId: string | undefined) => {
                   createMockSeasons(tmdbContent.title, tmdbContent.type);
                 }
               } catch (error) {
-                console.error("Error fetching TV details:", error);
+                // Error fetching TV details - falling back to mock data
                 // Fallback to mock data
                 createMockSeasons(tmdbContent.title, tmdbContent.type);
               }
@@ -129,7 +129,7 @@ export const useContentDetail = (contentId: string | undefined) => {
           const trailer = await getTrailerUrl(contentId, contentData.content_type || 'movie');
           setTrailerUrl(trailer);
         } catch (e) {
-          console.error('Error fetching trailer:', e);
+          // Error fetching trailer - continue without trailer
         }
         
         // Check if user has liked this content
@@ -186,13 +186,13 @@ export const useContentDetail = (contentId: string | undefined) => {
               createMockSeasons(contentData.title, contentData.content_type);
             }
           } catch (error) {
-            console.error("Error fetching TV details:", error);
+            // Error fetching TV details - falling back to mock data
             // Fallback to mock data
             createMockSeasons(contentData.title, contentData.content_type);
           }
         }
       } catch (error) {
-        console.error("Error fetching content:", error);
+        // Error fetching content
         setContent(null);
       } finally {
         setIsLoading(false);
@@ -268,7 +268,7 @@ export const useContentDetail = (contentId: string | undefined) => {
       setLiked(!liked);
     } catch (error) {
       toast.error("Error updating favorites");
-      console.error(error);
+      // Error updating favorites
     }
   };
 
@@ -340,7 +340,7 @@ export const useContentDetail = (contentId: string | undefined) => {
         }));
       }
     } catch (error) {
-      console.error("Error loading episodes:", error);
+      // Error loading episodes - keeping existing episodes
       // Keep existing episodes if error
     }
   };

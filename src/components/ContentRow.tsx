@@ -86,13 +86,9 @@ const ContentRow: React.FC<ContentRowProps> = ({
     }
   };
 
-  // Helper function for debugging IDs
-  const logCardClick = (item: Content) => {
-    console.log("[ContentRow] Card clicked:", {
-      id: item.id,
-      title: item.title,
-      category: item.category,
-    });
+  // Handle card click - navigate to content detail
+  const handleCardClick = (item: Content) => {
+    // Navigation is handled by ContentCard component
   };
 
   if (isLoading) {
@@ -112,7 +108,7 @@ const ContentRow: React.FC<ContentRowProps> = ({
   }
 
   if (error) {
-    console.error(`Error loading ${category} content:`, error);
+    // Error loading content
     return (
       <div className="container mx-auto px-4 py-8">
         <ContentRowHeader title={title} showViewAll={showViewAll} viewAllLink={viewAllLink} />
@@ -145,7 +141,7 @@ const ContentRow: React.FC<ContentRowProps> = ({
 
           <ContentRowList
             items={items}
-            onCardClick={logCardClick}
+            onCardClick={handleCardClick}
             rowRef={rowRef}
             onScroll={() => {
               if (rowRef.current) {

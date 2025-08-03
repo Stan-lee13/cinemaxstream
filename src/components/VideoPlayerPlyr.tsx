@@ -62,7 +62,7 @@ const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({
         const Plyr = (await import('plyr')).default;
         
         if (!videoRef.current) {
-          console.error("Video element ref is not available");
+          // Video element ref is not available
           return;
         }
         
@@ -99,7 +99,7 @@ const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({
                   
                   if (playPromise !== undefined) {
                     playPromise.then(() => {
-                      console.log("Autoplay started successfully");
+                      // Autoplay started successfully
                       toast("Video playing (muted). Click to unmute", {
                         action: {
                           label: "Unmute",
@@ -111,7 +111,7 @@ const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({
                         }
                       });
                     }).catch((error: any) => {
-                      console.error("Autoplay prevented:", error);
+                      // Autoplay prevented by browser
                       toast.info("Click play to start playback", {
                         action: {
                           label: "Play",
@@ -126,7 +126,7 @@ const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({
                   }
                 }
               } catch (error) {
-                console.error("Error during autoplay:", error);
+                // Error during autoplay
               }
             }, 100);
           }
@@ -162,7 +162,7 @@ const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({
           toast.error("Error loading video. Please try another source.");
         });
       } catch (err) {
-        console.error("Error initializing Plyr:", err);
+        // Error initializing Plyr
         setError("Failed to initialize video player");
         setIsLoading(false);
         if (onError) onError();
@@ -178,7 +178,7 @@ const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({
           playerRef.current.destroy();
           playerRef.current = null;
         } catch (e) {
-          console.error("Error destroying Plyr:", e);
+          // Error destroying Plyr
         }
       }
       
@@ -234,14 +234,14 @@ const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({
                 
                 if (playPromise !== undefined && typeof playPromise.then === 'function') {
                   playPromise.then(() => {
-                    console.log("Source change autoplay successful");
+                    // Source change autoplay successful
                   }).catch((error: any) => {
-                    console.error("Source change autoplay prevented:", error);
+                    // Source change autoplay prevented
                     toast.info("Click play to start video");
                   });
                 }
               } catch (error) {
-                console.error("Error during source change autoplay:", error);
+                // Error during source change autoplay
               }
             }
           }, 100);
@@ -250,7 +250,7 @@ const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({
       
       setIsLoading(false);
     } catch (error) {
-      console.error("Error updating video source:", error);
+      // Error updating video source
       setError("Failed to load video");
       setIsLoading(false);
     }
@@ -277,7 +277,7 @@ const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({
           });
         });
       } catch (error) {
-        console.error("Recording error:", error);
+        // Recording error
         toast.error("Failed to start recording");
       }
     } else if (stopRecordingFn) {
@@ -316,7 +316,7 @@ const VideoPlayerPlyr: React.FC<VideoPlayerPlyrProps> = ({
         try {
           playerRef.current.destroy();
         } catch (e) {
-          console.error("Error destroying Plyr on unmount:", e);
+          // Error destroying Plyr on unmount
         }
       }
     };

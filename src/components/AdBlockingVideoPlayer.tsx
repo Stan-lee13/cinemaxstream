@@ -135,7 +135,7 @@ const AdBlockingVideoPlayer: React.FC<AdBlockingVideoPlayerProps> = ({
       }
     } catch (e) {
       // Cross-origin restrictions - expected for external iframes
-      console.log("Cross-origin iframe - ad blocking script injection blocked");
+      // Cross-origin iframe - ad blocking script injection blocked
     }
     
     toast.success(`${title} loaded successfully`);

@@ -25,7 +25,7 @@ const TrailerModal = ({ isOpen, onClose, trailerKey, title }: TrailerModalProps)
   };
   
   useEffect(() => {
-    console.log("TrailerModal opened with key:", trailerKey, "title:", title);
+    
     
     if (isOpen && trailerKey) {
       setIsLoading(true);
@@ -43,7 +43,7 @@ const TrailerModal = ({ isOpen, onClose, trailerKey, title }: TrailerModalProps)
         
         // Use nocookie domain for better compatibility
         const embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&fs=1&origin=${encodeURIComponent(window.location.origin)}`;
-        console.log("Setting trailer URL:", embedUrl);
+        
         setTrailerSrc(embedUrl);
         setIsLoading(false);
       } catch (error) {
@@ -63,24 +63,20 @@ const TrailerModal = ({ isOpen, onClose, trailerKey, title }: TrailerModalProps)
   }, [isOpen, trailerKey, title]);
 
   if (!trailerKey) {
-    console.warn("No trailer key provided to TrailerModal");
     return null;
   }
 
   const handleCloseModal = () => {
-    console.log("Closing trailer modal");
     cleanupIframe();
     onClose();
   };
 
   const handleIframeLoad = () => {
-    console.log("Trailer iframe loaded successfully");
     setIsLoading(false);
     setError(null);
   };
 
   const handleIframeError = () => {
-    console.error("Trailer iframe failed to load");
     setIsLoading(false);
     setError("Failed to load trailer");
   };

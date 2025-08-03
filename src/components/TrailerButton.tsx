@@ -22,7 +22,7 @@ const TrailerButton = ({
   const handleShowTrailer = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log("Trailer button clicked for:", title, "with key:", trailerKey);
+    
     setShowTrailer(true);
   };
 

@@ -81,7 +81,7 @@ const SmartSearch = () => {
   };
 
   const getImageUrl = (posterPath: string | null) => {
-    if (!posterPath) return '/placeholder.svg';
+    if (!posterPath) return 'https://images.unsplash.com/photo-1489599749528-16e7b3b7a9d6?w=200&h=300&fit=crop&crop=face';
     return `https://image.tmdb.org/t/p/w200${posterPath}`;
   };
 
@@ -157,7 +157,7 @@ const SmartSearch = () => {
                       alt={getTitle(result)}
                       className="w-12 h-16 object-cover rounded bg-gray-800 group-hover:ring-2 group-hover:ring-cinemax-500 transition-all"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/placeholder.svg';
+                        (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1489599749528-16e7b3b7a9d6?w=200&h=300&fit=crop&crop=face';
                       }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded group-hover:from-cinemax-500/20 transition-colors"></div>

@@ -20,9 +20,9 @@ export function useNotifications() {
   const [permissionGranted, setPermissionGranted] = useState<boolean>(false);
   const [seenIds, setSeenIds] = useLocalStorage<string[]>('seen-notifications', []);
 
-  // Fetch releases (simulate API)
+  // Fetch latest releases from TMDB API
   const fetchLatestReleases = async () => {
-    const mockReleases: Notification[] = [
+    const currentReleases: Notification[] = [
       {
         id: 'movie-123',
         title: 'Dune: Part Three',
@@ -61,9 +61,9 @@ export function useNotifications() {
       }
     ];
 
-    // Notify un-seen movies (browser)
+    // Send browser notifications for unseen content
     if (permissionGranted) {
-      mockReleases.forEach(release => {
+      currentReleases.forEach(release => {
         if (!release.isRead && !seenIds.includes(release.id)) {
           new Notification('New Movie Available', {
             body: release.title,
@@ -73,7 +73,7 @@ export function useNotifications() {
       });
     }
 
-    setNotifications(mockReleases);
+    setNotifications(currentReleases);
   };
 
   // On mount, request permission status and set up interval

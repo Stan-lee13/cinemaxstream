@@ -56,7 +56,7 @@ const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({
     const setupPlayer = async () => {
       try {
         if (!videoContainerRef.current) {
-          console.error("Video container ref is not available");
+          // Video container ref is not available
           return;
         }
         
@@ -111,7 +111,7 @@ const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({
         
         // Initialize player
         const player = videojs(videoElement, videoJsOptions, function onPlayerReady() {
-          console.log('Player is ready');
+          // Player is ready
         });
         
         playerRef.current = player;
@@ -132,7 +132,7 @@ const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({
               try {
                 player.play()
                   .then(() => {
-                    console.log("Autoplay started successfully");
+                    // Autoplay started successfully
                     toast("Video playing (muted). Click to unmute", {
                       action: {
                         label: "Unmute",
@@ -146,7 +146,7 @@ const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({
                     });
                   })
                   .catch((error: any) => {
-                    console.error("Autoplay prevented:", error);
+                    // Autoplay prevented by browser
                     toast("Click to start playback", {
                       action: {
                         label: "Play",
@@ -159,7 +159,7 @@ const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({
                     });
                   });
               } catch (error) {
-                console.error("Error during autoplay:", error);
+                // Error during autoplay
               }
             }, 100);
           }
@@ -167,7 +167,7 @@ const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({
         
         // Error handling
         player.on('error', () => {
-          console.error('Video.js error:', player.error());
+          // Video.js error
           setError("Error loading video. Please try another source.");
           setIsLoading(false);
           if (onError) onError();
@@ -198,7 +198,7 @@ const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({
           }
         });
       } catch (error) {
-        console.error("Error initializing Video.js:", error);
+        // Error initializing Video.js
         setError("Failed to initialize video player");
         setIsLoading(false);
         if (onError) onError();
@@ -214,7 +214,7 @@ const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({
           playerRef.current.dispose();
           playerRef.current = null;
         } catch (e) {
-          console.error("Error disposing player:", e);
+          // Error disposing player
         }
       }
     };
@@ -251,14 +251,14 @@ const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({
             try {
               playerRef.current.play()
                 .then(() => {
-                  console.log("Source change autoplay successful");
+                  // Source change autoplay successful
                 })
                 .catch((error: any) => {
-                  console.error("Source change autoplay prevented:", error);
+                  // Source change autoplay prevented
                   toast.info("Click play to start video");
                 });
             } catch (error) {
-              console.error("Error playing video:", error);
+              // Error playing video
             }
           }
         }, 100);
@@ -266,7 +266,7 @@ const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({
       
       setIsLoading(false);
     } catch (error) {
-      console.error("Error updating video source:", error);
+      // Error updating video source
       setError("Failed to update video source");
       setIsLoading(false);
       if (onError) onError();
@@ -297,7 +297,7 @@ const VideoPlayerVideoJS: React.FC<VideoPlayerVideoJSProps> = ({
           });
         });
       } catch (error) {
-        console.error("Recording error:", error);
+        // Recording error
         toast.error("Failed to start recording");
       }
     } else if (stopRecordingFn) {

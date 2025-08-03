@@ -87,14 +87,17 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
 
   const handleUpgrade = async (planName: string) => {
     setIsUpgrading(true);
-    // TODO: Implement actual payment flow
-    console.log(`Upgrading to ${planName}`);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setIsUpgrading(false);
-    onClose();
+    try {
+      // Implement actual payment flow - for now just close
+      window.open(`https://buy.stripe.com/test_14k4ib?plan=${planName.toLowerCase()}`, '_blank');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      onClose();
+    } catch (error) {
+      console.error('Upgrade failed:', error);
+    } finally {
+      setIsUpgrading(false);
+    }
   };
 
   return (

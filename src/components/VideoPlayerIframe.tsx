@@ -106,7 +106,7 @@ const VideoPlayerIframe: React.FC<VideoPlayerIframeProps> = ({
           }
         } catch (e) {
           // If we can't access the document (cross-origin), assume it's loading
-          console.log("Cross-origin iframe, can't check load state");
+          // Cross-origin iframe, can't check load state
         }
       }
     }, 10000);

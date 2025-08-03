@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
-        console.log('Auth state changed:', event, currentSession?.user?.id);
+        // Auth state changed
         
         if (mounted) {
           setSession(currentSession);
@@ -74,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setIsPremium(false);
             localStorage.removeItem('premium-status');
           } else if (event === 'TOKEN_REFRESHED') {
-            console.log('Token refreshed');
+            // Token refreshed
           }
         }
       }
