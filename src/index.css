@@ -235,9 +235,35 @@
     @apply text-purple-400;
   }
   
-  /* Safe area insets for mobile navigation */
+  /* Enhanced mobile support and performance */
   .safe-area-pb {
-    padding-bottom: max(env(safe-area-inset-bottom), 8px);
+    padding-bottom: max(env(safe-area-inset-bottom), 1rem);
+  }
+  
+  .safe-area-pt {
+    padding-top: max(env(safe-area-inset-top), 1rem);
+  }
+  
+  /* Mobile navigation improvements */
+  .mobile-nav {
+    height: 4.5rem;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  /* Performance optimizations */
+  .optimized-scroll {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  
+  /* Error-free animations */
+  .fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
   
   /* Ensure mobile nav items are properly sized */

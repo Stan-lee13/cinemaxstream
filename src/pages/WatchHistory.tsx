@@ -55,7 +55,7 @@ const WatchHistory = () => {
             id: item.id,
             contentId: item.content_id,
             title: item.content?.title || 'Unknown title',
-            image: item.content?.image_url || item.content?.image_url || '/placeholder.jpg',
+            image: item.content?.image_url || 'https://images.unsplash.com/photo-1489599767810-b49fa91cd65b?w=300&h=450&fit=crop&crop=center',
             episodeId: item.episode_id,
             lastWatched: item.last_watched,
             watchPosition: item.watch_position,
@@ -80,7 +80,7 @@ const WatchHistory = () => {
                   id: crypto.randomUUID(),
                   contentId: item.contentId,
                   title: content?.title || 'Unknown title',
-                  image: content?.image_url || '/placeholder.jpg',
+                  image: content?.image_url || 'https://images.unsplash.com/photo-1489599767810-b49fa91cd65b?w=300&h=450&fit=crop&crop=center',
                   episodeId: item.episodeId,
                   lastWatched: item.lastWatched,
                   watchPosition: item.currentTime,
@@ -208,7 +208,7 @@ const WatchHistory = () => {
                   <div 
                     className="h-full w-full bg-cover bg-center"
                     style={{ 
-                      backgroundImage: `url(${item.image || '/placeholder.jpg'})`,
+                      backgroundImage: `url(${item.image || 'https://images.unsplash.com/photo-1489599767810-b49fa91cd65b?w=300&h=450&fit=crop&crop=center'})`,
                       backgroundSize: 'cover'
                     }}
                   />

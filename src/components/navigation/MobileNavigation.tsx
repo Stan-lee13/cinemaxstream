@@ -27,8 +27,8 @@ const MobileNavigation: React.FC = () => {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-gray-800 md:hidden">
-      <div className="flex items-center justify-around py-3 px-1 min-h-[70px] safe-area-pb">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/98 backdrop-blur-lg border-t border-border md:hidden mobile-nav">
+      <div className="flex items-center justify-around py-2 px-1 min-h-[60px]">
         {navItems.map(({ path, icon: Icon, label }) => (
           <Link
             key={path}

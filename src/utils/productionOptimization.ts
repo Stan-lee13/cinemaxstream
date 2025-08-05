@@ -109,5 +109,10 @@ export const initProductionOptimizations = () => {
     
     // Run network optimization on load
     optimizeNetwork();
+    
+    // Import and setup performance monitoring from separate module
+    import('./performanceUtils').then(({ setupPerformanceMonitoring }) => {
+      setupPerformanceMonitoring();
+    });
   }
 };

@@ -8,7 +8,9 @@ import { AuthProvider } from './contexts/AuthContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import ErrorBoundary from './components/ErrorBoundary';
-import { productionMonitor } from './utils/productionUtils';
+import { initResponsiveUtils } from './utils/responsiveUtils';
+import { initProductionOptimizations } from './utils/productionOptimization';
+import { initProductionReadiness } from './utils/productionReadiness';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -18,6 +20,11 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+// Initialize production optimizations and responsive utilities
+initProductionOptimizations();
+initResponsiveUtils();
+initProductionReadiness();
 
 // Register service worker
 if ('serviceWorker' in navigator) {
