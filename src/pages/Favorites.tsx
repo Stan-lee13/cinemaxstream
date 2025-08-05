@@ -48,7 +48,7 @@ const Favorites = () => {
           content_id: item.id,
           title: item.title || item.name || `Content ${item.id}`,
           image: item.image_url || item.image || item.poster_path ? 
-            `https://image.tmdb.org/t/p/w500${item.poster_path}` : '/placeholder.svg',
+            `https://image.tmdb.org/t/p/w500${item.poster_path}` : 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=500&q=80',
           created_at: item.added_at || new Date().toISOString()
         }));
 
@@ -124,12 +124,12 @@ const Favorites = () => {
                   <div 
                     className="h-full w-full bg-cover bg-center flex items-center justify-center"
                     style={{ 
-                      backgroundImage: favorite.image && favorite.image !== '/placeholder.svg' 
+                      backgroundImage: favorite.image && favorite.image !== 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=500&q=80' 
                         ? `url(${favorite.image})` 
                         : undefined 
                     }}
                   >
-                    {(!favorite.image || favorite.image === '/placeholder.svg') && (
+                    {(!favorite.image || favorite.image === 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=500&q=80') && (
                       <span className="text-gray-400 text-sm text-center p-2">
                         {favorite.title}
                       </span>

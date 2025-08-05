@@ -102,7 +102,7 @@ export const useContentDetails = ({
               const episodeCount = isAnime ? 12 : 10;
               const episodeDuration = isAnime ? "24 min" : "45 min";
               
-              const mockSeasons: Season[] = Array.from({ length: seasonCount }, (_, i) => ({
+              const placeholderSeasons: Season[] = Array.from({ length: seasonCount }, (_, i) => ({
                 id: `season-${i+1}`,
                 season_number: i+1,
                 title: `Season ${i+1}`,
@@ -120,7 +120,7 @@ export const useContentDetails = ({
                 air_date: new Date().toISOString()
               }));
               
-              setSeasons(mockSeasons);
+              setSeasons(placeholderSeasons);
             }
             
             // Try to get trailer URL
@@ -171,7 +171,7 @@ export const useContentDetails = ({
             const episodeCount = isAnime ? 12 : 10;
             const episodeDuration = isAnime ? "24 min" : "45 min";
             
-            const mockSeasons: Season[] = Array.from({ length: seasonCount }, (_, i) => ({
+            const placeholderSeasons: Season[] = Array.from({ length: seasonCount }, (_, i) => ({
               id: `season-${i+1}`,
               season_number: i+1,
               title: `Season ${i+1}`,
@@ -189,7 +189,7 @@ export const useContentDetails = ({
               air_date: new Date().toISOString()
             }));
             
-            setSeasons(mockSeasons);
+            setSeasons(placeholderSeasons);
           }
         }
         

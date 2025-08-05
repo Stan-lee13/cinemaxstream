@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { BrowserRouter } from "react-router-dom";
 import RoutedApp from "@/components/app/RoutedApp";
 import InstallPrompt from "@/components/InstallPrompt";
+import ProductionMonitor from "@/components/ProductionMonitor";
 
 // Show splash screen briefly on initial app load
 const App = () => {
@@ -38,6 +39,7 @@ const App = () => {
       <BrowserRouter>
         <RoutedApp />
         <InstallPrompt />
+        <ProductionMonitor />
       </BrowserRouter>
     </TooltipProvider>
   );

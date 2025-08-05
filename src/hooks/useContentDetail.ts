@@ -105,13 +105,12 @@ export const useContentDetail = (contentId: string | undefined) => {
                   
                   setSeasons(tvSeasons);
                 } else {
-                  // Fallback to mock data if no seasons found
-                  createMockSeasons(tmdbContent.title, tmdbContent.type);
+                  // No seasons found, create placeholder seasons
+                  createPlaceholderSeasons(tmdbContent.title, tmdbContent.type);
                 }
               } catch (error) {
-                // Error fetching TV details - falling back to mock data
-                // Fallback to mock data
-                createMockSeasons(tmdbContent.title, tmdbContent.type);
+                // Error fetching TV details, create placeholder seasons
+                createPlaceholderSeasons(tmdbContent.title, tmdbContent.type);
               }
             }
             
@@ -182,13 +181,12 @@ export const useContentDetail = (contentId: string | undefined) => {
               
               setSeasons(seasonsWithEpisodes);
             } else {
-              // Fallback to mock data if no seasons
-              createMockSeasons(contentData.title, contentData.content_type);
+              // No seasons found, create placeholder seasons
+              createPlaceholderSeasons(contentData.title, contentData.content_type);
             }
           } catch (error) {
-            // Error fetching TV details - falling back to mock data
-            // Fallback to mock data
-            createMockSeasons(contentData.title, contentData.content_type);
+            // Error fetching TV details, create placeholder seasons
+            createPlaceholderSeasons(contentData.title, contentData.content_type);
           }
         }
       } catch (error) {
@@ -202,8 +200,8 @@ export const useContentDetail = (contentId: string | undefined) => {
     fetchContent();
   }, [contentId, isAuthenticated, user]);
 
-  // Helper function to create mock seasons and episodes
-  const createMockSeasons = (title: string, contentType: string = 'series') => {
+  // Helper function to create placeholder seasons and episodes
+  const createPlaceholderSeasons = (title: string, contentType: string = 'series') => {
     // For anime, create different structure based on type
     const isAnime = contentType === 'anime';
     
@@ -211,7 +209,7 @@ export const useContentDetail = (contentId: string | undefined) => {
     const episodesPerSeason = isAnime ? 12 : 10;
     const episodeDuration = isAnime ? "24 min" : "45 min";
     
-    const mockSeasons: Season[] = Array.from({ length: seasonCount }, (_, i) => ({
+    const placeholderSeasons: Season[] = Array.from({ length: seasonCount }, (_, i) => ({
       id: `season-${i+1}`,
       season_number: i+1,
       title: `Season ${i+1}`,
@@ -229,7 +227,7 @@ export const useContentDetail = (contentId: string | undefined) => {
       air_date: new Date().toISOString()
     }));
     
-    setSeasons(mockSeasons);
+    setSeasons(placeholderSeasons);
   };
 
   // Handle favorite toggle

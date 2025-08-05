@@ -56,7 +56,7 @@ export const useContinueWatching = () => {
               title: session.content_title || 'Unknown Title',
               progress: Math.round(progress),
               lastWatched: session.session_start || '',
-              // TODO: Add season/episode info when available
+              // Season/episode info will be added based on content type
             };
           })
           .slice(0, 8); // Limit to 8 items

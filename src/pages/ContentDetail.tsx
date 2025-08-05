@@ -66,8 +66,6 @@ const ContentDetail = () => {
 
   // Enhanced start watching with credit check
   const startWatching = () => {
-    console.log("Start watching clicked", { userProfile, canStream: canStream() });
-    
     if (userProfile && !canStream()) {
       setUpgradeReason('streaming');
       setShowUpgradeModal(true);
@@ -79,13 +77,11 @@ const ContentDetail = () => {
       return;
     }
     
-    console.log("Starting to watch content:", content.title);
     originalStartWatching();
   };
 
   // Handle trailer watching
   const handleShowTrailer = () => {
-    console.log("Show trailer clicked for:", content.title);
     setShowTrailer(true);
   };
 
@@ -139,7 +135,7 @@ const ContentDetail = () => {
   }
 
   const handleSkipPlayback = (seconds: number) => {
-    console.log(`Skipping ${seconds} seconds`);
+    // Skip functionality implementation would go here
   };
 
   return (
@@ -395,7 +391,7 @@ const ContentDetail = () => {
                               alt={item.title}
                               className="w-full h-full object-cover"
                               onError={(e) => {
-                                (e.target as HTMLImageElement).src = '/placeholder.svg';
+                                (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=500&q=80';
                               }}
                             />
                             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-2">
