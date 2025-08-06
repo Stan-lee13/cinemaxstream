@@ -11,20 +11,35 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { initResponsiveUtils } from './utils/responsiveUtils';
 import { initProductionOptimizations } from './utils/productionOptimization';
 import { initProductionReadiness } from './utils/productionReadiness';
+import { errorReporter } from './utils/errorReporting';
+import { getConfig } from './utils/productionConfig';
+
+// Get production configuration
+const config = getConfig();
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 1,
+      retry: config.maxRetries,
       refetchOnWindowFocus: false,
+      staleTime: config.cacheTimeout,
+      gcTime: config.cacheTimeout * 2,
+    },
+    mutations: {
+      retry: config.maxRetries,
     },
   },
 });
 
-// Initialize production optimizations and responsive utilities
+// Initialize production systems
 initProductionOptimizations();
 initResponsiveUtils();
 initProductionReadiness();
+
+// Initialize error reporting
+if (config.enableErrorReporting) {
+  errorReporter;
+}
 
 // Register service worker
 if ('serviceWorker' in navigator) {

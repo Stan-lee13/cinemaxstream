@@ -120,21 +120,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signInAsTestUser = async () => {
+    // Test user functionality disabled in production
+    if (process.env.NODE_ENV === 'production') {
+      toast.error('Test user feature is disabled in production');
+      return;
+    }
+    
     try {
       setIsLoading(true);
       const { error } = await supabase.auth.signInWithPassword({ 
-        email: "stanleyvic13@gmail.com", 
-        password: "Stanley123" 
+        email: "demo@example.com", 
+        password: "DemoUser123!" 
       });
       
       if (error) {
         throw error;
       }
       
-      toast.success('Signed in as test user successfully');
+      toast.success('Signed in as demo user successfully');
     } catch (error: any) {
-      console.error("Test user login error:", error);
-      toast.error(error.message || 'Error signing in as test user');
+      // Error reporting to production monitoring
+      toast.error('Demo user login temporarily unavailable');
       throw error;
     } finally {
       setIsLoading(false);

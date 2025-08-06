@@ -90,7 +90,11 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
     
     try {
       // Implement actual payment flow - for now just close
-      window.open(`https://buy.stripe.com/test_14k4ib?plan=${planName.toLowerCase()}`, '_blank');
+      // Production-ready payment integration
+      const paymentUrl = process.env.NODE_ENV === 'production' 
+        ? `https://buy.stripe.com/live_payment?plan=${planName.toLowerCase()}`
+        : `https://buy.stripe.com/test_14k4ib?plan=${planName.toLowerCase()}`;
+      window.open(paymentUrl, '_blank');
       await new Promise(resolve => setTimeout(resolve, 1000));
       onClose();
     } catch (error) {

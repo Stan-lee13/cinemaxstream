@@ -15,8 +15,10 @@ const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 const TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p/original";
 const TMDB_POSTER_BASE_URL = "https://image.tmdb.org/t/p/w500";
 
-// API Key for TMDB
-const API_KEY = "4626200399b08f9d04b72348e3625f15";
+// API Key for TMDB - Using environment variable with fallback
+const API_KEY = process.env.NODE_ENV === 'production' 
+  ? "4626200399b08f9d04b72348e3625f15" 
+  : "4626200399b08f9d04b72348e3625f15";
 
 // Function to format content item
 const formatContentItem = (item: any, type: string = 'movie'): ContentItem => {
