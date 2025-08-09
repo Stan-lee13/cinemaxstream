@@ -94,33 +94,22 @@ export const useContentDetails = ({
               setRelatedContent(similar);
             }
             
-            // Fetch seasons if it's a series/anime and includeSeasons is true
             if (includeSeasons && (tmdbContent.type === 'series' || tmdbContent.type === 'anime')) {
-              // Generate appropriate seasons and episodes based on content type
-              const isAnime = tmdbContent.type === 'anime';
-              const seasonCount = isAnime ? 1 : 3;
-              const episodeCount = isAnime ? 12 : 10;
-              const episodeDuration = isAnime ? "24 min" : "45 min";
-              
-              const placeholderSeasons: Season[] = Array.from({ length: seasonCount }, (_, i) => ({
-                id: `season-${i+1}`,
-                season_number: i+1,
-                title: `Season ${i+1}`,
-                episode_count: episodeCount,
-                episodes: Array.from({ length: episodeCount }, (_, j) => ({
-                  id: `ep-${i+1}-${j+1}`,
-                  title: `Episode ${j+1}: ${tmdbContent.title} ${isAnime ? `Episode ${j+1}` : `Part ${j+1}`}`,
-                  episode_number: j+1,
-                  season_number: i+1,
-                  description: `This is episode ${j+1} of season ${i+1} of ${tmdbContent.title}`,
-                  duration: episodeDuration,
-                  air_date: new Date().toISOString()
-                })),
-                poster: tmdbContent.image,
-                air_date: new Date().toISOString()
-              }));
-              
-              setSeasons(placeholderSeasons);
+              try {
+                const tvSeasons = await tmdbApi.getTvShowSeasons(contentId);
+                if (tvSeasons && tvSeasons.length > 0) {
+                  const first = tvSeasons[0];
+                  const episodes = await tmdbApi.getTvShowEpisodes(contentId, first.season_number);
+                  if (episodes && episodes.length > 0) {
+                    tvSeasons[0] = { ...first, episodes };
+                  }
+                  setSeasons(tvSeasons);
+                } else {
+                  setSeasons([]);
+                }
+              } catch (e) {
+                setSeasons([]);
+              }
             }
             
             // Try to get trailer URL
@@ -163,33 +152,22 @@ export const useContentDetails = ({
             }
           }
           
-          // Fetch seasons if it's a series/anime and includeSeasons is true
           if (includeSeasons && (contentData.content_type === 'series' || contentData.content_type === 'anime')) {
-            // Generate appropriate seasons and episodes based on content type
-            const isAnime = contentData.content_type === 'anime';
-            const seasonCount = isAnime ? 1 : 3;
-            const episodeCount = isAnime ? 12 : 10;
-            const episodeDuration = isAnime ? "24 min" : "45 min";
-            
-            const placeholderSeasons: Season[] = Array.from({ length: seasonCount }, (_, i) => ({
-              id: `season-${i+1}`,
-              season_number: i+1,
-              title: `Season ${i+1}`,
-              episode_count: episodeCount,
-              episodes: Array.from({ length: episodeCount }, (_, j) => ({
-                id: `ep-${i+1}-${j+1}`,
-                title: `Episode ${j+1}: ${contentData.title} ${isAnime ? `Episode ${j+1}` : `Part ${j+1}`}`,
-                episode_number: j+1,
-                season_number: i+1,
-                description: `This is episode ${j+1} of season ${i+1} of ${contentData.title}`,
-                duration: episodeDuration,
-                air_date: new Date().toISOString()
-              })),
-              poster: contentData.image_url,
-              air_date: new Date().toISOString()
-            }));
-            
-            setSeasons(placeholderSeasons);
+            try {
+              const tvSeasons = await tmdbApi.getTvShowSeasons(contentId);
+              if (tvSeasons && tvSeasons.length > 0) {
+                const first = tvSeasons[0];
+                const episodes = await tmdbApi.getTvShowEpisodes(contentId, first.season_number);
+                if (episodes && episodes.length > 0) {
+                  tvSeasons[0] = { ...first, episodes };
+                }
+                setSeasons(tvSeasons);
+              } else {
+                setSeasons([]);
+              }
+            } catch (e) {
+              setSeasons([]);
+            }
           }
         }
         

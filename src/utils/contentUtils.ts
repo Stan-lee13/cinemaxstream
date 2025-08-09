@@ -90,9 +90,6 @@ export const getContentRuntime = (contentType: string, category?: string): strin
  * Get personalized recommendations based on watch history
  */
 export const getPersonalizedRecommendations = async (userId: string): Promise<any[]> => {
-  // This would typically call an API that uses the user's watch history
-  console.log(`Getting recommendations for user ${userId}`);
-  
-  // Return empty array for now
+  // Placeholder for future ML-based recommendations integration
   return [];
 };

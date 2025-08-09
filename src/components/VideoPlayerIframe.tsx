@@ -163,6 +163,7 @@ const VideoPlayerIframe: React.FC<VideoPlayerIframeProps> = ({
         onLoad={handleIframeLoad}
         sandbox="allow-forms allow-scripts allow-same-origin allow-presentation"
         allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+        referrerPolicy="no-referrer"
         style={{ border: 'none' }}
       ></iframe>
       

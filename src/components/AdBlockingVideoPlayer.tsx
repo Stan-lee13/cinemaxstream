@@ -280,8 +280,9 @@ const AdBlockingVideoPlayer: React.FC<AdBlockingVideoPlayerProps> = ({
           allowFullScreen
           onLoad={handleIframeLoad}
           onError={handleError}
-          sandbox="allow-forms allow-scripts allow-same-origin allow-presentation allow-popups-to-escape-sandbox"
+          sandbox="allow-forms allow-scripts allow-same-origin allow-presentation"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+          referrerPolicy="no-referrer"
           style={{ border: 'none' }}
         />
       )}

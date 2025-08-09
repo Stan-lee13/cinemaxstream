@@ -105,12 +105,10 @@ export const useContentDetail = (contentId: string | undefined) => {
                   
                   setSeasons(tvSeasons);
                 } else {
-                  // No seasons found, create placeholder seasons
-                  createPlaceholderSeasons(tmdbContent.title, tmdbContent.type);
+                  setSeasons([]);
                 }
               } catch (error) {
-                // Error fetching TV details, create placeholder seasons
-                createPlaceholderSeasons(tmdbContent.title, tmdbContent.type);
+                setSeasons([]);
               }
             }
             
@@ -180,14 +178,12 @@ export const useContentDetail = (contentId: string | undefined) => {
               );
               
               setSeasons(seasonsWithEpisodes);
-            } else {
-              // No seasons found, create placeholder seasons
-              createPlaceholderSeasons(contentData.title, contentData.content_type);
-            }
-          } catch (error) {
-            // Error fetching TV details, create placeholder seasons
-            createPlaceholderSeasons(contentData.title, contentData.content_type);
-          }
+             } else {
+               setSeasons([]);
+             }
+           } catch (error) {
+             setSeasons([]);
+           }
         }
       } catch (error) {
         // Error fetching content
@@ -200,35 +196,6 @@ export const useContentDetail = (contentId: string | undefined) => {
     fetchContent();
   }, [contentId, isAuthenticated, user]);
 
-  // Helper function to create placeholder seasons and episodes
-  const createPlaceholderSeasons = (title: string, contentType: string = 'series') => {
-    // For anime, create different structure based on type
-    const isAnime = contentType === 'anime';
-    
-    const seasonCount = isAnime ? 1 : 3;
-    const episodesPerSeason = isAnime ? 12 : 10;
-    const episodeDuration = isAnime ? "24 min" : "45 min";
-    
-    const placeholderSeasons: Season[] = Array.from({ length: seasonCount }, (_, i) => ({
-      id: `season-${i+1}`,
-      season_number: i+1,
-      title: `Season ${i+1}`,
-      episode_count: episodesPerSeason,
-      episodes: Array.from({ length: episodesPerSeason }, (_, j) => ({
-        id: `ep-${i+1}-${j+1}`,
-        title: `Episode ${j+1}: ${isAnime ? `${title} - ${j+1}` : `${title} Part ${j+1}`}`,
-        episode_number: j+1,
-        season_number: i+1,
-        description: `This is episode ${j+1} of season ${i+1} of ${title}`,
-        duration: episodeDuration,
-        air_date: new Date().toISOString()
-      })),
-      poster: content?.image_url || content?.image,
-      air_date: new Date().toISOString()
-    }));
-    
-    setSeasons(placeholderSeasons);
-  };
 
   // Handle favorite toggle
   const toggleFavorite = async () => {

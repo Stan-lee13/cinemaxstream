@@ -33,7 +33,9 @@ const formatContentItem = (item: any, type: string = 'movie'): ContentItem => {
     poster: item.poster_path ? `${TMDB_POSTER_BASE_URL}${item.poster_path}` : '/placeholder.svg',
     backdrop: item.backdrop_path ? `${TMDB_IMAGE_BASE_URL}${item.backdrop_path}` : undefined,
     year: (isMovie ? item.release_date : item.first_air_date)?.substring(0, 4) || 'N/A',
-    duration: isMovie ? '120 min' : 'Seasons: ' + (item.number_of_seasons || 'N/A'),
+    duration: isMovie
+      ? (typeof item.runtime === 'number' ? `${item.runtime} min` : 'N/A')
+      : (typeof item.number_of_seasons === 'number' ? `Seasons: ${item.number_of_seasons}` : 'N/A'),
     rating: (item.vote_average / 2).toFixed(1),
     category: contentType,
     type: contentType,
@@ -203,7 +205,7 @@ const getContentDetails = async (id: string, type: string = 'movie'): Promise<Co
       formattedItem.trailer_key = trailerKey;
     } catch (trailerError) {
       console.error("Error fetching trailer for content:", trailerError);
-      formattedItem.trailer_key = 'dQw4w9WgXcQ'; // Fallback
+      formattedItem.trailer_key = ''; // No trailer available
     }
     
     return formattedItem;
@@ -294,7 +296,7 @@ const getSports = async (page: number = 1): Promise<ContentItem[]> => {
 
 const getContentByCategory = async (category: string, page: number = 1): Promise<ContentItem[]> => {
   try {
-    console.log(`Fetching content for category: ${category}, page: ${page}`);
+    
     
     switch (category) {
       case 'movies':
@@ -443,7 +445,7 @@ const getTvShowEpisodes = async (id: string, seasonNumber: number): Promise<Epis
       season_number: seasonNumber,
       description: episode.overview || '',
       image: episode.still_path ? `${TMDB_POSTER_BASE_URL}${episode.still_path}` : undefined,
-      duration: `${Math.floor(Math.random() * 20) + 30} min`, // Mock duration
+      duration: typeof episode.runtime === 'number' ? `${episode.runtime} min` : undefined,
       air_date: episode.air_date || undefined
     }));
   } catch (error) {

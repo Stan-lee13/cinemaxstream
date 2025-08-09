@@ -94,9 +94,6 @@ export const startRecording = async (options = {}): Promise<MediaStream | null> 
         video: true,
         audio: true
       });
-      
-      console.log('Screen recording started:', stream);
-      return stream;
     } else {
       throw new Error('Screen recording not supported');
     }
