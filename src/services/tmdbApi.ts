@@ -306,16 +306,17 @@ const getContentByCategory = async (category: string, page: number = 1): Promise
         return await getPopularTvShows(page);
       case 'anime':
         return await getAnime(page);
-      case 'trending':
+      case 'trending': {
         const trendingMovies = await getTrendingMovies(page);
         const trendingTvShows = await getTrendingTvShows(page);
         return [...trendingMovies.slice(0, 10), ...trendingTvShows.slice(0, 10)];
+      }
       case 'documentary':
       case 'documentaries':
         return await getDocumentaries(page);
       case 'sports':
         return await getSports(page);
-      default:
+      default: {
         // Fallback to trending
         const fallbackUrl = `${TMDB_BASE_URL}/trending/all/week?api_key=${API_KEY}&page=${page}`;
         const response = await fetch(fallbackUrl);
@@ -329,6 +330,7 @@ const getContentByCategory = async (category: string, page: number = 1): Promise
           const contentType = normalizeContentType(itemType === 'tv' ? 'series' : itemType);
           return formatContentItem(item, contentType);
         });
+      }
     }
   } catch (error) {
     console.error(`Error fetching ${category} content:`, error);

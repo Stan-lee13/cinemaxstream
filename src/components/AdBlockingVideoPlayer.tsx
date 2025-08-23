@@ -176,6 +176,7 @@ const AdBlockingVideoPlayer: React.FC<AdBlockingVideoPlayerProps> = ({
     
     // Force iframe reload
     if (iframeRef.current) {
+      // eslint-disable-next-line no-self-assign
       iframeRef.current.src = iframeRef.current.src;
     }
   };

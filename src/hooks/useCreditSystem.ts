@@ -58,11 +58,13 @@ export const useCreditSystem = () => {
     const initializeUser = async () => {
       try {
         // Get user profile
-        let { data: profile, error: profileError } = await supabase
+        const { data: initialProfile, error: profileError } = await supabase
           .from('user_profiles')
           .select('*')
           .eq('id', user.id)
           .single();
+
+        let profile = initialProfile;
 
         if (profileError && profileError.code === 'PGRST116') {
           // Create profile if it doesn't exist
@@ -97,11 +99,13 @@ export const useCreditSystem = () => {
         setUserProfile(transformedProfile);
 
         // Get or create user usage
-        let { data: usage, error: usageError } = await supabase
+        const { data: initialUsage, error: usageError } = await supabase
           .from('user_usage')
           .select('*')
           .eq('user_id', user.id)
           .single();
+
+        let usage = initialUsage;
 
         if (usageError && usageError.code === 'PGRST116') {
           // Create usage record if it doesn't exist
