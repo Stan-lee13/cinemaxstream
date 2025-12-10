@@ -1,0 +1,13 @@
+.storageProgressBar {
+  width: 100%;
+  background-color: hsl(var(--secondary));
+  border-radius: 9999px;
+  height: 0.5rem;
+}
+
+.storageProgressFill {
+  background-color: hsl(var(--primary));
+  border-radius: 9999px;
+  height: 0.5rem;
+  transition: width 300ms all;
+}

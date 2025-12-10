@@ -1,0 +1,13 @@
+/* Sidebar CSS variables class
+   This file defines a utility class that sets the CSS variables used by the Sidebar.
+   We keep it minimal so consumers can toggle classes instead of inline styles. */
+
+.sidebar-css-vars {
+  /* default values — these mirror the constants in sharedVariants */
+  --sidebar-width: 16rem;
+  --sidebar-width-icon: 3rem;
+}
+
+.sidebar-css-vars-mobile {
+  --sidebar-width: 18rem;
+}
