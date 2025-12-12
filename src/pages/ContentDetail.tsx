@@ -1,0 +1,578 @@
+import { useEffect, useRef, useState, useCallback } from "react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import ContentRow from "@/components/ContentRow";
+import VideoPlayerWrapper from "@/components/VideoPlayerWrapper";
+import TrailerModal from "@/components/TrailerModal";
+import EpisodeSelector from "@/components/EpisodeSelector";
+import PremiumCodeModal from "@/components/PremiumCodeModal";
+import MovieDetail from "@/components/MovieDetail";
+import CreditUsageBar from "@/components/CreditUsageBar";
+import UpgradeModal from "@/components/UpgradeModal";
+import DownloadButton from "@/components/DownloadButton";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, List, Grid3X3 } from "lucide-react";
+import useContentDetail from "@/hooks/useContentDetail";
+import { useCreditSystem } from "@/hooks/useCreditSystem";
+import LoadingState from "@/components/LoadingState";
+import PlaySplashScreen from "@/components/PlaySplashScreen";
+import NeonEdgeEffect from "@/components/NeonEdgeEffect";
+import VideoAssistant from "@/components/VideoAssistant";
+import StreamingProviderSelector from "@/components/StreamingProviderSelector";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import { Content } from "@/types/content";
+import { getImageUrlFlexible } from "@/utils/imageUtils";
+
+const ContentDetail = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Get content type from navigation state if available
+  const stateContentType = (location.state as { contentType?: string })?.contentType;
+  const cleanupRef = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeReason, setUpgradeReason] = useState<'streaming' | 'download'>('streaming');
+  
+  const {
+    content,
+    isLoading,
+    liked,
+    toggleFavorite,
+    relatedContent,
+    isPlaying,
+    setIsPlaying,
+    showTrailer,
+    setShowTrailer,
+    showPremiumModal,
+    setShowPremiumModal,
+    activeProvider,
+    setActiveProvider,
+    seasons,
+    currentSeason,
+    currentEpisode,
+    trailerUrl,
+    isPremiumContent,
+    canAccessPremium,
+    availableProviders,
+    startWatching: originalStartWatching,
+    handleEpisodeSelect,
+    loadEpisodesForSeason,
+    showSplashScreen,
+    showNeonEffect,
+    user,
+    tmdbId // Get TMDB ID from hook
+  } = useContentDetail(id, stateContentType);
+
+  // Credit system integration
+  const { userProfile, canStream, canDownload } = useCreditSystem();
+
+  // Enhanced start watching with credit check and early access gating
+  const startWatching = useCallback(() => {
+    // Check if content is in early access and user doesn't have premium access
+    if (content?.early_access_until && new Date() < new Date(content.early_access_until)) {
+      if (!user || (user && !canAccessPremium)) {
+        setUpgradeReason('streaming');
+        setShowUpgradeModal(true);
+        return;
+      }
+    }
+
+    if (userProfile && !canStream()) {
+      setUpgradeReason('streaming');
+      setShowUpgradeModal(true);
+      return;
+    }
+
+    if (isPremiumContent && !canAccessPremium) {
+      setShowPremiumModal(true);
+      return;
+    }
+
+    originalStartWatching();
+  }, [userProfile, canStream, isPremiumContent, canAccessPremium, originalStartWatching, setShowPremiumModal, content, user]);
+
+  // Handle trailer watching
+  const handleShowTrailer = useCallback(() => {
+    setShowTrailer(true);
+  }, [setShowTrailer]);
+
+  // Handle back navigation
+  const handleGoBack = useCallback(() => {
+    if (isPlaying) {
+      setIsPlaying(false);
+      return;
+    }
+
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
+  }, [isPlaying, setIsPlaying, navigate]);
+
+  const handleSkipPlayback = useCallback((seconds: number) => {
+    // Skip functionality implementation would go here
+  }, []);
+
+  useEffect(() => {
+    if (seasons.length > 0) {
+      loadEpisodesForSeason(seasons[0].season_number);
+    }
+  }, [seasons, loadEpisodesForSeason]);
+
+  useEffect(() => {
+    return () => {
+      cleanupRef.current = true;
+      if (setIsPlaying) {
+        setIsPlaying(false);
+      }
+      if (setShowTrailer) {
+        setShowTrailer(false);
+      }
+    };
+  }, [setIsPlaying, setShowTrailer]);
+
+  if (isLoading) {
+    return <LoadingState message="Loading content details..." />;
+  }
+
+  if (!content) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+        <h1 className="text-3xl font-bold mb-4">Content Not Found</h1>
+        <p className="text-gray-400 mb-8">The content you're looking for doesn't exist or has been removed.</p>
+        <Button className="gap-2" onClick={handleGoBack}>
+          <ArrowLeft size={16} />
+          <span>Back</span>
+        </Button>
+      </div>
+    );
+  }
+
+  
+  // Normalize nullable fields used heavily in the UI so downstream code doesn't assume null/undefined are absent
+  const safeContent = {
+    ...content,
+    title: content.title ?? 'Untitled',
+    description: content.description ?? '',
+    image: getImageUrlFlexible(content) ?? '',
+    year: content.year ?? '',
+    rating: content.rating ?? '',
+    duration: content.duration ?? '',
+    content_type: content.content_type ?? 'movie',
+  } as typeof content;
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      
+      <main>
+        <PlaySplashScreen 
+          isShowing={showSplashScreen} 
+          contentTitle={(safeContent.title as string) || ''}
+          isTrailer={false}
+        />
+        
+  <NeonEdgeEffect isActive={showNeonEffect && isPlaying} color="multi" />
+        
+        {isPlaying && !cleanupRef.current ? (
+          <div ref={containerRef} className="container mx-auto px-4 py-8 relative">
+            <div className="max-w-5xl mx-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h1 className="text-2xl font-bold">
+                  {safeContent.title}
+                  {currentSeason && currentEpisode && 
+                    ` - S${currentSeason}:E${currentEpisode}`
+                  }
+                </h1>
+                
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setIsPlaying(false)}
+                  className="flex items-center gap-2"
+                >
+                  <ArrowLeft size={16} />
+                  <span>Back</span>
+                </Button>
+              </div>
+              
+              <div className="mb-4">
+                <StreamingProviderSelector
+                  providers={availableProviders}
+                  activeProvider={activeProvider}
+                  contentType={content.content_type || 'movie'}
+                  onProviderChange={setActiveProvider}
+                  variant="inline"
+                />
+              </div>
+              
+                <VideoPlayerWrapper 
+                  contentId={tmdbId || String(content?.id || id)} // Use TMDB ID if available
+                  contentType={String(safeContent.content_type || 'movie')}
+                  userId={user?.id}
+                  episodeId={currentEpisode ? `ep-${currentSeason}-${currentEpisode}` : undefined}
+                  seasonNumber={currentSeason}
+                  episodeNumber={currentEpisode}
+                  autoPlay={true}
+                  onEnded={() => setIsPlaying(false)}
+                  poster={getImageUrlFlexible(safeContent)}
+                  title={String(safeContent.title || '')}
+                />
+              
+              {(content.content_type === 'series' || content.content_type === 'anime') && seasons.length > 0 && (
+                <div className="mt-8">
+                  <EpisodeSelector
+                    seasons={seasons}
+                    onEpisodeSelect={handleEpisodeSelect}
+                    onSeasonChange={loadEpisodesForSeason}
+                    contentId={String(content.id)}
+                    contentTitle={content.title || 'Unknown'}
+                  />
+                </div>
+              )}
+            </div>
+            
+            <VideoAssistant 
+              contentTitle={content.title || ''}
+              contentType={content.content_type || 'movie'}
+              onRequestEpisode={handleEpisodeSelect}
+              onRequestSkip={handleSkipPlayback}
+            />
+          </div>
+        ) : (
+          <>
+            <MovieDetail 
+              content={{
+                ...safeContent,
+                year: String(safeContent.year || ''),
+                rating: String(safeContent.rating || ''),
+                duration: String(safeContent.duration || ''),
+                type: safeContent.content_type || 'movie',
+                is_premium: safeContent.is_premium || undefined
+              } as unknown as Content}
+              liked={liked}
+              toggleFavorite={toggleFavorite}
+              showTrailer={handleShowTrailer}
+              startWatching={startWatching}
+            />
+            
+            <div className="py-8">
+              <div className="container mx-auto px-4">
+                {/* Credit Usage Bar for authenticated users */}
+                {user && <CreditUsageBar />}
+                
+                <Tabs defaultValue="overview" className="w-full">
+                  <TabsList className="mb-6 border-b border-gray-800 w-full justify-start rounded-none bg-transparent">
+                    <TabsTrigger value="overview" className="data-[state=active]:border-b-2 data-[state=active]:border-cinemax-500 rounded-none">
+                      Overview
+                    </TabsTrigger>
+                    <TabsTrigger value="trailers" className="data-[state=active]:border-b-2 data-[state=active]:border-cinemax-500 rounded-none">
+                      Trailers
+                    </TabsTrigger>
+                    <TabsTrigger value="similar" className="data-[state=active]:border-b-2 data-[state=active]:border-cinemax-500 rounded-none">
+                      More Like This
+                    </TabsTrigger>
+                    <TabsTrigger value="details" className="data-[state=active]:border-b-2 data-[state=active]:border-cinemax-500 rounded-none">
+                      Details
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="overview">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                      <div className="lg:col-span-2">
+                        <h2 className="text-xl font-bold mb-4">Synopsis</h2>
+                        <p className="text-gray-300 mb-8">
+                          {content.description}
+                        </p>
+                        
+                        {/* Trailer Preview in Synopsis */}
+                        <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden mb-6">
+                          {trailerUrl ? (
+                            <iframe
+                              src={`https://www.youtube-nocookie.com/embed/${trailerUrl}?rel=0&modestbranding=1`}
+                              title={`${content.title} trailer preview`}
+                              className="w-full h-full"
+                              allowFullScreen
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                            />
+                          ) : (
+                            <div 
+                              className="w-full h-full flex items-center justify-center bg-center relative cursor-pointer"
+                              onClick={startWatching}
+                            >
+                              <img
+                                src={getImageUrlFlexible(content) || ''}
+                                alt={`${content.title} poster`}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=500&q=80';
+                                }}
+                              />
+                              <div className="absolute inset-0 bg-black/40"></div>
+                              <Button className="relative z-10 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full w-16 h-16 flex items-center justify-center">
+                                <div className="ml-1 w-0 h-0 border-t-[12px] border-t-transparent border-l-[20px] border-l-white border-b-[12px] border-b-transparent"></div>
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {(content.content_type === 'series' || content.content_type === 'anime') && seasons.length > 0 && (
+                          <div className="mt-8">
+                            <EpisodeSelector
+                              seasons={seasons}
+                              onEpisodeSelect={handleEpisodeSelect}
+                              onSeasonChange={loadEpisodesForSeason}
+                              contentId={String(content.id)}
+                              contentTitle={content.title || 'Unknown'}
+                            />
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div>
+                        <div className="mt-6">
+                          <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-bold">Available Sources</h3>
+                            <div className="flex gap-2">
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <List className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <Grid3X3 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          <StreamingProviderSelector
+                            providers={availableProviders}
+                            activeProvider={activeProvider}
+                            contentType={content.content_type || 'movie'}
+                            onProviderChange={setActiveProvider}
+                            variant="grid"
+                          />
+
+                          {/* Download System */}
+                          <div className="mt-4">
+                            <DownloadButton
+                              contentId={String(content.id)}
+                              contentTitle={content.title || 'Unknown'}
+                              contentType={content.content_type || 'movie'}
+                              seasonNumber={currentSeason}
+                              episodeNumber={currentEpisode}
+                              year={String(content.year || '')}
+                              className="w-full"
+                            />
+                          </div>
+                        </div>
+                        
+                        {isPremiumContent && !canAccessPremium && (
+                          <div className="mt-6 p-4 bg-cinemax-500/10 border border-cinemax-500/30 rounded-lg">
+                            <div className="flex items-start gap-3">
+                              <div className="text-yellow-500 shrink-0 mt-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M6 3h12l4 8-10 13L2 11l4-8z"></path>
+                                </svg>
+                              </div>
+                              <div>
+                                <h3 className="text-lg font-bold text-yellow-500 mb-2">Premium Content</h3>
+                                <p className="text-gray-300 text-sm mb-3">
+                                  This is premium content. Subscribe or enter premium code to watch.
+                                </p>
+                                <Button 
+                                  className="bg-yellow-600 hover:bg-yellow-700 text-white w-full"
+                                  onClick={() => setShowPremiumModal(true)}
+                                >
+                                  Enter Premium Code
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="mt-6">
+                          <h3 className="text-lg font-bold mb-4">Category</h3>
+                          <Button 
+                            variant="outline"
+                            onClick={() => navigate(`/${content.content_categories?.slug || content.content_type || 'category'}`)}
+                            className="px-3 py-1 bg-gray-800 rounded-md text-sm hover:bg-gray-700 transition-colors"
+                          >
+                            {content.content_categories?.name || content.content_type || 'Uncategorized'}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="trailers">
+                    <div className="grid grid-cols-1 gap-6">
+                      <div className="aspect-video rounded-lg overflow-hidden bg-gray-900">
+                        {trailerUrl ? (
+                          <iframe
+                            src={`https://www.youtube-nocookie.com/embed/${trailerUrl}?autoplay=0&rel=0&modestbranding=1&fs=1`}
+                            title={`${content.title} Official Trailer`}
+                            className="w-full h-full"
+                            allowFullScreen
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                          />
+                        ) : (
+                          <div className="flex flex-col items-center justify-center h-full text-gray-400 p-8">
+                            <div className="text-6xl mb-4">🎬</div>
+                            <h3 className="text-xl font-semibold mb-2">No Trailer Available</h3>
+                            <p className="text-center">We couldn't find an official trailer for this content.</p>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div>
+                        <h2 className="text-xl font-bold mb-2">{content.title} - Official Trailer</h2>
+                        <p className="text-gray-400">Release Year: {content.year}</p>
+                        {trailerUrl && (
+                          <Button 
+                            variant="outline" 
+                            className="mt-4"
+                            onClick={() => window.open(`https://www.youtube.com/watch?v=${trailerUrl}`, '_blank')}
+                          >
+                            Watch on YouTube
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="similar">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                      {relatedContent.map(item => (
+                        <div 
+                          key={item.id}
+                          className="rounded-lg overflow-hidden bg-gray-800/50 hover:bg-gray-800 transition-colors cursor-pointer"
+                          onClick={() => navigate(`/content/${item.id}`)}
+                        >
+                          <div className="aspect-[2/3] relative">
+                            <img 
+                              src={getImageUrlFlexible(item) || ''}
+                              alt={item.title || ''}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=500&q=80';
+                              }}
+                            />
+                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-2">
+                              <div className="text-xs text-gray-300">{item.year}</div>
+                            </div>
+                          </div>
+                          <div className="p-3">
+                            <h3 className="font-medium text-sm line-clamp-2">{item.title}</h3>
+                            <div className="flex items-center mt-1">
+                              <div className="text-xs text-yellow-500">{item.rating}</div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="details">
+                    <div className="space-y-6">
+                      <div>
+                        <h2 className="text-xl font-bold mb-4">Content Details</h2>
+                        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="p-4 bg-gray-800/50 rounded-lg">
+                            <dt className="text-sm text-gray-400">Title</dt>
+                            <dd className="text-white mt-1">{content.title}</dd>
+                          </div>
+                          <div className="p-4 bg-gray-800/50 rounded-lg">
+                            <dt className="text-sm text-gray-400">Release Year</dt>
+                            <dd className="text-white mt-1">{content.year}</dd>
+                          </div>
+                          <div className="p-4 bg-gray-800/50 rounded-lg">
+                            <dt className="text-sm text-gray-400">Content Type</dt>
+                            <dd className="text-white mt-1 capitalize">{content.content_type}</dd>
+                          </div>
+                          <div className="p-4 bg-gray-800/50 rounded-lg">
+                            <dt className="text-sm text-gray-400">Category</dt>
+                            <dd className="text-white mt-1">{content.content_categories?.name || 'Uncategorized'}</dd>
+                          </div>
+                          <div className="p-4 bg-gray-800/50 rounded-lg">
+                            <dt className="text-sm text-gray-400">Duration</dt>
+                            <dd className="text-white mt-1">{content.duration}</dd>
+                          </div>
+                          <div className="p-4 bg-gray-800/50 rounded-lg">
+                            <dt className="text-sm text-gray-400">Rating</dt>
+                            <dd className="text-white mt-1">{content.rating}/10</dd>
+                          </div>
+                        </dl>
+                      </div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </div>
+            </div>
+          </>
+        )}
+        
+        {!isPlaying && (
+            <ContentRow
+              title="More Like This"
+              category={String(content.content_type || 'movies')}
+              showViewAll={true}
+              viewAllLink={`/similar/${content.id}`}
+              items={relatedContent.map((item) => ({
+                id: item.id,
+                title: String(item.title || ''),
+                image: getImageUrlFlexible(item),
+                poster: getImageUrlFlexible(item),
+                description: String(item.description || ''),
+                year: String(item.year || ''),
+                rating: String(item.rating || ''),
+                category: String(item.content_type || 'movie'),
+                duration: String(item.duration || ''),
+                type: String(item.content_type || 'movie')
+              }))}
+            />
+        )}
+      </main>
+      
+      {showTrailer && trailerUrl && (
+        <TrailerModal
+          isOpen={showTrailer}
+          onClose={() => setShowTrailer(false)}
+          trailerKey={trailerUrl}
+          title={content.title || 'Unknown'}
+        />
+      )}
+      
+      {showPremiumModal && (
+        <PremiumCodeModal 
+          isOpen={showPremiumModal}
+          onClose={() => setShowPremiumModal(false)}
+        />
+      )}
+
+      {/* Upgrade Modal */}
+      {showUpgradeModal && userProfile && (
+        <UpgradeModal
+          isOpen={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(false)}
+          reason={upgradeReason}
+          currentRole={userProfile.role}
+        />
+      )}
+      
+      <Footer />
+      
+      {!isPlaying && (
+        <VideoAssistant 
+          contentTitle={content.title || 'Unknown'}
+          contentType={content.content_type || 'movie'}
+          onRequestEpisode={handleEpisodeSelect}
+        />
+      )}
+    </div>
+  );
+};
+
+export default ContentDetail;

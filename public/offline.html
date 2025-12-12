@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - CinemaXStream</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #f43f5e;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        p {
+            color: #d1d5db;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        .offline-message {
+            background-color: #27272a;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 2rem;
+        }
+
+        .retry-button {
+            background-color: #f43f5e;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .retry-button:hover {
+            background-color: #e11d48;
+        }
+
+        .cached-content {
+            margin-top: 2rem;
+            padding: 20px;
+            background-color: #27272a;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .cached-content h2 {
+            color: #f43f5e;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .cached-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            text-align: left;
+        }
+
+        .cached-list li {
+            padding: 10px;
+            border-bottom: 1px solid #3f3f46;
+        }
+
+        .cached-list li:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>You're Offline</h1>
+        <div class="offline-message">
+            <p>Looks like you've lost your internet connection. Don't worry though - you can still access your downloaded content!</p>
+        </div>
+        <button class="retry-button" onclick="window.location.reload()">
+            Try Again
+        </button>
+        <div class="cached-content">
+            <h2>Available Offline</h2>
+            <ul class="cached-list" id="cached-content">
+                <li>Loading cached content...</li>
+            </ul>
+        </div>
+    </div>
+    <script>
+        // List available offline content
+        async function listCachedContent() {
+            try {
+                const cache = await caches.open('cinemaxstream-media-v3');
+                const keys = await cache.keys();
+                const contentList = document.getElementById('cached-content');
+                
+                if (keys.length === 0) {
+                    contentList.innerHTML = '<li>No content available offline</li>';
+                    return;
+                }
+
+                contentList.innerHTML = keys
+                    .map(key => `<li>${key.url.split('/').pop()}</li>`)
+                    .join('');
+            } catch (error) {
+                console.error('Failed to list cached content:', error);
+            }
+        }
+
+        // Check network status
+        function updateOnlineStatus() {
+            const button = document.querySelector('.retry-button');
+            if (navigator.onLine) {
+                button.textContent = 'Reconnected! Click to refresh';
+                button.style.backgroundColor = '#10b981';
+            } else {
+                button.textContent = 'Try Again';
+                button.style.backgroundColor = '#f43f5e';
+            }
+        }
+
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+        
+        // Initial load
+        listCachedContent();
+        updateOnlineStatus();
+    </script>
+</body>
+</html>
