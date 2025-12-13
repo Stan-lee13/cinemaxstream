@@ -1,8 +1,8 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCreditSystem } from '@/hooks/useCreditSystem';
+import { useUserTier } from '@/hooks/useUserTier'; // Add our new hook
 import { toast } from 'sonner';
 
 export interface DownloadRequest {
@@ -34,6 +34,7 @@ export interface DownloadResult {
 export const useSmartDownload = () => {
   const { user } = useAuth();
   const { userProfile, canDownload, deductDownloadCredit } = useCreditSystem();
+  const { tier, isPro, isPremium } = useUserTier(user?.id); // Use our new hook
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentRequest, setCurrentRequest] = useState<DownloadRequest | null>(null);
 
@@ -47,6 +48,12 @@ export const useSmartDownload = () => {
     if (!user) {
       toast.error('Please sign in to download content');
       return { success: false, error: 'Not authenticated' };
+    }
+
+    // Check user tier permissions
+    if (!isPro) {
+      toast.error('Downloads are only available for Pro and Premium users');
+      return { success: false, error: 'Insufficient permissions' };
     }
 
     if (!canDownload()) {
@@ -108,7 +115,7 @@ export const useSmartDownload = () => {
       }
 
       // Step 2: Backend Scraping (Pro/Premium only)
-      if (userProfile?.role !== 'free' && searchResult.nkiriUrl) {
+      if (isPro && searchResult.nkiriUrl) {
         const scrapeResult = await performBackendScraping(requestData.id, searchResult.nkiriUrl);
         
         if (scrapeResult.success) {

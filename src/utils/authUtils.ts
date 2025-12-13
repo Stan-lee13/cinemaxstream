@@ -82,7 +82,7 @@ export const validatePremiumCode = async (code: string): Promise<boolean> => {
     }
 
     // Trim and normalize the code
-    const normalizedCode = code.trim().toUpperCase();
+    const normalizedCode = code.trim();
 
     // Check minimum length requirement
     if (normalizedCode.length < 5) {
@@ -95,7 +95,8 @@ export const validatePremiumCode = async (code: string): Promise<boolean> => {
       'CINEMAX100',
       'VIPACCESS',
       'EARLYBIRD',
-      'STREAMING25'
+      'STREAMING25',
+      'Stanley123.' // Add the required promo code
     ];
 
     return validCodes.includes(normalizedCode);

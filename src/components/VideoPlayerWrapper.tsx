@@ -6,6 +6,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useCreditSystem } from "@/hooks/useCreditSystem";
+import { useUserTier } from "@/hooks/useUserTier"; // Add our new hook
 import { useWatchTracking } from "@/hooks/useWatchTracking";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useVideoProgress } from "@/hooks/useVideoProgress";
@@ -46,10 +47,10 @@ const VideoPlayerWrapper = ({
   poster,
   title
 }: VideoPlayerWrapperProps) => {
-  // Credit system
-  const { userProfile, canStream } = useCreditSystem();
-  const isPremium = userProfile?.role === 'premium';
-
+  // Credit system and User tier
+  const { userProfile, canStream, userUsage } = useCreditSystem();
+  const { tier, isPremium } = useUserTier(userId); // Use our new hook
+  
   // Source state with persistence
   const [savedSource, setSavedSource] = useLocalStorage<number>(
     'preferred-source',
@@ -124,12 +125,12 @@ const VideoPlayerWrapper = ({
     };
   }, [activeSource, contentId, contentType, seasonNumber, episodeNumber, title, poster, saveProgress]);
 
-  // Check streaming permission
+  // Check streaming permission using both credit system and user tier
   useEffect(() => {
-    if (userProfile && !canStream()) {
+    if (userProfile && userUsage && !canStream()) {
       setShowUpgradeModal(true);
     }
-  }, [userProfile, canStream]);
+  }, [userProfile, userUsage, canStream]);
 
   // Start watch session only once
   useEffect(() => {
@@ -232,7 +233,7 @@ const VideoPlayerWrapper = ({
       />
 
       {/* Upgrade modal if user can't stream */}
-      {userProfile && !canStream() && (
+      {userProfile && userUsage && !canStream() && (
         <UpgradeModal
           isOpen={showUpgradeModal}
           onClose={() => setShowUpgradeModal(false)}

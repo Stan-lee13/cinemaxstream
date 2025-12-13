@@ -1,7 +1,9 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useUserTier } from '@/hooks/useUserTier';
+import UpgradeModal from '@/components/UpgradeModal';
 
 interface DownloadButtonProps {
   contentId: string;
@@ -26,7 +28,24 @@ const DownloadButton: React.FC<DownloadButtonProps> = ({
   variant = 'default',
   size = 'default'
 }) => {
+  const { user } = useAuth();
+  const { tier, isPro, isPremium } = useUserTier(user?.id);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
   const handleDownload = () => {
+    // Check if user has download permissions
+    if (!user) {
+      // Redirect to login or show login modal
+      window.location.href = '/login';
+      return;
+    }
+
+    if (!isPro) {
+      // Show upgrade modal for free users
+      setShowUpgradeModal(true);
+      return;
+    }
+
     let downloadUrl = '';
     
     if (contentType === 'movie') {
@@ -45,16 +64,26 @@ const DownloadButton: React.FC<DownloadButtonProps> = ({
   };
 
   return (
-    <Button
-      onClick={handleDownload}
-      variant={variant}
-      size={size}
-      className={`${className} ${variant === 'default' ? 'bg-green-600 hover:bg-green-700' : ''}`}
-      data-tour-id="download-button"
-    >
-      <Download className="h-4 w-4 mr-2" />
-      Download
-    </Button>
+    <>
+      <Button
+        onClick={handleDownload}
+        variant={variant}
+        size={size}
+        className={`${className} ${variant === 'default' ? 'bg-green-600 hover:bg-green-700' : ''}`}
+        data-tour-id="download-button"
+      >
+        <Download className="h-4 w-4 mr-2" />
+        Download
+      </Button>
+
+      {/* Upgrade modal for free users trying to download */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        reason="download"
+        currentRole={tier}
+      />
+    </>
   );
 };
 

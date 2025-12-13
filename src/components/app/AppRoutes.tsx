@@ -1,4 +1,3 @@
-
 import { Routes, Route } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import LoadingState from "@/components/LoadingState";
@@ -40,6 +39,7 @@ const Cookies = lazy(() => import("@/pages/Cookies"));
 const Legal = lazy(() => import("@/pages/Legal"));
 const Admin = lazy(() => import("@/pages/Admin"));
 const AppSettings = lazy(() => import("@/pages/AppSettings"));
+const TierTest = lazy(() => import("@/pages/TierTest")); // Add TierTest route
 
 const AppRoutes = () => {
   return (
@@ -84,6 +84,7 @@ const AppRoutes = () => {
         <Route path="/delete-account" element={<DeleteAccount />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/app-settings" element={<AppSettings />} />
+        <Route path="/tier-test" element={<TierTest />} /> {/* Add TierTest route */}
         <Route path="/similar/:category" element={<Category />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
