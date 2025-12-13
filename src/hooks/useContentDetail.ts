@@ -160,18 +160,29 @@ export const useContentDetail = (contentId: string | undefined, contentTypeHint?
         }
         
         // Content found in database - try to get TMDB ID
-        // For now, we'll assume the contentId parameter is the TMDB ID
-        // In a real implementation, we would store the TMDB ID in the database
-        setTmdbId(contentId);
+        // Extract TMDB ID from image URL if possible
+        let extractedTmdbId = contentId; // fallback to contentId
+        
+        if (contentData?.image_url) {
+          // Try to extract TMDB ID from image URL
+          // TMDB image URLs follow pattern: https://image.tmdb.org/t/p/w500/{tmdb_id}.jpg
+          const tmdbImageRegex = new RegExp('/t/p/[^/]+/([^./]+)\\.(?:jpg|png|jpeg)');
+          const match = contentData.image_url.match(tmdbImageRegex);
+          if (match && match[1]) {
+            extractedTmdbId = match[1];
+          }
+        }
+        
+        setTmdbId(extractedTmdbId);
         setContent({
           ...contentData,
-          tmdb_id: contentId
+          tmdb_id: extractedTmdbId
         } as Content);
         
         // Try to get trailer URL
         try {
           if (contentData) {
-            const trailer = await getTrailerUrl(contentId, contentData.content_type || 'movie');
+            const trailer = await getTrailerUrl(extractedTmdbId, contentData.content_type || 'movie');
             setTrailerUrl(trailer);
           }
         } catch (e) {
@@ -202,7 +213,7 @@ export const useContentDetail = (contentId: string | undefined, contentTypeHint?
           setRelatedContent((relatedRes.data as ContentRow[] | null) || []);
         } else if (contentData) {
           // If no category ID, fetch related content from TMDB
-          const similar = await tmdbApi.getSimilarContent(contentId, contentData.content_type);
+          const similar = await tmdbApi.getSimilarContent(extractedTmdbId, contentData.content_type);
           setRelatedContent(similar.map(item => ({
             id: item.id,
             title: item.title,
@@ -229,12 +240,12 @@ export const useContentDetail = (contentId: string | undefined, contentTypeHint?
         // If it's a TV show or anime, fetch seasons and episodes from TMDB
         if (contentData && (contentData.content_type === 'series' || contentData.content_type === 'anime')) {
           try {
-            const tvSeasons = await tmdbApi.getTvShowSeasons(contentId);
+            const tvSeasons = await tmdbApi.getTvShowSeasons(extractedTmdbId);
             
             if (tvSeasons && tvSeasons.length > 0) {
               // Fetch episodes for the first season only initially
               const firstSeasonEpisodes = await tmdbApi.getTvShowEpisodes(
-                contentId, 
+                extractedTmdbId, 
                 tvSeasons[0].season_number
               );
               
