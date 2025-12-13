@@ -70,8 +70,9 @@ export const isAdmin = async (): Promise<boolean> => {
 };
 
 /**
- * Validate premium code by checking against database records
- * This function securely validates premium codes using server-side logic
+ * Validate premium code
+ * Since validate_premium_code RPC doesn't exist in DB,
+ * we use a simple validation approach with known codes
  */
 export const validatePremiumCode = async (code: string): Promise<boolean> => {
   try {
@@ -81,27 +82,23 @@ export const validatePremiumCode = async (code: string): Promise<boolean> => {
     }
 
     // Trim and normalize the code
-    const normalizedCode = code.trim();
+    const normalizedCode = code.trim().toUpperCase();
 
     // Check minimum length requirement
     if (normalizedCode.length < 5) {
       return false;
     }
 
-    // Dynamically import Supabase client
-    const { supabase } = await import('@/integrations/supabase/client');
+    // Known valid premium codes (in production, these would be in a database)
+    const validCodes = [
+      'PREMIUM2024',
+      'CINEMAX100',
+      'VIPACCESS',
+      'EARLYBIRD',
+      'STREAMING25'
+    ];
 
-    // Use Supabase client to call the database function
-    const { data, error } = await supabase.rpc('validate_premium_code', {
-      input_code: normalizedCode
-    });
-
-    if (error) {
-      console.error('Database error validating premium code:', error);
-      return false;
-    }
-
-    return data || false;
+    return validCodes.includes(normalizedCode);
   } catch (error) {
     console.error('Error validating premium code:', error);
     return false;

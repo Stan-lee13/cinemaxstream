@@ -1,14 +1,25 @@
+/**
+ * Video Player Wrapper Component
+ * Uses obfuscated source labels (Source 1-5)
+ * Includes VidRock progress listener and ad-free playback
+ */
+
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { getAvailableProviders, streamingProviders } from "@/utils/contentUtils";
-import { getStreamingUrl } from "@/utils/streamingUtils";
 import { useCreditSystem } from "@/hooks/useCreditSystem";
 import { useWatchTracking } from "@/hooks/useWatchTracking";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { useVideoProgress } from "@/hooks/useVideoProgress";
 import { toast } from "sonner";
 import UpgradeModal from "./UpgradeModal";
-import { AlertCircle, RefreshCw, Check } from "lucide-react";
+import SourceSelector from "./SourceSelector";
+import { AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "./ui/button";
-import { cn } from "@/lib/utils";
+import {
+  getStreamingUrlForSource,
+  getAvailableSources,
+  getDefaultSource,
+  isVidRockSource
+} from "@/utils/providers/providerUtils";
 
 interface VideoPlayerWrapperProps {
   contentId: string;
@@ -16,7 +27,7 @@ interface VideoPlayerWrapperProps {
   userId?: string;
   episodeId?: string;
   seasonNumber?: number;
-  episodeNumber?: number; 
+  episodeNumber?: number;
   autoPlay?: boolean;
   onEnded?: () => void;
   poster?: string;
@@ -35,30 +46,83 @@ const VideoPlayerWrapper = ({
   poster,
   title
 }: VideoPlayerWrapperProps) => {
-  const [savedProvider, setSavedProvider] = useLocalStorage<string>('preferred-provider', 'vidsrc_embed_ru');
-  const [activeProvider, setActiveProvider] = useState<string>(savedProvider || 'vidsrc_embed_ru');
-  const [lastErrorProvider, setLastErrorProvider] = useState<string | null>(null);
-  const [showUpgradeModal, setShowUpgradeModal] = useState<boolean>(false);
+  // Credit system
+  const { userProfile, canStream } = useCreditSystem();
+  const isPremium = userProfile?.role === 'premium';
+
+  // Source state with persistence
+  const [savedSource, setSavedSource] = useLocalStorage<number>(
+    'preferred-source',
+    getDefaultSource(isPremium)
+  );
+  const [activeSource, setActiveSource] = useState<number>(savedSource || getDefaultSource(isPremium));
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [loadError, setLoadError] = useState<boolean>(false);
-  const [failedProviders, setFailedProviders] = useState<string[]>([]);
+  const [failedSources, setFailedSources] = useState<number[]>([]);
+  const [showUpgradeModal, setShowUpgradeModal] = useState<boolean>(false);
+
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const hasStartedSession = useRef<boolean>(false);
-  
-  // Credit system hooks
-  const { userProfile, canStream } = useCreditSystem();
-  const { startWatchSession } = useWatchTracking();
+  const vidRockListenerRef = useRef<boolean>(false);
 
-  // Memoize the video source URL to prevent unnecessary recalculations
+  // Hooks
+  const { startWatchSession } = useWatchTracking();
+  const { saveProgress } = useVideoProgress();
+
+  // Build video source URL using obfuscated source system
   const videoSrc = useMemo(() => {
-    const options = {
+    return getStreamingUrlForSource(contentId, activeSource, {
       contentType,
       autoplay: autoPlay,
       season: typeof seasonNumber === 'number' && !isNaN(seasonNumber) ? seasonNumber : undefined,
       episodeNum: typeof episodeNumber === 'number' && !isNaN(episodeNumber) ? episodeNumber : undefined,
+    });
+  }, [contentId, contentType, activeSource, seasonNumber, episodeNumber, autoPlay]);
+
+  // VidRock message listener for enhanced progress tracking
+  useEffect(() => {
+    if (!isVidRockSource(activeSource)) return;
+    if (vidRockListenerRef.current) return;
+    vidRockListenerRef.current = true;
+
+    const handleMessage = (event: MessageEvent) => {
+      // Security: only accept messages from vidrock
+      if (!event.origin.includes('vidrock.net')) return;
+
+      try {
+        const data = event.data;
+        if (data?.type === 'MEDIA_DATA' && data.data) {
+          // Store VidRock progress
+          localStorage.setItem('vidRockProgress', JSON.stringify(data.data));
+          
+          // Also save to our progress system
+          if (data.data.currentTime && data.data.duration) {
+            saveProgress({
+              contentId,
+              contentType,
+              season: seasonNumber,
+              episode: episodeNumber,
+              position: data.data.currentTime,
+              duration: data.data.duration,
+              timestamp: Date.now(),
+              source: activeSource,
+              title,
+              poster
+            });
+          }
+        }
+      } catch (error) {
+        // Ignore parsing errors
+      }
     };
-    return getStreamingUrl(contentId, activeProvider, options);
-  }, [contentId, contentType, activeProvider, seasonNumber, episodeNumber, autoPlay]);
+
+    window.addEventListener('message', handleMessage);
+
+    return () => {
+      window.removeEventListener('message', handleMessage);
+      vidRockListenerRef.current = false;
+    };
+  }, [activeSource, contentId, contentType, seasonNumber, episodeNumber, title, poster, saveProgress]);
 
   // Check streaming permission
   useEffect(() => {
@@ -85,109 +149,87 @@ const VideoPlayerWrapper = ({
   const handleIframeError = useCallback(() => {
     setIsLoading(false);
     setLoadError(true);
-    setLastErrorProvider(activeProvider);
-    setFailedProviders(prev => {
-      if (prev.includes(activeProvider)) {
-        return prev;
-      }
-      return [...prev, activeProvider];
+    setFailedSources(prev => {
+      if (prev.includes(activeSource)) return prev;
+      return [...prev, activeSource];
     });
-  }, [activeProvider]);
+  }, [activeSource]);
 
+  // Auto-fallback to next source on error
   useEffect(() => {
     if (!loadError) return;
-    if (failedProviders.length >= streamingProviders.length) {
-      toast.error('All providers appear to be blocked. Please try again later or clear your cache.');
+
+    const allSources = getAvailableSources();
+    if (failedSources.length >= allSources.length) {
+      toast.error('All sources appear to be blocked. Please try again later.');
       return;
     }
 
-    const ordered = streamingProviders.map(p => p.id);
-    const nextProvider = ordered.find(id => !failedProviders.includes(id));
-
-    if (!nextProvider || nextProvider === activeProvider) {
-      return;
-    }
+    const nextSource = allSources.find(s => !failedSources.includes(s));
+    if (!nextSource || nextSource === activeSource) return;
 
     const timer = window.setTimeout(() => {
-      const providerName = streamingProviders.find(p => p.id === nextProvider)?.name || nextProvider;
-      toast.warning(`Provider blocked / failed. Switching to ${providerName}.`);
+      toast.warning(`Source ${activeSource} blocked. Switching to Source ${nextSource}.`);
       setIsLoading(true);
       setLoadError(false);
-      setActiveProvider(nextProvider);
-      setSavedProvider(nextProvider);
+      setActiveSource(nextSource);
+      setSavedSource(nextSource);
     }, 1000);
 
     return () => window.clearTimeout(timer);
-  }, [loadError, failedProviders, activeProvider, setSavedProvider]);
+  }, [loadError, failedSources, activeSource, setSavedSource]);
 
-  // Provider change handler
-  const handleProviderChange = useCallback((providerId: string) => {
-    if (providerId === activeProvider) return;
-    
+  // Source change handler
+  const handleSourceChange = useCallback((sourceNum: number) => {
+    if (sourceNum === activeSource) return;
+
     setIsLoading(true);
     setLoadError(false);
-    setFailedProviders([]);
-    setLastErrorProvider(null);
-    setActiveProvider(providerId);
-    setSavedProvider(providerId);
-    
-    const providerName = streamingProviders.find(p => p.id === providerId)?.name || providerId;
-    toast.info(`Switched to ${providerName}`);
-  }, [activeProvider, setSavedProvider]);
+    setFailedSources([]);
+    setActiveSource(sourceNum);
+    setSavedSource(sourceNum);
 
-  // Retry with next provider
+    toast.info(`Switched to Source ${sourceNum}`);
+  }, [activeSource, setSavedSource]);
+
+  // Retry with next source
   const handleRetry = useCallback(() => {
-    const ordered = streamingProviders.map(p => p.id);
-    const currentIndex = ordered.findIndex(id => id === activeProvider);
-    const nextIndex = (currentIndex + 1) % ordered.length;
-    handleProviderChange(ordered[nextIndex]);
-  }, [activeProvider, handleProviderChange]);
+    const allSources = getAvailableSources();
+    const currentIndex = allSources.findIndex(s => s === activeSource);
+    const nextIndex = (currentIndex + 1) % allSources.length;
+    handleSourceChange(allSources[nextIndex]);
+  }, [activeSource, handleSourceChange]);
 
-  const resetProviderCycle = useCallback(() => {
-    const defaultProvider = savedProvider || streamingProviders[0]?.id || 'vidsrc_embed_ru';
-    setFailedProviders([]);
+  // Reset all sources
+  const resetSources = useCallback(() => {
+    const defaultSource = getDefaultSource(isPremium);
+    setFailedSources([]);
     setLoadError(false);
     setIsLoading(true);
-    setLastErrorProvider(null);
-    setActiveProvider(defaultProvider);
-    setSavedProvider(defaultProvider);
-  }, [savedProvider, setSavedProvider]);
+    setActiveSource(defaultSource);
+    setSavedSource(defaultSource);
+  }, [isPremium, setSavedSource]);
 
+  // Reset on content change
   useEffect(() => {
-    setFailedProviders([]);
-    setLastErrorProvider(null);
+    setFailedSources([]);
     setLoadError(false);
     setIsLoading(true);
   }, [contentId, seasonNumber, episodeNumber]);
 
   // Generate iframe key for controlled re-renders
-  const iframeKey = `${contentId}-${seasonNumber ?? 1}-${episodeNumber ?? 1}-${activeProvider}`;
+  const iframeKey = `${contentId}-${seasonNumber ?? 1}-${episodeNumber ?? 1}-${activeSource}`;
 
   return (
     <div className="space-y-3">
-      {/* Provider Selector - Inline buttons */}
-      <div className="flex flex-wrap items-center gap-2 p-2 bg-secondary/30 rounded-lg" data-tour-id="provider-selector">
-        <span className="text-sm text-muted-foreground whitespace-nowrap mr-1">Source:</span>
-        {streamingProviders.map((provider) => (
-          <Button
-            key={provider.id}
-            variant={activeProvider === provider.id ? "default" : "outline"}
-            size="sm"
-            onClick={() => handleProviderChange(provider.id)}
-            disabled={isLoading && activeProvider !== provider.id}
-            className={cn(
-              "h-7 px-3 text-xs transition-all",
-              activeProvider === provider.id && "ring-2 ring-primary ring-offset-1 ring-offset-background"
-            )}
-          >
-            {activeProvider === provider.id && <Check className="h-3 w-3 mr-1" />}
-            {provider.name}
-          </Button>
-        ))}
-        {isLoading && (
-          <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground ml-2" />
-        )}
-      </div>
+      {/* Source Selector - Obfuscated labels */}
+      <SourceSelector
+        activeSource={activeSource}
+        onSourceChange={handleSourceChange}
+        isLoading={isLoading}
+        isPremium={isPremium}
+        disabled={loadError}
+      />
 
       {/* Upgrade modal if user can't stream */}
       {userProfile && !canStream() && (
@@ -198,7 +240,7 @@ const VideoPlayerWrapper = ({
           currentRole={userProfile.role}
         />
       )}
-      
+
       {/* Video player */}
       {(!userProfile || canStream()) && (
         <div className="relative w-full bg-black rounded-lg overflow-hidden" style={{ aspectRatio: '16/9' }}>
@@ -210,24 +252,21 @@ const VideoPlayerWrapper = ({
               </div>
             </div>
           )}
-          
+
           {loadError ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 z-10 gap-4 p-6 text-center">
               <AlertCircle className="h-12 w-12 text-destructive" />
-              <p className="text-lg font-semibold">Provider blocked / failed</p>
+              <p className="text-lg font-semibold">Source unavailable</p>
               <p className="text-sm text-muted-foreground">
-                {lastErrorProvider
-                  ? `${streamingProviders.find(p => p.id === lastErrorProvider)?.name || 'This provider'} is not loading.`
-                  : 'The current provider may be unavailable.'}
-                {" "}We’re switching sources automatically.
+                Source {activeSource} is not loading. We're switching automatically.
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 w-full">
+              <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm">
                 <Button onClick={handleRetry} className="flex-1 gap-2">
                   <RefreshCw className="h-4 w-4" />
-                  Try Another Source
+                  Try Next Source
                 </Button>
-                <Button variant="outline" onClick={resetProviderCycle} className="flex-1">
-                  Reset Providers
+                <Button variant="outline" onClick={resetSources} className="flex-1">
+                  Reset
                 </Button>
               </div>
             </div>

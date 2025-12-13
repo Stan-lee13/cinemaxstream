@@ -154,15 +154,7 @@ const HeroSection = () => {
         </div>
       </div>
       
-      {/* Scroll indicator */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white/60">
-        <div className="flex flex-col items-center gap-2">
-          <span className="text-sm">Scroll for more</span>
-          <div className="w-6 h-10 border-2 border-white/30 rounded-full p-1">
-            <div className="w-1 h-3 bg-white/60 rounded-full animate-bounce mx-auto" />
-          </div>
-        </div>
-      </div>
+      {/* Removed scroll indicator per request */}
 
       {/* Indicators */}
       {featuredContent.length > 1 && (

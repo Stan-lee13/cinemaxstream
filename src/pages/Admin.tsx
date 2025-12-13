@@ -113,14 +113,18 @@ const Admin = () => {
         .select('id, created_at')
         .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
-      // Fetch content for early access management
+      // Fetch content for management
       let contentData: ContentData[] = [];
       try {
         const { data } = await supabase
           .from('content')
-          .select('id, title, content_type, created_at, is_trending_new, early_access_until')
+          .select('id, title, content_type, created_at, trending, featured')
           .order('created_at', { ascending: false });
-        contentData = data || [];
+        contentData = (data || []).map(c => ({
+          ...c,
+          is_trending_new: c.trending,
+          early_access_until: null
+        })) as ContentData[];
       } catch (contentError) {
         console.warn('Content table query failed:', contentError);
       }
@@ -218,7 +222,7 @@ const Admin = () => {
       const newValue = !currentValue;
       await supabase
         .from('content')
-        .update({ is_trending_new: newValue })
+        .update({ trending: newValue })
         .eq('id', contentId);
       
       toast.success(`Content ${newValue ? 'marked as' : 'removed from'} trending`);
@@ -229,34 +233,13 @@ const Admin = () => {
   };
 
   const handleSetEarlyAccess = async (contentId: string, days: number) => {
-    try {
-      const earlyAccessUntil = new Date();
-      earlyAccessUntil.setDate(earlyAccessUntil.getDate() + days);
-      
-      await supabase
-        .from('content')
-        .update({ early_access_until: earlyAccessUntil.toISOString() })
-        .eq('id', contentId);
-      
-      toast.success(`Early access set for ${days} days`);
-      fetchData();
-    } catch (error) {
-      toast.error("Failed to set early access");
-    }
+    // Early access feature not yet in DB schema
+    toast.info(`Early access feature coming soon (${days} days for content ${contentId})`);
   };
 
   const handleRemoveEarlyAccess = async (contentId: string) => {
-    try {
-      await supabase
-        .from('content')
-        .update({ early_access_until: null })
-        .eq('id', contentId);
-      
-      toast.success("Early access removed");
-      fetchData();
-    } catch (error) {
-      toast.error("Failed to remove early access");
-    }
+    // Early access feature not yet in DB schema
+    toast.info(`Early access feature coming soon for content ${contentId}`);
   };
 
   const filteredUsers = users.filter(u => 

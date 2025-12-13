@@ -46,10 +46,8 @@ export const useContentDetail = (contentId: string | undefined, contentTypeHint?
   const isPremiumContent = content?.is_premium || (content?.rating && parseFloat(String(content.rating)) > 8.0);
   const canAccessPremium = isPremium;
   
-  // Check if content is in early access
-  const isEarlyAccess = content?.early_access_until 
-    ? new Date() < new Date(content.early_access_until)
-    : false;
+  // Check if content is in early access (feature not yet in DB schema)
+  const isEarlyAccess = false;
 
   // Fetch content details
   useEffect(() => {
@@ -94,9 +92,7 @@ export const useContentDetail = (contentId: string | undefined, contentTypeHint?
                 description: null,
                 created_at: new Date().toISOString()
               } as ContentCategoryRow,
-              tmdb_id: contentId, // Set TMDB ID
-              is_trending_new: false,
-              early_access_until: null,
+              tmdb_id: contentId,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             });
@@ -127,8 +123,6 @@ export const useContentDetail = (contentId: string | undefined, contentTypeHint?
               is_premium: parseFloat(item.rating) > 8.0,
               content_categories: null,
               tmdb_id: item.id,
-              is_trending_new: false,
-              early_access_until: null,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             })));
@@ -171,9 +165,7 @@ export const useContentDetail = (contentId: string | undefined, contentTypeHint?
         setTmdbId(contentId);
         setContent({
           ...contentData,
-          tmdb_id: contentId, // Assume contentId is the TMDB ID
-          is_trending_new: contentData?.is_trending_new || false,
-          early_access_until: contentData?.early_access_until || null
+          tmdb_id: contentId
         } as Content);
         
         // Try to get trailer URL
