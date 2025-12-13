@@ -1,11 +1,9 @@
-
 /**
  * Authentication utility functions
  */
 
 // Storage key for premium access
 const PREMIUM_ACCESS_KEY = 'premium_access';
-const VALID_PREMIUM_CODES = ['PREMIUM123', 'NETFLIX2025', 'CINEMAX2025'];
 
 /**
  * Check if user has premium access via database
@@ -70,9 +68,7 @@ export const isAdmin = async (): Promise<boolean> => {
 };
 
 /**
- * Validate premium code
- * Since validate_premium_code RPC doesn't exist in DB,
- * we use a simple validation approach with known codes
+ * Validate premium code using database function
  */
 export const validatePremiumCode = async (code: string): Promise<boolean> => {
   try {
@@ -89,17 +85,18 @@ export const validatePremiumCode = async (code: string): Promise<boolean> => {
       return false;
     }
 
-    // Known valid premium codes (in production, these would be in a database)
-    const validCodes = [
-      'PREMIUM2024',
-      'CINEMAX100',
-      'VIPACCESS',
-      'EARLYBIRD',
-      'STREAMING25',
-      'Stanley123.' // Add the required promo code
-    ];
+    // Use database function to validate premium code
+    const { supabase } = await import('@/integrations/supabase/client');
+    const { data, error } = await supabase.rpc('validate_premium_code', {
+      input_code: normalizedCode
+    });
 
-    return validCodes.includes(normalizedCode);
+    if (error) {
+      console.error('Error validating premium code:', error);
+      return false;
+    }
+
+    return data === true;
   } catch (error) {
     console.error('Error validating premium code:', error);
     return false;

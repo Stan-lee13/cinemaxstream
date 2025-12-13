@@ -20,7 +20,10 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Clock,
-  X
+  X,
+  Plus,
+  Calendar,
+  CheckCircle
 } from "lucide-react";
 import LoadingState from "@/components/LoadingState";
 
@@ -54,6 +57,17 @@ interface ContentData {
   early_access_until: string | null;
 }
 
+interface PromoCode {
+  id: string;
+  code: string;
+  is_active: boolean;
+  max_uses: number | null;
+  current_uses: number;
+  created_at: string;
+  expires_at: string | null;
+  notes: string | null;
+}
+
 const Admin = () => {
   const { user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -61,6 +75,7 @@ const Admin = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [users, setUsers] = useState<UserData[]>([]);
   const [content, setContent] = useState<ContentData[]>([]);
+  const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticsData>({
     totalUsers: 0,
     premiumUsers: 0,
@@ -70,6 +85,14 @@ const Admin = () => {
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTab, setSelectedTab] = useState("overview");
+  
+  // Promo code form state
+  const [newPromoCode, setNewPromoCode] = useState({
+    code: "",
+    max_uses: 1,
+    expires_at: "",
+    notes: ""
+  });
 
   // Security check - only allow admin email
   useEffect(() => {
@@ -127,6 +150,20 @@ const Admin = () => {
         })) as ContentData[];
       } catch (contentError) {
         console.warn('Content table query failed:', contentError);
+      }
+
+      // Fetch promo codes
+      try {
+        const { data: promoData, error: promoError } = await supabase
+          .from('premium_codes')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (!promoError && promoData) {
+          setPromoCodes(promoData as PromoCode[]);
+        }
+      } catch (promoError) {
+        console.warn('Promo codes query failed:', promoError);
       }
 
       // Calculate analytics
@@ -242,6 +279,69 @@ const Admin = () => {
     toast.info(`Early access feature coming soon for content ${contentId}`);
   };
 
+  // Promo code functions
+  const handleCreatePromoCode = async () => {
+    if (!newPromoCode.code.trim()) {
+      toast.error("Please enter a promo code");
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('premium_codes')
+        .insert({
+          code: newPromoCode.code.trim().toUpperCase(),
+          is_active: true,
+          max_uses: newPromoCode.max_uses,
+          current_uses: 0,
+          expires_at: newPromoCode.expires_at || null,
+          notes: newPromoCode.notes || null
+        })
+        .select();
+
+      if (error) throw error;
+
+      toast.success("Promo code created successfully");
+      setNewPromoCode({
+        code: "",
+        max_uses: 1,
+        expires_at: "",
+        notes: ""
+      });
+      fetchData();
+    } catch (error) {
+      toast.error("Failed to create promo code");
+    }
+  };
+
+  const handleTogglePromoCode = async (codeId: string, isActive: boolean) => {
+    try {
+      await supabase
+        .from('premium_codes')
+        .update({ is_active: !isActive })
+        .eq('id', codeId);
+
+      toast.success(`Promo code ${!isActive ? 'activated' : 'deactivated'}`);
+      fetchData();
+    } catch (error) {
+      toast.error("Failed to update promo code");
+    }
+  };
+
+  const handleDeletePromoCode = async (codeId: string) => {
+    try {
+      await supabase
+        .from('premium_codes')
+        .delete()
+        .eq('id', codeId);
+
+      toast.success("Promo code deleted");
+      fetchData();
+    } catch (error) {
+      toast.error("Failed to delete promo code");
+    }
+  };
+
   const filteredUsers = users.filter(u => 
     u.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     u.username?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -249,6 +349,11 @@ const Admin = () => {
 
   const filteredContent = content.filter(c => 
     c.title?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredPromoCodes = promoCodes.filter(c => 
+    c.code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.notes?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (authLoading || isLoading) {
@@ -278,6 +383,7 @@ const Admin = () => {
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="content">Content</TabsTrigger>
+            <TabsTrigger value="promo">Promo Codes</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
 
@@ -512,6 +618,146 @@ const Admin = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="promo" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Create Promo Code Form */}
+              <Card className="bg-secondary/30 border-gray-800 lg:col-span-1">
+                <CardHeader>
+                  <CardTitle>Create Promo Code</CardTitle>
+                  <CardDescription>Create new premium access codes</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Code</label>
+                    <Input
+                      placeholder="e.g., SUMMER2024"
+                      value={newPromoCode.code}
+                      onChange={(e) => setNewPromoCode({...newPromoCode, code: e.target.value})}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Max Uses</label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={newPromoCode.max_uses}
+                      onChange={(e) => setNewPromoCode({...newPromoCode, max_uses: parseInt(e.target.value) || 1})}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Expiration Date (Optional)</label>
+                    <Input
+                      type="date"
+                      value={newPromoCode.expires_at}
+                      onChange={(e) => setNewPromoCode({...newPromoCode, expires_at: e.target.value})}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Notes (Optional)</label>
+                    <Input
+                      placeholder="e.g., Summer promotion"
+                      value={newPromoCode.notes}
+                      onChange={(e) => setNewPromoCode({...newPromoCode, notes: e.target.value})}
+                    />
+                  </div>
+                  
+                  <Button onClick={handleCreatePromoCode} className="w-full gap-2">
+                    <Plus size={16} />
+                    Create Promo Code
+                  </Button>
+                </CardContent>
+              </Card>
+              
+              {/* Promo Codes List */}
+              <Card className="bg-secondary/30 border-gray-800 lg:col-span-2">
+                <CardHeader>
+                  <CardTitle>Active Promo Codes</CardTitle>
+                  <CardDescription>Manage existing promo codes</CardDescription>
+                  <div className="relative mt-4">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <Input
+                      placeholder="Search promo codes..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10 bg-background/50 border-gray-700"
+                    />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3 max-h-[500px] overflow-y-auto">
+                    {filteredPromoCodes.map((code) => (
+                      <div key={code.id} className="flex items-center justify-between p-4 bg-background/50 rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="font-mono font-bold text-lg">{code.code}</p>
+                            <Badge variant={code.is_active ? 'default' : 'secondary'} className="text-xs">
+                              {code.is_active ? 'Active' : 'Inactive'}
+                            </Badge>
+                            {code.expires_at && new Date(code.expires_at) < new Date() && (
+                              <Badge variant="destructive" className="text-xs">
+                                Expired
+                              </Badge>
+                            )}
+                          </div>
+                          
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            <span className="text-xs text-gray-400">
+                              Uses: {code.current_uses}/{code.max_uses || '∞'}
+                            </span>
+                            
+                            {code.expires_at && (
+                              <span className="text-xs text-gray-400 flex items-center gap-1">
+                                <Calendar size={12} />
+                                Expires: {new Date(code.expires_at).toLocaleDateString()}
+                              </span>
+                            )}
+                            
+                            {code.notes && (
+                              <span className="text-xs text-gray-400">
+                                {code.notes}
+                              </span>
+                            )}
+                          </div>
+                          
+                          <p className="text-xs text-gray-500 mt-1">
+                            Created {new Date(code.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                        
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant={code.is_active ? "outline" : "default"}
+                            onClick={() => handleTogglePromoCode(code.id, code.is_active)}
+                            className="gap-1"
+                          >
+                            {code.is_active ? 'Deactivate' : 'Activate'}
+                          </Button>
+                          
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDeletePromoCode(code.id)}
+                            className="gap-1"
+                          >
+                            <X size={14} />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {filteredPromoCodes.length === 0 && (
+                      <p className="text-center text-gray-400 py-8">No promo codes found</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-6">
