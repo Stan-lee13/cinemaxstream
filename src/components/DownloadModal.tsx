@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -15,6 +14,8 @@ interface DownloadModalProps {
   seasonNumber?: number;
   episodeNumber?: number;
   year?: string;
+  fallbackUrl?: string; // Add fallback URL prop
+  onLegacyDownload?: () => void; // Add legacy download callback
 }
 
 const DownloadModal: React.FC<DownloadModalProps> = ({
@@ -24,7 +25,9 @@ const DownloadModal: React.FC<DownloadModalProps> = ({
   contentType,
   seasonNumber,
   episodeNumber,
-  year
+  year,
+  fallbackUrl, // Receive fallback URL
+  onLegacyDownload // Receive legacy download callback
 }) => {
   const { initiateDownload, isProcessing } = useSmartDownload();
   const { userProfile, canDownload, getDownloadsRemaining } = useCreditSystem();
@@ -33,6 +36,12 @@ const DownloadModal: React.FC<DownloadModalProps> = ({
 
   const handleDownload = async () => {
     if (!canDownload()) {
+      return;
+    }
+
+    // If we have a fallback URL, use it directly
+    if (fallbackUrl && onLegacyDownload) {
+      onLegacyDownload();
       return;
     }
 
@@ -205,7 +214,7 @@ const DownloadModal: React.FC<DownloadModalProps> = ({
                   disabled={!canDownload()}
                 >
                   <Download className="h-4 w-4 mr-2" />
-                  Start Smart Download
+                  {fallbackUrl ? 'Direct Download' : 'Start Smart Download'}
                 </Button>
               )}
             </>
