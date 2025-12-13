@@ -48,11 +48,9 @@ export type Database = {
           created_at: string
           description: string | null
           duration: string | null
-          early_access_until: string | null
           featured: boolean | null
           id: string
           image_url: string | null
-          is_trending_new: boolean | null
           popular: boolean | null
           rating: string | null
           title: string
@@ -66,11 +64,9 @@ export type Database = {
           created_at?: string
           description?: string | null
           duration?: string | null
-          early_access_until?: string | null
           featured?: boolean | null
           id?: string
           image_url?: string | null
-          is_trending_new?: boolean | null
           popular?: boolean | null
           rating?: string | null
           title: string
@@ -84,11 +80,9 @@ export type Database = {
           created_at?: string
           description?: string | null
           duration?: string | null
-          early_access_until?: string | null
           featured?: boolean | null
           id?: string
           image_url?: string | null
-          is_trending_new?: boolean | null
           popular?: boolean | null
           rating?: string | null
           title?: string
@@ -256,92 +250,6 @@ export type Database = {
           thumbnail_url?: string | null
           title?: string
           video_url?: string | null
-        }
-        Relationships: []
-      }
-      premium_codes: {
-        Row: {
-          code: string
-          created_at: string | null
-          created_by: string | null
-          current_uses: number | null
-          expires_at: string | null
-          id: string
-          is_active: boolean | null
-          max_uses: number | null
-          notes: string | null
-        }
-        Insert: {
-          code: string
-          created_at?: string | null
-          created_by?: string | null
-          current_uses?: number | null
-          expires_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          max_uses?: number | null
-          notes?: string | null
-        }
-        Update: {
-          code?: string
-          created_at?: string | null
-          created_by?: string | null
-          current_uses?: number | null
-          expires_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          max_uses?: number | null
-          notes?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "premium_codes_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "user_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      subscription_plans: {
-        Row: {
-          created_at: string | null
-          features: Json | null
-          id: string
-          max_downloads: number
-          max_streams: number
-          name: string
-          plan_id: string
-          price_naira: number
-          priority_level: number | null
-          unlimited: boolean | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          features?: Json | null
-          id?: string
-          max_downloads: number
-          max_streams: number
-          name: string
-          plan_id: string
-          price_naira: number
-          priority_level?: number | null
-          unlimited?: boolean | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          features?: Json | null
-          id?: string
-          max_downloads?: number
-          max_streams?: number
-          name?: string
-          plan_id?: string
-          price_naira?: number
-          priority_level?: number | null
-          unlimited?: boolean | null
-          updated_at?: string | null
         }
         Relationships: []
       }
@@ -571,12 +479,6 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
-      validate_premium_code: {
-        Args: {
-          input_code: string
-        }
-        Returns: boolean
-      }
     }
     Enums: {
       app_role: "free" | "premium" | "admin"

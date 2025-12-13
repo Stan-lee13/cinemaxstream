@@ -79,8 +79,8 @@ export const getStreamingUrl = (contentId: string, provider: string = 'vidsrc_em
 /**
  * Determine if a provider requires iframe embedding
  */
-export const isIframeSource = (provider: string): boolean => {
-  return isIframeSourceImpl(provider);
+export const isIframeSource = (): boolean => {
+  return isIframeSourceImpl();
 };
 
 /**

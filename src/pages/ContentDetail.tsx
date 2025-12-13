@@ -70,16 +70,9 @@ const ContentDetail = () => {
   // Credit system integration
   const { userProfile, canStream, canDownload } = useCreditSystem();
 
-  // Enhanced start watching with credit check and early access gating
+  // Enhanced start watching with credit check
   const startWatching = useCallback(() => {
-    // Check if content is in early access and user doesn't have premium access
-    if (content?.early_access_until && new Date() < new Date(content.early_access_until)) {
-      if (!user || (user && !canAccessPremium)) {
-        setUpgradeReason('streaming');
-        setShowUpgradeModal(true);
-        return;
-      }
-    }
+    // Early access feature not yet implemented in DB schema
 
     if (userProfile && !canStream()) {
       setUpgradeReason('streaming');

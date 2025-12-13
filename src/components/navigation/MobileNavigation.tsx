@@ -8,16 +8,18 @@ const MobileNavigation: React.FC = () => {
   const location = useLocation();
   const { isAuthenticated } = useAuth();
   
+  // Simplified nav - removed duplicate profile menu, routes to main account
   const navItems = [
     { path: "/", icon: Home, label: "Home" },
     { path: "/movies", icon: Film, label: "Movies" },
     { path: "/series", icon: Tv, label: "Series" },
-    { path: "/anime", icon: Play, label: "Anime" },
     ...(isAuthenticated ? [
       { path: "/downloads", icon: Download, label: "Downloads" },
       { path: "/favorites", icon: Heart, label: "Favorites" },
-      { path: "/profile", icon: User, label: "Profile" }
-    ] : [])
+      { path: "/account", icon: User, label: "Account" }
+    ] : [
+      { path: "/auth", icon: User, label: "Login" }
+    ])
   ];
 
   const isActive = (path: string) => {

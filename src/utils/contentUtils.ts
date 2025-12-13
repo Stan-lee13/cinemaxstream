@@ -1,16 +1,18 @@
 /**
  * Content utility functions
+ * Uses obfuscated source system - sources displayed as Source 1-5 only
  */
 
 import type { ContentItem } from '@/types/content';
 
-// Production streaming providers - 5 verified providers
+// Production streaming sources - displayed as "Source 1-5" to users
+// Internal mapping is handled in providerUtils.ts
 export const streamingProviders = [
-  { id: 'vidsrc_me', name: 'VidSrc.me', contentType: 'all' },
-  { id: 'vidsrcme_ru', name: 'VidSrcMe.ru', contentType: 'all' },
-  { id: 'vidsrc_embed_ru', name: 'VidSrc Embed RU', contentType: 'all', isDefault: true },
-  { id: 'vidsrc_embed_su', name: 'VidSrc Embed SU', contentType: 'all' },
-  { id: 'vidrock_net', name: 'VidRock', contentType: 'all' }
+  { id: 'source_1', name: 'Source 1', contentType: 'all', isDefault: true },
+  { id: 'source_2', name: 'Source 2', contentType: 'all' },
+  { id: 'source_3', name: 'Source 3', contentType: 'all' },
+  { id: 'source_4', name: 'Source 4', contentType: 'all' },
+  { id: 'source_5', name: 'Source 5', contentType: 'all' }
 ];
 
 // Download providers - empty as per requirement (streaming only)
@@ -56,21 +58,21 @@ export const isPremiumContent = (contentId: string, releaseDate?: string, rating
 };
 
 /**
- * Get available streaming providers for content
+ * Get available streaming sources for content
  */
 export const getAvailableProviders = (contentId: string, contentType: string = 'movie') => {
-  // All providers support all content types in our configuration
+  // All sources support all content types
   return streamingProviders.filter(provider => 
     provider.contentType === 'all' || provider.contentType === contentType
   );
 };
 
 /**
- * Get best provider based on content type and availability
+ * Get best source based on content type
  */
 export const getBestProviderForContentType = (contentType: string): string => {
-  // Always return the default provider (vidsrc_embed_ru)
-  return 'vidsrc_embed_ru';
+  // Default to Source 1
+  return 'source_1';
 };
 
 /**
@@ -124,25 +126,18 @@ export const getPersonalizedRecommendations = async (userId: string): Promise<Co
 };
 
 /**
- * Get content quality based on provider and content type
+ * Get content quality based on source and content type
  */
-export const getContentQuality = (providerId: string, contentType: string): string[] => {
-  const qualityMap: Record<string, string[]> = {
-    'vidsrc_me': ['1080p', '720p', '480p'],
-    'vidsrcme_ru': ['1080p', '720p', '480p'],
-    'vidsrc_embed_ru': ['1080p', '720p', '480p'],
-    'vidsrc_embed_su': ['1080p', '720p', '480p'],
-    'vidrock_net': ['1080p', '720p', '480p']
-  };
-  
-  return qualityMap[providerId] || ['720p', '480p'];
+export const getContentQuality = (sourceId: string, contentType: string): string[] => {
+  // All sources support the same quality options
+  return ['1080p', '720p', '480p'];
 };
 
 /**
- * Check if provider supports download for content type
+ * Check if source supports download for content type
  */
-export const providerSupportsDownload = (providerId: string, contentType: string): boolean => {
-  // Currently, no providers support direct download
+export const providerSupportsDownload = (sourceId: string, contentType: string): boolean => {
+  // Currently, no sources support direct download
   // Downloads are handled through the smart download system
   return false;
 };

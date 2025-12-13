@@ -52,38 +52,54 @@ export const useCreditSystem = () => {
   const [subscriptionPlan, setSubscriptionPlan] = useState<SubscriptionPlan | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch subscription plan based on user role
+  // Get subscription plan based on user role (hardcoded since table doesn't exist)
   const fetchSubscriptionPlan = useCallback(async (role: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('subscription_plans')
-        .select('*')
-        .eq('plan_id', role)
-        .single();
+    // Hardcoded plan definitions since subscription_plans table doesn't exist in schema
+    const plans: Record<string, SubscriptionPlan> = {
+      free: {
+        id: 'free',
+        plan_id: 'free',
+        name: 'Free Plan',
+        price_naira: 0,
+        max_streams: 5,
+        max_downloads: 0,
+        unlimited: false,
+        features: ['5 streams per day', 'Standard quality'],
+        priority_level: 3,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      pro: {
+        id: 'pro',
+        plan_id: 'pro',
+        name: 'Pro Plan',
+        price_naira: 2000,
+        max_streams: 12,
+        max_downloads: 5,
+        unlimited: false,
+        features: ['12 streams per day', '5 downloads per day', 'HD quality'],
+        priority_level: 2,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      premium: {
+        id: 'premium',
+        plan_id: 'premium',
+        name: 'Premium Plan',
+        price_naira: 5000,
+        max_streams: 0,
+        max_downloads: 0,
+        unlimited: true,
+        features: ['Unlimited streams', 'Unlimited downloads', '4K quality', 'VidRock default', 'Ad-free'],
+        priority_level: 1,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+    };
 
-      if (error) throw error;
-
-      // Transform the data to match our interface
-      const plan: SubscriptionPlan = {
-        id: data.id,
-        plan_id: data.plan_id,
-        name: data.name,
-        price_naira: data.price_naira,
-        max_streams: data.max_streams,
-        max_downloads: data.max_downloads,
-        unlimited: data.unlimited ?? false,
-        features: Array.isArray(data.features) ? data.features.map(f => String(f)) : [],
-        priority_level: data.priority_level ?? 3,
-        created_at: data.created_at ?? new Date().toISOString(),
-        updated_at: data.updated_at ?? new Date().toISOString()
-      };
-
-      setSubscriptionPlan(plan);
-      return plan;
-    } catch (err) {
-      console.error('Error fetching subscription plan:', getErrorMessage(err));
-      return null;
-    }
+    const plan = plans[role] || plans.free;
+    setSubscriptionPlan(plan);
+    return plan;
   }, []);
 
   // Get credit limits based on subscription plan
