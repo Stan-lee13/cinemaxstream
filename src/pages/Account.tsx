@@ -15,35 +15,35 @@ const Account = () => {
   useEffect(() => {
     const ctx = gsap.context(() => {
       gsap.from(".account-header", {
-        scale: 0.95,
+        scale: 0.98,
         opacity: 0,
-        duration: 0.8,
-        ease: "power3.out"
+        duration: 0.4,
+        ease: "power2.out"
       });
 
       gsap.from(".section-title", {
-        x: -20,
+        x: -10,
         opacity: 0,
-        duration: 0.6,
-        stagger: 0.1,
-        delay: 0.2,
+        duration: 0.3,
+        stagger: 0.05,
+        delay: 0.1,
         ease: "power2.out"
       });
 
       gsap.from(".settings-card", {
-        y: 30,
+        y: 15,
         opacity: 0,
-        duration: 0.7,
-        stagger: 0.08,
-        delay: 0.4,
-        ease: "power3.out"
+        duration: 0.4,
+        stagger: 0.04,
+        delay: 0.15,
+        ease: "power2.out"
       });
 
       gsap.from(".danger-zone", {
         opacity: 0,
-        y: 20,
-        duration: 0.8,
-        delay: 1,
+        y: 10,
+        duration: 0.5,
+        delay: 0.3,
         ease: "power2.out"
       });
     }, containerRef);
@@ -186,75 +186,102 @@ const Account = () => {
             <BackButton className="hover:bg-white/5 text-gray-400 hover:text-white border-white/10 rounded-xl" />
           </div>
 
-          <div className="account-header flex flex-col md:flex-row items-center gap-8 mb-16 p-8 md:p-10 rounded-[32px] bg-white/5 border border-white/5 backdrop-blur-2xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
-              <Sparkles size={120} className="text-blue-500" />
+          <div className="account-header flex flex-col md:flex-row items-center gap-8 mb-16 p-8 md:p-10 rounded-[40px] bg-white/5 border border-white/5 backdrop-blur-3xl relative overflow-hidden group shadow-2xl shadow-black/40">
+            <div className="absolute top-0 right-0 p-8 opacity-20 group-hover:opacity-40 transition-opacity">
+              <Sparkles size={160} className="text-blue-500/30" />
             </div>
 
             <div className="relative">
-              <div className="w-32 h-32 md:w-40 md:h-40 rounded-[40px] bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 flex items-center justify-center shadow-3xl transform rotate-3 group-hover:rotate-6 transition-transform duration-500">
-                <span className="text-5xl md:text-6xl font-black text-white drop-shadow-2xl -rotate-3 group-hover:-rotate-6">
+              <div className="w-32 h-32 md:w-44 md:h-44 rounded-[48px] bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 flex items-center justify-center shadow-3xl transform group-hover:scale-105 transition-transform duration-500">
+                <span className="text-5xl md:text-7xl font-black text-white drop-shadow-2xl">
                   {user.email?.charAt(0).toUpperCase()}
                 </span>
               </div>
-              <div className="absolute -bottom-2 -right-2 bg-emerald-500 w-8 h-8 rounded-full border-4 border-[#0a0a0a] shadow-lg" title="Active Account" />
+              <div className="absolute -bottom-2 -right-2 bg-emerald-500 w-10 h-10 rounded-full border-4 border-[#0a0a0a] shadow-lg flex items-center justify-center" title="Active Account">
+                <div className="w-4 h-4 bg-white rounded-full animate-pulse" />
+              </div>
             </div>
 
             <div className="text-center md:text-left flex-1 z-10">
-              <div className="flex flex-col md:flex-row md:items-center gap-2 mb-2">
-                <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight">
+              <div className="flex flex-col md:flex-row md:items-center gap-4 mb-3">
+                <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter">
                   {user.email?.split('@')[0]}
                 </h1>
-                <span className="hidden md:inline-block px-3 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-full text-[10px] font-black uppercase tracking-widest">
-                  Premium Member
-                </span>
+                <div className="flex gap-2 justify-center">
+                  <span className="px-4 py-1.5 bg-blue-500 text-white border border-blue-400 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-500/20">
+                    Premium Member
+                  </span>
+                  {user.email?.toLowerCase() === 'stanleyvic13@gmail.com' && (
+                    <button
+                      onClick={() => navigate('/admin')}
+                      className="px-4 py-1.5 bg-emerald-500 text-white border border-emerald-400 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20 hover:scale-105 transition-transform"
+                    >
+                      Admin Access
+                    </button>
+                  )}
+                </div>
               </div>
-              <p className="text-gray-400 text-lg mb-6 font-medium">{user.email}</p>
+              <p className="text-white/60 text-xl font-medium mb-8 select-all decoration-blue-500 underline-offset-4 decoration-2">{user.email}</p>
 
               <div className="flex flex-wrap items-center gap-4 justify-center md:justify-start">
-                <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-xl border border-white/5">
-                  <span className="text-xs text-gray-500 font-bold uppercase tracking-wider">Since</span>
-                  <span className="text-sm font-black text-gray-300">
-                    {new Date(user.created_at || Date.now()).toLocaleDateString(undefined, { year: 'numeric', month: 'long' })}
-                  </span>
+                <div className="flex items-center gap-3 bg-white/5 px-5 py-3 rounded-2xl border border-white/10 hover:bg-white/10 transition-colors">
+                  <Calendar size={18} className="text-gray-400" />
+                  <div className="flex flex-col text-left">
+                    <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Joined On</span>
+                    <span className="text-sm font-black text-white">
+                      {new Date(user.created_at || Date.now()).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
+                    </span>
+                  </div>
                 </div>
 
                 <button
                   onClick={() => signOut()}
-                  className="px-6 py-2.5 rounded-xl bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all flex items-center gap-2 font-black text-sm uppercase tracking-wider"
+                  className="px-8 py-3 rounded-2xl bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all flex items-center gap-3 font-black text-sm uppercase tracking-widest shadow-lg active:scale-95"
                 >
-                  <LogOut size={16} />
-                  Sign Out
+                  <LogOut size={18} />
+                  Terminate Session
                 </button>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-12">
+          <div className="grid grid-cols-1 gap-14">
             {accountSections.map((section, idx) => (
-              <div key={idx} className="space-y-6">
-                <h2 className="section-title text-sm font-black text-gray-600 uppercase tracking-[0.2em] px-2">
+              <div key={idx} className="space-y-8">
+                <h2 className="section-title text-xs font-black text-gray-500 uppercase tracking-[0.3em] px-2 flex items-center gap-4">
                   {section.group}
+                  <div className="h-[1px] flex-1 bg-gradient-to-r from-white/10 to-transparent" />
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {section.items.map((item, i) => {
                     const Icon = item.icon;
+                    const isBilling = item.title.includes("Billing");
                     return (
                       <div
                         key={i}
                         onClick={() => navigate(item.route)}
-                        className="settings-card group p-6 rounded-[24px] bg-[#111] border border-white/5 hover:border-white/10 hover:bg-[#161616] transition-all cursor-pointer flex items-center gap-5 relative overflow-hidden"
+                        className={`settings-card group p-8 rounded-[32px] bg-[#111]/60 border transition-all cursor-pointer flex items-center gap-6 relative overflow-hidden backdrop-blur-xl ${isBilling ? 'border-amber-500/30 bg-amber-500/[0.03] hover:bg-amber-500/[0.06] hover:border-amber-500' : 'border-white/5 hover:border-white/20 hover:bg-[#161616]'}`}
                       >
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500" />
 
-                        <div className={`w-14 h-14 rounded-2xl ${item.bgColor} ${item.color} ${item.borderColor} border flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-500`}>
-                          <Icon size={28} />
+                        {isBilling && (
+                          <div className="absolute -top-1 -right-1 bg-amber-500 text-black px-4 py-1 rounded-bl-2xl text-[10px] font-black uppercase tracking-tighter">
+                            Active Subscription
+                          </div>
+                        )}
+
+                        <div className={`w-16 h-16 rounded-2xl ${item.bgColor} ${item.color} ${item.borderColor} border flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-500`}>
+                          <Icon size={32} />
                         </div>
                         <div className="flex-1">
-                          <h3 className="font-black text-gray-100 text-lg group-hover:text-blue-400 transition-colors uppercase tracking-tight">{item.title}</h3>
-                          <p className="text-sm text-gray-500 font-medium leading-relaxed">{item.description}</p>
+                          <h3 className={`font-black text-xl mb-1 uppercase tracking-tight transition-colors ${isBilling ? 'text-amber-400' : 'text-gray-100 group-hover:text-blue-400'}`}>
+                            {item.title}
+                          </h3>
+                          <p className="text-sm text-gray-400 font-medium leading-relaxed group-hover:text-gray-300 transition-colors">
+                            {item.description}
+                          </p>
                         </div>
-                        <ChevronRight className="text-gray-700 group-hover:text-white group-hover:translate-x-1 transition-all" size={24} />
+                        <ChevronRight className={`transition-all duration-300 ${isBilling ? 'text-amber-500' : 'text-gray-700 group-hover:text-white'} group-hover:translate-x-2`} size={28} />
                       </div>
                     );
                   })}

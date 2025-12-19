@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Clock, Trash2, Play, Film, ChevronRight, Bookmark, Sparkles, LayoutGrid, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -36,15 +36,7 @@ const WatchList = () => {
     }
   }, [isAuthenticated, navigate, isLoading]);
 
-  useEffect(() => {
-    if (user) {
-      fetchWatchList();
-    } else {
-      setIsLoading(false);
-    }
-  }, [user]);
-
-  const fetchWatchList = async () => {
+  const fetchWatchList = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -97,26 +89,34 @@ const WatchList = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      fetchWatchList();
+    } else {
+      setIsLoading(false);
+    }
+  }, [user, fetchWatchList]);
 
   useEffect(() => {
     if (!isLoading && watchList.length > 0) {
       const ctx = gsap.context(() => {
         gsap.from(".watchlist-header", {
-          y: 30,
+          y: 20,
           opacity: 0,
-          duration: 0.8,
-          ease: "power3.out"
+          duration: 0.4,
+          ease: "power2.out"
         });
 
         gsap.from(".watchlist-card", {
-          y: 40,
+          y: 20,
           opacity: 0,
-          scale: 0.95,
-          duration: 0.7,
-          stagger: 0.08,
+          scale: 0.98,
+          duration: 0.4,
+          stagger: 0.04,
           ease: "power2.out",
-          delay: 0.2
+          delay: 0.1
         });
       }, containerRef);
       return () => ctx.revert();

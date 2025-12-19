@@ -1,10 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,17 +16,21 @@ import {
   Crown,
   Search,
   RefreshCw,
-  ArrowUpRight,
-  ArrowDownRight,
   Clock,
-  X,
-  Plus,
-  Calendar,
-  CheckCircle
+  Zap,
+  Activity,
+  Server,
+  Database,
+  Layers,
+  BarChart3,
+  ChevronRight,
+  Sparkles
 } from "lucide-react";
 import LoadingState from "@/components/LoadingState";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import gsap from "gsap";
 
-// CRITICAL: Only this email can access admin panel
 const ADMIN_EMAIL = "stanleyvic13@gmail.com";
 
 interface UserData {
@@ -52,30 +55,18 @@ interface ContentData {
   title: string;
   content_type: string;
   created_at: string;
-  // Updated to make these required since migration has run
   is_trending_new: boolean | null;
   early_access_until: string | null;
-}
-
-interface PromoCode {
-  id: string;
-  code: string;
-  is_active: boolean;
-  max_uses: number | null;
-  current_uses: number;
-  created_at: string;
-  expires_at: string | null;
-  notes: string | null;
 }
 
 const Admin = () => {
   const { user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const containerRef = useRef<HTMLDivElement>(null);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [users, setUsers] = useState<UserData[]>([]);
   const [content, setContent] = useState<ContentData[]>([]);
-  const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticsData>({
     totalUsers: 0,
     premiumUsers: 0,
@@ -86,92 +77,63 @@ const Admin = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTab, setSelectedTab] = useState("overview");
 
-  // Promo code form state
-  const [newPromoCode, setNewPromoCode] = useState({
-    code: "",
-    max_uses: 1,
-    expires_at: "",
-    notes: ""
-  });
-
-  // Security check - only allow admin email
   useEffect(() => {
     if (authLoading) return;
-
-    if (!user) {
-      navigate("/");
+    if (!user || user.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+      if (!user) navigate("/");
+      else {
+        toast.error("Level 5 Authorization required");
+        navigate("/");
+      }
       return;
     }
-
-    // CRITICAL SECURITY CHECK
-    if (user.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
-      toast.error("Access denied");
-      navigate("/");
-      return;
-    }
-
     setIsAuthorized(true);
     fetchData();
   }, [user, authLoading, navigate]);
 
+  useEffect(() => {
+    if (isAuthorized && !isLoading) {
+      const ctx = gsap.context(() => {
+        gsap.from(".admin-header", {
+          y: -20,
+          opacity: 0,
+          duration: 0.4,
+          ease: "power2.out"
+        });
+
+        gsap.from(".stat-card", {
+          scale: 0.98,
+          opacity: 0,
+          y: 20,
+          duration: 0.3,
+          stagger: 0.05,
+          ease: "power2.out"
+        });
+
+        gsap.from(".admin-tab-content", {
+          opacity: 0,
+          y: 10,
+          duration: 0.3,
+          ease: "power2.out"
+        });
+      }, containerRef);
+      return () => ctx.revert();
+    }
+  }, [isAuthorized, isLoading, selectedTab]);
+
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      // Fetch user profiles
-      const { data: profiles, error: profilesError } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (profilesError) throw profilesError;
-
-      // Fetch user roles
-      const { data: roles } = await supabase
-        .from('user_roles')
-        .select('*');
-
-      // Fetch watch sessions for analytics
-      const { data: sessions } = await supabase
-        .from('watch_sessions')
-        .select('id, created_at')
+      const { data: profiles } = await supabase.from('user_profiles').select('*').order('created_at', { ascending: false });
+      const { data: roles } = await supabase.from('user_roles').select('*');
+      const { data: sessions } = await supabase.from('watch_sessions').select('id, created_at')
         .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
-      // Fetch content for management
-      let contentData: ContentData[] = [];
-      try {
-        const { data } = await supabase
-          .from('content')
-          .select('id, title, content_type, created_at, trending, featured')
-          .order('created_at', { ascending: false });
-        contentData = (data || []).map(c => ({
-          ...c,
-          is_trending_new: c.trending,
-          early_access_until: null
-        })) as ContentData[];
-      } catch (contentError) {
-        console.warn('Content table query failed:', contentError);
-      }
-
-      // Fetch promo codes
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: promoData, error: promoError } = await (supabase as any)
-          .from('premium_codes')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (!promoError && promoData) {
-          setPromoCodes(promoData as PromoCode[]);
-        }
-      } catch (promoError) {
-        console.warn('Promo codes query failed:', promoError);
-      }
-
-      // Calculate analytics
-      const now = new Date();
-      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const { data: contentDataRaw } = await supabase.from('content').select('id, title, content_type, created_at, trending')
+        .order('created_at', { ascending: false });
 
       const premiumCount = roles?.filter(r => r.role === 'premium').length || 0;
+      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
       const newUsersCount = profiles?.filter(p => new Date(p.created_at) > weekAgo).length || 0;
 
       setAnalytics({
@@ -182,699 +144,286 @@ const Admin = () => {
         watchSessions: sessions?.length || 0
       });
 
-      // Map users with roles
-      const usersWithRoles = profiles?.map(profile => {
-        const userRole = roles?.find(r => r.user_id === profile.id);
-        return {
-          id: profile.id,
-          email: profile.username || 'Unknown',
-          created_at: profile.created_at,
-          role: userRole?.role || 'free',
-          subscription_tier: profile.subscription_tier,
-          username: profile.username
-        };
-      }) || [];
+      setUsers(profiles?.map(p => ({
+        id: p.id,
+        email: p.username || 'Unknown',
+        created_at: p.created_at,
+        role: roles?.find(r => r.user_id === p.id)?.role || 'free',
+        username: p.username
+      })) || []);
 
-      setUsers(usersWithRoles);
-      setContent(contentData);
+      setContent((contentDataRaw || []).map(c => ({
+        id: c.id,
+        title: c.title,
+        content_type: c.content_type,
+        created_at: c.created_at,
+        is_trending_new: c.trending,
+        early_access_until: null
+      })));
     } catch (error) {
-      console.error('Failed to fetch data:', error);
-      toast.error("Failed to fetch data");
+      toast.error("Nexus Link Failure");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleBanUser = async (userId: string) => {
-    if (userId === user?.id) {
-      toast.error("Cannot ban yourself");
-      return;
-    }
-
-    try {
-      // Add banned role
-      await supabase
-        .from('user_roles')
-        .upsert({ user_id: userId, role: 'free' as const });
-
-      toast.success("User access restricted");
-      fetchData();
-    } catch (error) {
-      console.error('Failed to ban user:', error);
-      toast.error("Failed to update user");
-    }
-  };
-
   const handleUpgradeUser = async (userId: string) => {
     try {
-      // Check if premium role exists
-      const { data: existing } = await supabase
-        .from('user_roles')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('role', 'premium')
-        .single();
-
+      const { data: existing } = await supabase.from('user_roles').select('*').eq('user_id', userId).eq('role', 'premium').single();
       if (existing) {
-        // Downgrade to free
-        await supabase
-          .from('user_roles')
-          .delete()
-          .eq('user_id', userId)
-          .eq('role', 'premium');
-        toast.success("User downgraded to free");
+        await supabase.from('user_roles').delete().eq('user_id', userId).eq('role', 'premium');
+        toast.success("Node Downgraded");
       } else {
-        // Upgrade to premium
-        await supabase
-          .from('user_roles')
-          .insert({ user_id: userId, role: 'premium' as const });
-        toast.success("User upgraded to premium");
+        await supabase.from('user_roles').insert({ user_id: userId, role: 'premium' as const });
+        toast.success("Node Elevated to Premium");
       }
-
       fetchData();
     } catch (error) {
-      console.error('Failed to upgrade user:', error);
-      toast.error("Failed to update user role");
+      toast.error("Operation Failed");
     }
   };
 
-  const handleToggleTrending = async (contentId: string, currentValue: boolean | null) => {
-    try {
-      const newValue = !currentValue;
-      await supabase
-        .from('content')
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .update({ trending: newValue } as any)
-        .eq('id', contentId);
+  const filteredUsers = users.filter(u => u.username?.toLowerCase().includes(searchQuery.toLowerCase()));
 
-      toast.success(`Content ${newValue ? 'marked as' : 'removed from'} trending`);
-      fetchData();
-    } catch (error) {
-      console.error('Failed to toggle trending:', error);
-      toast.error("Failed to update content");
-    }
-  };
-
-  const handleSetEarlyAccess = async (contentId: string, days: number) => {
-    try {
-      const date = new Date();
-      date.setDate(date.getDate() + days);
-
-      const { error } = await supabase
-        .from('content')
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .update({ early_access_until: date.toISOString() } as any)
-        .eq('id', contentId);
-
-      if (error) throw error;
-
-      toast.success(`Early access set for ${days} days`);
-      fetchData();
-    } catch (error) {
-      console.error('Error setting early access:', error);
-      toast.error("Failed to set early access");
-    }
-  };
-
-  const handleRemoveEarlyAccess = async (contentId: string) => {
-    try {
-      const { error } = await supabase
-        .from('content')
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .update({ early_access_until: null } as any)
-        .eq('id', contentId);
-
-      if (error) throw error;
-
-      toast.success("Early access removed");
-      fetchData();
-    } catch (error) {
-      console.error('Error removing early access:', error);
-      toast.error("Failed to remove early access");
-    }
-  };
-
-  // Promo code functions
-  const handleCreatePromoCode = async () => {
-    if (!newPromoCode.code.trim()) {
-      toast.error("Please enter a promo code");
-      return;
-    }
-
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
-        .from('premium_codes')
-        .insert({
-          code: newPromoCode.code.trim().toUpperCase(),
-          is_active: true,
-          max_uses: newPromoCode.max_uses,
-          current_uses: 0,
-          expires_at: newPromoCode.expires_at || null,
-          notes: newPromoCode.notes || null
-        })
-        .select();
-
-      if (error) throw error;
-
-      toast.success("Promo code created successfully");
-      setNewPromoCode({
-        code: "",
-        max_uses: 1,
-        expires_at: "",
-        notes: ""
-      });
-      fetchData();
-    } catch (error) {
-      console.error('Failed to create promo code:', error);
-      toast.error("Failed to create promo code");
-    }
-  };
-
-  const handleTogglePromoCode = async (codeId: string, isActive: boolean) => {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase as any)
-        .from('premium_codes')
-        .update({ is_active: !isActive })
-        .eq('id', codeId);
-
-      toast.success(`Promo code ${!isActive ? 'activated' : 'deactivated'}`);
-      fetchData();
-    } catch (error) {
-      console.error('Failed to toggle promo code:', error);
-      toast.error("Failed to update promo code");
-    }
-  };
-
-  const handleDeletePromoCode = async (codeId: string) => {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase as any)
-        .from('premium_codes')
-        .delete()
-        .eq('id', codeId);
-
-      toast.success("Promo code deleted");
-      fetchData();
-    } catch (error) {
-      console.error('Failed to delete promo code:', error);
-      toast.error("Failed to delete promo code");
-    }
-  };
-
-  const filteredUsers = users.filter(u =>
-    u.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    u.username?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const filteredContent = content.filter(c =>
-    c.title?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const filteredPromoCodes = promoCodes.filter(c =>
-    c.code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.notes?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  if (authLoading || isLoading) {
-    return <LoadingState message="Loading admin panel..." />;
-  }
-
-  if (!isAuthorized) {
-    return null;
-  }
+  if (authLoading || isLoading) return <LoadingState message="Hyper-threading Nexus Core..." />;
+  if (!isAuthorized) return null;
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gradient">Admin Panel</h1>
-            <p className="text-gray-400 mt-1">CinemaxStream Management</p>
-          </div>
-          <Button onClick={fetchData} variant="outline" className="gap-2">
-            <RefreshCw size={16} />
-            Refresh
-          </Button>
-        </div>
+    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col font-sans selection:bg-blue-500/30" ref={containerRef}>
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[5%] right-[5%] w-[40%] h-[40%] bg-blue-600/[0.03] rounded-full blur-[120px]" />
+        <div className="absolute bottom-[5%] left-[5%] w-[40%] h-[40%] bg-indigo-600/[0.03] rounded-full blur-[120px]" />
+      </div>
 
-        <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
-          <TabsList className="bg-secondary/50">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="users">Users</TabsTrigger>
-            <TabsTrigger value="content">Content</TabsTrigger>
-            <TabsTrigger value="promo">Promo Codes</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          </TabsList>
+      <Navbar />
 
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card className="bg-secondary/30 border-gray-800">
-                <CardHeader className="pb-2">
-                  <CardDescription>Total Users</CardDescription>
-                  <CardTitle className="text-3xl flex items-center gap-2">
-                    {analytics.totalUsers}
-                    <Users className="h-6 w-6 text-cinemax-500" />
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center text-sm text-green-500">
-                    <ArrowUpRight size={14} />
-                    <span>+{analytics.newUsersThisWeek} this week</span>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-secondary/30 border-gray-800">
-                <CardHeader className="pb-2">
-                  <CardDescription>Premium Users</CardDescription>
-                  <CardTitle className="text-3xl flex items-center gap-2">
-                    {analytics.premiumUsers}
-                    <Crown className="h-6 w-6 text-yellow-500" />
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-sm text-gray-400">
-                    {analytics.totalUsers > 0
-                      ? `${((analytics.premiumUsers / analytics.totalUsers) * 100).toFixed(1)}% conversion`
-                      : '0% conversion'}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-secondary/30 border-gray-800">
-                <CardHeader className="pb-2">
-                  <CardDescription>Active Today</CardDescription>
-                  <CardTitle className="text-3xl flex items-center gap-2">
-                    {analytics.activeToday}
-                    <TrendingUp className="h-6 w-6 text-blue-500" />
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-sm text-gray-400">
-                    Watch sessions
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-secondary/30 border-gray-800">
-                <CardHeader className="pb-2">
-                  <CardDescription>Security Status</CardDescription>
-                  <CardTitle className="text-3xl flex items-center gap-2">
-                    <span className="text-green-500">Active</span>
-                    <Shield className="h-6 w-6 text-green-500" />
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-sm text-gray-400">
-                    All systems operational
-                  </div>
-                </CardContent>
-              </Card>
+      <div className="flex-1 container mx-auto px-4 pt-28 pb-12 relative z-10">
+        <div className="max-w-7xl mx-auto">
+          {/* Dashboard Header */}
+          <div className="admin-header flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-blue-500/10 rounded-xl border border-blue-500/20">
+                  <Shield size={18} className="text-blue-500" />
+                </div>
+                <span className="text-blue-500 font-black uppercase tracking-[0.3em] text-[9px]">Root Authorization</span>
+              </div>
+              <h1 className="text-5xl md:text-7xl font-black mb-4 tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-gray-700">
+                Nexus <span className="text-blue-500">Admin</span>
+              </h1>
+              <p className="text-gray-500 text-lg font-medium leading-relaxed max-w-2xl">
+                Real-time neural monitoring and global synchronization protocol.
+              </p>
             </div>
 
-            <Card className="bg-secondary/30 border-gray-800">
-              <CardHeader>
-                <CardTitle>Recent Users</CardTitle>
-                <CardDescription>Latest registered users</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {users.slice(0, 5).map((u) => (
-                    <div key={u.id} className="flex items-center justify-between p-3 bg-background/50 rounded-lg">
-                      <div>
-                        <p className="font-medium">{u.username || u.email}</p>
-                        <p className="text-sm text-gray-400">
-                          Joined {new Date(u.created_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <Badge variant={u.role === 'premium' ? 'default' : 'secondary'}>
-                        {u.role}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+            <button onClick={fetchData} className="px-8 py-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-3xl flex items-center gap-3 hover:bg-white/10 transition-all active:scale-95 group">
+              <RefreshCw size={20} className="text-blue-500 group-hover:rotate-180 transition-transform duration-700" />
+              <span className="text-xs font-black text-white uppercase tracking-widest">Resync Core</span>
+            </button>
+          </div>
 
-          <TabsContent value="users" className="space-y-6">
-            <Card className="bg-secondary/30 border-gray-800">
-              <CardHeader>
-                <CardTitle>User Management</CardTitle>
-                <CardDescription>Manage user accounts and permissions</CardDescription>
-                <div className="relative mt-4">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                  <Input
-                    placeholder="Search users..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 bg-background/50 border-gray-700"
-                  />
+          {/* Quick Stats Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+            {[
+              { label: 'Neural Nodes', value: analytics.totalUsers, icon: Users, color: 'text-blue-400', sub: `+${analytics.newUsersThisWeek} New` },
+              { label: 'Premium Sync', value: analytics.premiumUsers, icon: Crown, color: 'text-amber-400', sub: `${((analytics.premiumUsers / analytics.totalUsers) * 100).toFixed(1)}% Ratio` },
+              { label: 'Live Pulses', value: analytics.activeToday, icon: Activity, color: 'text-emerald-400', sub: 'Active Sessions' },
+              { label: 'Grid Integrity', value: '100%', icon: Server, color: 'text-blue-500', sub: 'Status Optimal' },
+            ].map((stat, i) => (
+              <div key={i} className="stat-card p-8 rounded-[36px] bg-white/[0.03] border border-white/5 backdrop-blur-3xl hover:bg-white/[0.05] transition-all group overflow-hidden relative">
+                <div className={`absolute -right-4 -top-4 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity ${stat.color}`}>
+                  <stat.icon size={120} />
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 max-h-[500px] overflow-y-auto">
-                  {filteredUsers.map((u) => (
-                    <div key={u.id} className="flex items-center justify-between p-4 bg-background/50 rounded-lg">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium">{u.username || 'No username'}</p>
-                          <Badge variant={u.role === 'premium' ? 'default' : 'secondary'} className="text-xs">
-                            {u.role}
+                <div className="relative z-10">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className={`p-2 rounded-xl bg-white/5 ${stat.color} border border-current/20`}>
+                      <stat.icon size={18} />
+                    </div>
+                    <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">{stat.label}</span>
+                  </div>
+                  <div className="text-4xl font-black text-white mb-2 tracking-tighter">{stat.value}</div>
+                  <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">{stat.sub}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-8">
+            <div className="flex justify-start">
+              <TabsList className="bg-white/5 p-1.5 border border-white/5 rounded-2xl backdrop-blur-3xl h-auto">
+                {['overview', 'users', 'analytics'].map((tab) => (
+                  <TabsTrigger key={tab} value={tab} className="px-8 py-3 rounded-xl font-black uppercase text-[10px] tracking-[0.2em] data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all shadow-xl">
+                    {tab}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
+
+            <div className="admin-tab-content bg-[#111]/40 border border-white/5 rounded-[48px] p-8 md:p-12 backdrop-blur-3xl shadow-3xl">
+              <TabsContent value="overview" className="mt-0">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                  <div className="space-y-8">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xl font-black uppercase tracking-tight flex items-center gap-3 italic">
+                        <Layers className="text-blue-500" />
+                        Priority Nodes
+                      </h3>
+                      <button className="text-[10px] font-black text-blue-500 uppercase tracking-widest hover:underline">View All</button>
+                    </div>
+                    <div className="space-y-4">
+                      {users.slice(0, 6).map(u => (
+                        <div key={u.id} className="p-6 rounded-[32px] bg-white/[0.03] border border-white/5 flex items-center justify-between hover:bg-white/[0.06] transition-all group">
+                          <div className="flex items-center gap-5">
+                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-gray-800 to-black flex items-center justify-center font-black text-gray-400 group-hover:scale-110 group-hover:rotate-3 transition-transform border border-white/5">
+                              {u.email?.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <div className="font-black text-white text-lg tracking-tight group-hover:text-blue-400 transition-colors uppercase">{u.username || 'Anonymous'}</div>
+                              <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Joined {new Date(u.created_at).toLocaleDateString()}</div>
+                            </div>
+                          </div>
+                          <Badge className={u.role === 'premium' ? 'bg-amber-500 text-black font-black' : 'bg-white/5 text-gray-500 border-white/5'}>
+                            {u.role.toUpperCase()}
                           </Badge>
                         </div>
-                        <p className="text-sm text-gray-400">ID: {u.id.slice(0, 8)}...</p>
-                        <p className="text-xs text-gray-500">
-                          Joined {new Date(u.created_at).toLocaleDateString()}
-                        </p>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-8">
+                    <h3 className="text-xl font-black uppercase tracking-tight flex items-center gap-3 italic">
+                      <Database className="text-blue-500" />
+                      Neural Pulse
+                    </h3>
+                    <div className="aspect-[16/10] rounded-[40px] bg-black/60 border border-white/5 p-12 flex flex-col items-center justify-center text-center space-y-6 overflow-hidden relative group/pulse">
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.1)_0%,transparent_70%)] group-hover/pulse:scale-150 transition-transform duration-1000" />
+                      <div className="w-24 h-24 rounded-full bg-blue-500/10 flex items-center justify-center relative">
+                        <Zap className="text-blue-500 animate-pulse relative z-10" size={40} />
+                        <div className="absolute inset-0 bg-blue-500 rounded-full blur-2xl opacity-20 animate-ping" />
                       </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleUpgradeUser(u.id)}
-                          className="gap-1"
-                        >
-                          <Crown size={14} />
-                          {u.role === 'premium' ? 'Downgrade' : 'Upgrade'}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handleBanUser(u.id)}
-                          className="gap-1"
-                        >
-                          <Ban size={14} />
-                          Restrict
-                        </Button>
+                      <div className="font-black text-white uppercase tracking-tighter text-3xl">Engine Optimal</div>
+                      <p className="text-gray-500 text-lg font-medium leading-relaxed">Monitoring {analytics.watchSessions} high-priority sync sessions across global nodes.</p>
+                      <div className="flex gap-4">
+                        <div className="px-4 py-2 rounded-xl bg-white/5 border border-white/5 text-[9px] font-black text-gray-400 uppercase tracking-widest">Load: 12%</div>
+                        <div className="px-4 py-2 rounded-xl bg-white/5 border border-white/5 text-[9px] font-black text-gray-400 uppercase tracking-widest">Latency: 14ms</div>
                       </div>
                     </div>
-                  ))}
-
-                  {filteredUsers.length === 0 && (
-                    <p className="text-center text-gray-400 py-8">No users found</p>
-                  )}
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+              </TabsContent>
 
-          <TabsContent value="content" className="space-y-6">
-            <Card className="bg-secondary/30 border-gray-800">
-              <CardHeader>
-                <CardTitle>Content Management</CardTitle>
-                <CardDescription>Manage trending/new flags and early access</CardDescription>
-                <div className="relative mt-4">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                  <Input
-                    placeholder="Search content..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 bg-background/50 border-gray-700"
-                  />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 max-h-[500px] overflow-y-auto">
-                  {filteredContent.map((c) => (
-                    <div key={c.id} className="flex items-center justify-between p-4 bg-background/50 rounded-lg">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium">{c.title}</p>
-                          {c.is_trending_new && (
-                            <Badge variant="default" className="text-xs">
-                              Trending
-                            </Badge>
-                          )}
-                          {c.early_access_until && new Date(c.early_access_until) > new Date() && (
-                            <Badge variant="secondary" className="text-xs bg-yellow-500/20 text-yellow-300">
-                              Early Access
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-sm text-gray-400 capitalize">{c.content_type}</p>
-                        <p className="text-xs text-gray-500">
-                          Added {new Date(c.created_at).toLocaleDateString()}
-                        </p>
-                        {c.early_access_until && new Date(c.early_access_until) > new Date() && (
-                          <p className="text-xs text-yellow-300 mt-1">
-                            <Clock className="inline mr-1" size={12} />
-                            Until {new Date(c.early_access_until).toLocaleDateString()}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex gap-2">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button size="sm" variant="outline">
-                              Actions
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleToggleTrending(c.id, c.is_trending_new || false)}>
-                              {c.is_trending_new ? 'Remove Trending' : 'Mark as Trending'}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleSetEarlyAccess(c.id, 7)}>
-                              Set 7-day Early Access
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleSetEarlyAccess(c.id, 30)}>
-                              Set 30-day Early Access
-                            </DropdownMenuItem>
-                            {c.early_access_until && (
-                              <DropdownMenuItem onClick={() => handleRemoveEarlyAccess(c.id)}>
-                                Remove Early Access
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </div>
-                  ))}
-
-                  {filteredContent.length === 0 && (
-                    <p className="text-center text-gray-400 py-8">No content found</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="promo" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Create Promo Code Form */}
-              <Card className="bg-secondary/30 border-gray-800 lg:col-span-1">
-                <CardHeader>
-                  <CardTitle>Create Promo Code</CardTitle>
-                  <CardDescription>Create new premium access codes</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">Code</label>
-                    <Input
-                      placeholder="e.g., SUMMER2024"
-                      value={newPromoCode.code}
-                      onChange={(e) => setNewPromoCode({ ...newPromoCode, code: e.target.value })}
-                    />
+              <TabsContent value="users" className="mt-0 space-y-10">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 bg-white/5 p-10 rounded-[32px] border border-white/5 backdrop-blur-3xl">
+                  <div className="space-y-2">
+                    <h3 className="text-3xl font-black uppercase tracking-tighter">Node Hierarchy</h3>
+                    <p className="text-gray-500 text-sm font-medium">Search and manage global identities.</p>
                   </div>
-
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">Max Uses</label>
+                  <div className="relative w-full md:w-[400px]">
+                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
                     <Input
-                      type="number"
-                      min="1"
-                      value={newPromoCode.max_uses}
-                      onChange={(e) => setNewPromoCode({ ...newPromoCode, max_uses: parseInt(e.target.value) || 1 })}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">Expiration Date (Optional)</label>
-                    <Input
-                      type="date"
-                      value={newPromoCode.expires_at}
-                      onChange={(e) => setNewPromoCode({ ...newPromoCode, expires_at: e.target.value })}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">Notes (Optional)</label>
-                    <Input
-                      placeholder="e.g., Summer promotion"
-                      value={newPromoCode.notes}
-                      onChange={(e) => setNewPromoCode({ ...newPromoCode, notes: e.target.value })}
-                    />
-                  </div>
-
-                  <Button onClick={handleCreatePromoCode} className="w-full gap-2">
-                    <Plus size={16} />
-                    Create Promo Code
-                  </Button>
-                </CardContent>
-              </Card>
-
-              {/* Promo Codes List */}
-              <Card className="bg-secondary/30 border-gray-800 lg:col-span-2">
-                <CardHeader>
-                  <CardTitle>Active Promo Codes</CardTitle>
-                  <CardDescription>Manage existing promo codes</CardDescription>
-                  <div className="relative mt-4">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                    <Input
-                      placeholder="Search promo codes..."
+                      placeholder="ENTER NODE ID OR ALIAS..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10 bg-background/50 border-gray-700"
+                      className="pl-14 bg-white/5 border-white/10 h-16 rounded-[20px] font-black text-xs uppercase tracking-widest focus-visible:ring-blue-500 shadow-2xl"
                     />
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3 max-h-[500px] overflow-y-auto">
-                    {filteredPromoCodes.map((code) => (
-                      <div key={code.id} className="flex items-center justify-between p-4 bg-background/50 rounded-lg">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <p className="font-mono font-bold text-lg">{code.code}</p>
-                            <Badge variant={code.is_active ? 'default' : 'secondary'} className="text-xs">
-                              {code.is_active ? 'Active' : 'Inactive'}
-                            </Badge>
-                            {code.expires_at && new Date(code.expires_at) < new Date() && (
-                              <Badge variant="destructive" className="text-xs">
-                                Expired
-                              </Badge>
-                            )}
-                          </div>
+                </div>
 
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            <span className="text-xs text-gray-400">
-                              Uses: {code.current_uses}/{code.max_uses || '∞'}
-                            </span>
-
-                            {code.expires_at && (
-                              <span className="text-xs text-gray-400 flex items-center gap-1">
-                                <Calendar size={12} />
-                                Expires: {new Date(code.expires_at).toLocaleDateString()}
-                              </span>
-                            )}
-
-                            {code.notes && (
-                              <span className="text-xs text-gray-400">
-                                {code.notes}
-                              </span>
-                            )}
-                          </div>
-
-                          <p className="text-xs text-gray-500 mt-1">
-                            Created {new Date(code.created_at).toLocaleDateString()}
-                          </p>
+                <div className="grid grid-cols-1 gap-4">
+                  {filteredUsers.map(u => (
+                    <div key={u.id} className="p-8 rounded-[40px] bg-white/[0.03] border border-white/5 flex flex-wrap items-center justify-between gap-8 hover:bg-white/[0.06] transition-all group/node shadow-xl">
+                      <div className="flex items-center gap-6">
+                        <div className="w-16 h-16 rounded-[24px] bg-blue-500/10 border border-blue-500/20 flex items-center justify-center font-black text-blue-500 text-2xl shadow-inner">
+                          {u.email?.charAt(0).toUpperCase()}
                         </div>
-
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant={code.is_active ? "outline" : "default"}
-                            onClick={() => handleTogglePromoCode(code.id, code.is_active)}
-                            className="gap-1"
-                          >
-                            {code.is_active ? 'Deactivate' : 'Activate'}
-                          </Button>
-
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleDeletePromoCode(code.id)}
-                            className="gap-1"
-                          >
-                            <X size={14} />
-                          </Button>
+                        <div>
+                          <div className="flex items-center gap-4 mb-1">
+                            <span className="font-black text-2xl text-white tracking-tight group-hover/node:text-blue-400 transition-colors uppercase">{u.username || 'Anonymous'}</span>
+                            <Badge className={u.role === 'premium' ? 'bg-amber-500 text-black font-black uppercase tracking-widest text-[8px]' : 'bg-gray-800 text-gray-400 font-black uppercase tracking-widest text-[8px]'}>
+                              {u.role}
+                            </Badge>
+                          </div>
+                          <div className="text-[10px] text-gray-600 font-bold uppercase tracking-[0.2em] flex items-center gap-2">
+                            <Clock size={12} className="text-gray-700" />
+                            {u.id}
+                          </div>
                         </div>
                       </div>
-                    ))}
 
-                    {filteredPromoCodes.length === 0 && (
-                      <p className="text-center text-gray-400 py-8">No promo codes found</p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
+                      <div className="flex gap-4">
+                        <button onClick={() => handleUpgradeUser(u.id)} className="px-8 py-3.5 rounded-2xl bg-white text-black font-black uppercase text-[11px] tracking-widest hover:bg-blue-500 hover:text-white transition-all shadow-xl active:scale-95">
+                          Recalibrate Tier
+                        </button>
+                        <button onClick={() => handleBanUser(u.id)} className="p-3.5 rounded-2xl bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all group/ban shadow-xl active:scale-95">
+                          <Ban size={22} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </TabsContent>
 
-          <TabsContent value="analytics" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="bg-secondary/30 border-gray-800">
-                <CardHeader>
-                  <CardTitle>User Growth</CardTitle>
-                  <CardDescription>Weekly user registration trends</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-48 flex items-center justify-center text-gray-400">
-                    <div className="text-center">
-                      <TrendingUp className="h-12 w-12 mx-auto mb-2 text-cinemax-500" />
-                      <p>{analytics.newUsersThisWeek} new users this week</p>
-                      <p className="text-sm">Total: {analytics.totalUsers} users</p>
+              <TabsContent value="analytics" className="mt-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                  <div className="p-10 rounded-[40px] bg-white/5 border border-white/5 space-y-10 shadow-2xl">
+                    <h4 className="text-xl font-black uppercase tracking-tighter flex items-center gap-3 italic">
+                      <TrendingUp className="text-emerald-500" />
+                      Sync Frequency
+                    </h4>
+                    <div className="h-72 flex flex-col justify-end gap-2">
+                      <div className="flex items-end justify-between h-full gap-5 px-4">
+                        {[30, 50, 40, 70, 45, 90, 60].map((h, i) => (
+                          <div key={i} className="flex-1 bg-blue-500/10 rounded-t-2xl relative group/bar">
+                            <div className="absolute bottom-0 left-0 w-full bg-blue-600 rounded-t-2xl transition-all duration-1000 group-hover/bar:bg-blue-400 shadow-[0_0_20px_rgba(37,99,235,0.4)]" style={{ height: `${h}%` }} />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex justify-between text-[10px] font-black text-gray-700 uppercase tracking-widest pt-6 border-t border-white/5 mt-4">
+                        {['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map(d => <span key={d}>{d}</span>)}
+                      </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
 
-              <Card className="bg-secondary/30 border-gray-800">
-                <CardHeader>
-                  <CardTitle>Revenue Metrics</CardTitle>
-                  <CardDescription>Premium subscription overview</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-48 flex items-center justify-center text-gray-400">
-                    <div className="text-center">
-                      <Crown className="h-12 w-12 mx-auto mb-2 text-yellow-500" />
-                      <p>{analytics.premiumUsers} premium subscribers</p>
-                      <p className="text-sm">
-                        Est. MRR: ${(analytics.premiumUsers * 9.99).toFixed(2)}
-                      </p>
+                  <div className="p-10 rounded-[40px] bg-white/5 border border-white/5 space-y-10 shadow-2xl">
+                    <h4 className="text-xl font-black uppercase tracking-tighter flex items-center gap-3 italic">
+                      <BarChart3 className="text-amber-500" />
+                      Core Saturation
+                    </h4>
+                    <div className="space-y-10">
+                      <div className="space-y-4">
+                        <div className="flex justify-between text-[11px] font-black text-gray-500 uppercase tracking-widest mb-1 px-1">
+                          <span>Premium Density</span>
+                          <span className="text-amber-500">{((analytics.premiumUsers / analytics.totalUsers) * 100).toFixed(1)}%</span>
+                        </div>
+                        <div className="h-4 w-full bg-white/5 rounded-full overflow-hidden p-1 shadow-inner">
+                          <div className="h-full bg-amber-500 rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(245,158,11,0.5)]" style={{ width: `${(analytics.premiumUsers / analytics.totalUsers) * 100}%` }} />
+                        </div>
+                      </div>
+                      <div className="space-y-4">
+                        <div className="flex justify-between text-[11px] font-black text-gray-500 uppercase tracking-widest mb-1 px-1">
+                          <span>Pulse Activity</span>
+                          <span className="text-blue-500">{((analytics.activeToday / analytics.totalUsers) * 100).toFixed(1)}%</span>
+                        </div>
+                        <div className="h-4 w-full bg-white/5 rounded-full overflow-hidden p-1 shadow-inner">
+                          <div className="h-full bg-blue-600 rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(37,99,235,0.5)]" style={{ width: `${(analytics.activeToday / analytics.totalUsers) * 100}%` }} />
+                        </div>
+                      </div>
+                      <div className="p-6 rounded-[28px] bg-blue-500/5 border border-blue-500/10">
+                        <div className="flex items-center gap-3 mb-2">
+                          <Sparkles size={16} className="text-blue-500" />
+                          <span className="text-[10px] font-black uppercase text-blue-500 tracking-widest">Nexus Tip</span>
+                        </div>
+                        <p className="text-xs text-gray-500 font-medium leading-relaxed italic">System response time is optimized. 4 new nodes are currently queued for terminal elevation.</p>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <Card className="bg-secondary/30 border-gray-800">
-              <CardHeader>
-                <CardTitle>Engagement Metrics</CardTitle>
-                <CardDescription>User activity and watch sessions</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="p-4 bg-background/50 rounded-lg text-center">
-                    <p className="text-3xl font-bold text-cinemax-500">{analytics.watchSessions}</p>
-                    <p className="text-sm text-gray-400">Sessions Today</p>
-                  </div>
-                  <div className="p-4 bg-background/50 rounded-lg text-center">
-                    <p className="text-3xl font-bold text-green-500">{analytics.activeToday}</p>
-                    <p className="text-sm text-gray-400">Active Users</p>
-                  </div>
-                  <div className="p-4 bg-background/50 rounded-lg text-center">
-                    <p className="text-3xl font-bold text-blue-500">
-                      {analytics.totalUsers > 0
-                        ? ((analytics.activeToday / analytics.totalUsers) * 100).toFixed(1)
-                        : 0}%
-                    </p>
-                    <p className="text-sm text-gray-400">Engagement Rate</p>
-                  </div>
-                  <div className="p-4 bg-background/50 rounded-lg text-center">
-                    <p className="text-3xl font-bold text-yellow-500">
-                      {analytics.totalUsers > 0
-                        ? ((analytics.premiumUsers / analytics.totalUsers) * 100).toFixed(1)
-                        : 0}%
-                    </p>
-                    <p className="text-sm text-gray-400">Conversion Rate</p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+              </TabsContent>
+            </div>
+          </Tabs>
+        </div>
       </div>
+      <Footer />
     </div>
   );
 };

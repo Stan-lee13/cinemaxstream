@@ -18,30 +18,30 @@ const ManageBillingPage = () => {
     const ctx = gsap.context(() => {
       // Hero Animation
       gsap.from(".hero-text", {
-        y: 30,
+        y: 20,
         opacity: 0,
-        duration: 1,
-        stagger: 0.2,
-        ease: "power3.out"
+        duration: 0.4,
+        stagger: 0.1,
+        ease: "power2.out"
       });
 
       // Plans Animation
       gsap.from(".plan-card", {
-        y: 50,
+        y: 30,
         opacity: 0,
-        duration: 0.8,
-        stagger: 0.15,
-        delay: 0.4,
-        ease: "back.out(1.7)"
+        duration: 0.4,
+        stagger: 0.08,
+        delay: 0.2,
+        ease: "back.out(1.2)"
       });
 
       // FAQ Animation
       gsap.from(".faq-item", {
-        y: 20,
+        y: 10,
         opacity: 0,
-        duration: 0.8,
-        stagger: 0.1,
-        delay: 1,
+        duration: 0.4,
+        stagger: 0.05,
+        delay: 0.4,
         scrollTrigger: {
           trigger: ".faq-section",
           start: "top 80%"
@@ -131,8 +131,8 @@ const ManageBillingPage = () => {
             <h1 className="hero-text text-5xl md:text-6xl font-black tracking-tight mb-4">
               Unlock the <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500">Ultimate Experience</span>
             </h1>
-            <p className="hero-text text-xl text-gray-400 max-w-2xl mx-auto">
-              Upgrade your plan to enjoy unlimited access, higher video quality, and offline downloads.
+            <p className="hero-text text-xl text-white/50 max-w-2xl mx-auto font-medium">
+              Upgrade your terminal priority to enjoy infinite access, hyper-definition quality, and offline buffering.
             </p>
 
             <div className="hero-text pt-4">
@@ -153,8 +153,8 @@ const ManageBillingPage = () => {
                 <div
                   key={index}
                   className={`plan-card relative group rounded-3xl p-8 transition-all duration-300 hover:transform hover:-translate-y-2 ${plan.recommended
-                      ? 'bg-gradient-to-b from-[#1a1a1a] to-[#0f0f0f] border-2 border-amber-500/30 hover:border-amber-500/60 shadow-2xl shadow-amber-900/20'
-                      : 'bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10'
+                    ? 'bg-gradient-to-b from-[#1a1a1a] to-[#0f0f0f] border-2 border-amber-500/30 hover:border-amber-500/60 shadow-2xl shadow-amber-900/20'
+                    : 'bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10'
                     }`}
                 >
                   {plan.recommended && (
@@ -224,8 +224,8 @@ const ManageBillingPage = () => {
                   ) : (
                     <Button
                       className={`w-full h-12 rounded-xl font-bold transition-all shadow-lg ${plan.recommended
-                          ? 'bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white shadow-amber-900/20 hover:shadow-amber-900/40 hover:scale-[1.02]'
-                          : 'bg-white text-black hover:bg-gray-200'
+                        ? 'bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white shadow-amber-900/20 hover:shadow-amber-900/40 hover:scale-[1.02]'
+                        : 'bg-white text-black hover:bg-gray-200'
                         }`}
                       onClick={() => handleUpgrade(plan.name)}
                     >

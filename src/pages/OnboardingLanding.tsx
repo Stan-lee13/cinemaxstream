@@ -47,21 +47,21 @@ const OnboardingLanding: React.FC = () => {
       const tl = gsap.timeline();
 
       tl.from(".hero-content > *", {
-        y: 40,
+        y: 20,
         opacity: 0,
-        duration: 0.8,
-        stagger: 0.2,
-        ease: "power3.out"
+        duration: 0.4,
+        stagger: 0.1,
+        ease: "power2.out"
       });
 
       gsap.from(".feature-card", {
-        scale: 0.9,
+        scale: 0.95,
         opacity: 0,
-        y: 30,
-        duration: 0.7,
-        stagger: 0.1,
-        ease: "back.out(1.7)",
-        delay: 0.6
+        y: 15,
+        duration: 0.4,
+        stagger: 0.05,
+        ease: "power2.out",
+        delay: 0.3
       });
 
       // Floating animation for ambient blobs
