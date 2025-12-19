@@ -112,7 +112,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[600px] bg-gradient-to-br from-background via-background to-secondary/20 border-2 border-primary/20">
+      <DialogContent className="w-[95vw] sm:max-w-[600px] max-h-[90vh] overflow-y-auto p-4 md:p-6 bg-gradient-to-br from-background via-background to-secondary/20 border-2 border-primary/20 rounded-xl">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-center">
             {reason === 'streaming' ? (
@@ -140,14 +140,14 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
           {getUpgradeOptions().map((plan) => (
             <div
               key={plan.name}
-              className={`relative border rounded-lg p-6 transition-all duration-200 hover:shadow-lg ${plan.recommended
-                  ? 'border-cinemax-500 bg-cinemax-500/5 shadow-cinemax-500/20'
-                  : 'border-border bg-secondary/30'
+              className={`relative border rounded-lg p-4 md:p-6 transition-all duration-200 hover:shadow-lg ${plan.recommended
+                ? 'border-cinemax-500 bg-cinemax-500/5 shadow-cinemax-500/20'
+                : 'border-border bg-secondary/30'
                 }`}
             >
               {plan.recommended && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+                  <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 shadow-md">
                     <Star size={12} />
                     Recommended
                   </div>
@@ -159,7 +159,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
                   {plan.name === 'Premium' && <Crown className="text-yellow-500 mr-2" size={20} />}
                   <h3 className="text-lg font-bold">{plan.name}</h3>
                 </div>
-                <div className="text-2xl font-bold text-cinemax-500">{plan.price}</div>
+                <div className="text-xl md:text-2xl font-bold text-cinemax-500">{plan.price}</div>
               </div>
 
               <ul className="space-y-2 mb-6">
@@ -173,8 +173,8 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
 
               <Button
                 className={`w-full transition-all duration-200 ${plan.recommended
-                    ? 'bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-semibold'
-                    : 'bg-secondary hover:bg-secondary/80'
+                  ? 'bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-semibold'
+                  : 'bg-secondary hover:bg-secondary/80'
                   }`}
                 onClick={() => handleUpgrade(plan.name)}
                 disabled={isUpgrading}
