@@ -1,158 +1,248 @@
-import React from 'react';
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import React, { useRef, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { User, Settings, CreditCard, Download, Bell, Shield, FileText, Trash2, Mail } from 'lucide-react';
+import { User, Settings, CreditCard, Download, Bell, Shield, FileText, Trash2, Mail, ChevronRight, LogOut, LayoutDashboard } from 'lucide-react';
 import BackButton from "@/components/BackButton";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import { useNavigate } from 'react-router-dom';
+import gsap from 'gsap';
 
 const Account = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.from(".account-header", {
+        y: 30,
+        opacity: 0,
+        duration: 0.8,
+        ease: "power3.out"
+      });
+
+      gsap.from(".settings-card", {
+        y: 20,
+        opacity: 0,
+        duration: 0.6,
+        stagger: 0.1,
+        delay: 0.3,
+        ease: "power2.out"
+      });
+
+      gsap.from(".action-button", {
+        y: 20,
+        opacity: 0,
+        duration: 0.6,
+        stagger: 0.05,
+        delay: 0.6,
+        ease: "power2.out"
+      });
+    }, containerRef);
+    return () => ctx.revert();
+  }, []);
+
+  const accountSections = [
+    {
+      group: "General",
+      items: [
+        {
+          icon: User,
+          title: "Profile Information",
+          description: "Manage your personal information",
+          route: "/edit-profile",
+          color: "text-blue-500",
+          bgColor: "bg-blue-500/10"
+        },
+        {
+          icon: CreditCard,
+          title: "Subscription & Billing",
+          description: "View plan and billing details",
+          route: "/manage-billing",
+          color: "text-amber-500",
+          bgColor: "bg-amber-500/10"
+        }
+      ]
+    },
+    {
+      group: "Content & Activity",
+      items: [
+        {
+          icon: Download,
+          title: "Downloads",
+          description: "Manage offline content",
+          route: "/downloads",
+          color: "text-emerald-500",
+          bgColor: "bg-emerald-500/10"
+        },
+        {
+          icon: LayoutDashboard,
+          title: "Watch History",
+          description: "View and clear history",
+          route: "/watch-history",
+          color: "text-purple-500",
+          bgColor: "bg-purple-500/10"
+        }
+      ]
+    },
+    {
+      group: "Preferences",
+      items: [
+        {
+          icon: Bell,
+          title: "Notifications",
+          description: "Email and app alerts",
+          route: "/notification-settings",
+          color: "text-pink-500",
+          bgColor: "bg-pink-500/10"
+        },
+        {
+          icon: Settings,
+          title: "App Preferences",
+          description: "Customize viewing experience",
+          route: "/app-settings",
+          color: "text-indigo-500",
+          bgColor: "bg-indigo-500/10"
+        }
+      ]
+    },
+    {
+      group: "Security",
+      items: [
+        {
+          icon: Shield,
+          title: "Privacy & Security",
+          description: "Password and security settings",
+          route: "/security-settings",
+          color: "text-cyan-500",
+          bgColor: "bg-cyan-500/10"
+        }
+      ]
+    }
+  ];
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-background pt-20 pb-12">
-        <div className="container mx-auto px-4">
-          <BackButton className="mb-6" />
-          <div className="max-w-2xl mx-auto text-center">
-            <h1 className="text-4xl font-bold mb-4">Account</h1>
-            <p className="text-gray-400 mb-8">Please sign in to access your account settings</p>
-            <a 
-              href="/auth" 
-              className="bg-cinemax-500 hover:bg-cinemax-600 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-            >
-              Sign In
-            </a>
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white/5 border border-white/10 rounded-2xl p-8 text-center backdrop-blur-sm">
+          <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            <User className="w-8 h-8 text-gray-400" />
           </div>
+          <h1 className="text-2xl font-bold text-white mb-2">Account Access</h1>
+          <p className="text-gray-400 mb-8">Please sign in to access your account settings and preferences.</p>
+          <button
+            onClick={() => navigate('/auth')}
+            className="w-full bg-white text-black font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors"
+          >
+            Sign In
+          </button>
+          <button
+            onClick={() => navigate('/')}
+            className="w-full mt-4 text-gray-500 hover:text-white text-sm"
+          >
+            Back to Home
+          </button>
         </div>
       </div>
     );
   }
 
-  const accountSections = [
-    {
-      icon: <User className="w-6 h-6 text-cinemax-500" />,
-      title: "Profile Information",
-      description: "Manage your personal information and preferences",
-      action: "Edit Profile",
-      route: "/edit-profile"
-    },
-    {
-      icon: <CreditCard className="w-6 h-6 text-cinemax-500" />,
-      title: "Subscription & Billing",
-      description: "View your subscription plan and billing information",
-      action: "Manage Billing",
-      route: "/manage-billing"
-    },
-    {
-      icon: <Download className="w-6 h-6 text-cinemax-500" />,
-      title: "Downloads",
-      description: "Manage your downloaded content for offline viewing",
-      action: "View Downloads",
-      route: "/downloads"
-    },
-    {
-      icon: <Bell className="w-6 h-6 text-cinemax-500" />,
-      title: "Notifications",
-      description: "Control your email and app notification preferences",
-      action: "Notification Settings",
-      route: "/notification-settings"
-    },
-    {
-      icon: <Shield className="w-6 h-6 text-cinemax-500" />,
-      title: "Privacy & Security",
-      description: "Manage your privacy settings and account security",
-      action: "Security Settings",
-      route: "/security-settings"
-    },
-    {
-      icon: <Settings className="w-6 h-6 text-cinemax-500" />,
-      title: "App Preferences",
-      description: "Customize your viewing experience and app behavior",
-      action: "App Settings",
-      route: "/app-settings"
-    }
-  ];
-
   return (
-    <div className="min-h-screen bg-background pt-20 pb-12">
-      <div className="container mx-auto px-4">
-        <BackButton className="mb-6" />
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl font-bold mb-2">Account Settings</h1>
-          <p className="text-gray-400 mb-8">Manage your CinemaxStream account</p>
-          
-          {/* User Info */}
-          <Card className="p-6 bg-secondary/20 border-gray-800 mb-8">
-            <div className="flex items-center">
-              <div className="w-16 h-16 bg-cinemax-500 rounded-full flex items-center justify-center text-2xl font-bold text-white">
-                {user.email?.charAt(0).toUpperCase()}
-              </div>
-              <div className="ml-4">
-                <h2 className="text-xl font-semibold">{user.email}</h2>
-                <p className="text-gray-400">Member since {new Date(user.created_at || Date.now()).toLocaleDateString()}</p>
+    <div className="min-h-screen bg-[#0a0a0a] text-white" ref={containerRef}>
+      {/* Background Ambience */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-[10%] left-[20%] w-[30%] h-[30%] bg-blue-900/10 rounded-full blur-[100px]" />
+        <div className="absolute bottom-[20%] right-[10%] w-[35%] h-[35%] bg-purple-900/10 rounded-full blur-[100px]" />
+      </div>
+
+      <Navbar />
+
+      <div className="container mx-auto px-4 pt-24 pb-12 relative z-10">
+        <div className="max-w-5xl mx-auto">
+          <div className="mb-6">
+            <BackButton className="hover:bg-white/10 text-gray-400 hover:text-white border-white/10" />
+          </div>
+
+          <div className="account-header flex flex-col md:flex-row items-center gap-6 mb-12 p-6 rounded-3xl bg-secondary/30 border border-white/10 backdrop-blur-md">
+            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-cinemax-500 to-purple-600 flex items-center justify-center text-4xl font-bold text-white shadow-xl shadow-purple-900/20">
+              {user.email?.charAt(0).toUpperCase()}
+            </div>
+            <div className="text-center md:text-left flex-1">
+              <h1 className="text-3xl font-bold text-white mb-1">{user.email?.split('@')[0]}</h1>
+              <p className="text-gray-400">{user.email}</p>
+              <div className="flex items-center gap-2 mt-2 justify-center md:justify-start">
+                <span className="text-xs bg-white/10 px-2 py-0.5 rounded text-gray-300 border border-white/5">
+                  Member since {new Date(user.created_at || Date.now()).getFullYear()}
+                </span>
               </div>
             </div>
-          </Card>
-          
-          {/* Account Sections */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {accountSections.map((section, index) => (
-              <Card key={index} className="p-6 bg-secondary/20 border-gray-800 hover:bg-secondary/30 transition-colors">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start">
-                    {section.icon}
-                    <div className="ml-3">
-                      <h3 className="text-lg font-semibold mb-2">{section.title}</h3>
-                      <p className="text-gray-400 text-sm mb-4">{section.description}</p>
-                    </div>
-                  </div>
+            <button
+              onClick={() => signOut()}
+              className="px-6 py-2 rounded-xl bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 transition-colors flex items-center gap-2 font-medium"
+            >
+              <LogOut size={18} />
+              Sign Out
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 gap-8">
+            {accountSections.map((section, idx) => (
+              <div key={idx}>
+                <h2 className="text-lg font-semibold text-gray-500 mb-4 px-2">{section.group}</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {section.items.map((item, i) => {
+                    const Icon = item.icon;
+                    return (
+                      <div
+                        key={i}
+                        onClick={() => navigate(item.route)}
+                        className="settings-card group p-4 rounded-2xl bg-[#111] border border-white/5 hover:border-white/10 hover:bg-[#161616] transition-all cursor-pointer flex items-center gap-4"
+                      >
+                        <div className={`w-12 h-12 rounded-xl ${item.bgColor} ${item.color} flex items-center justify-center`}>
+                          <Icon size={24} />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-white group-hover:text-blue-400 transition-colors">{item.title}</h3>
+                          <p className="text-sm text-gray-500">{item.description}</p>
+                        </div>
+                        <ChevronRight className="text-gray-600 group-hover:text-white transition-colors" size={20} />
+                      </div>
+                    );
+                  })}
                 </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="w-full"
-                  onClick={() => navigate(section.route)}
-                >
-                  {section.action}
-                </Button>
-              </Card>
+              </div>
             ))}
           </div>
-          
-          {/* Quick Actions */}
-          <div className="mt-12">
-            <h3 className="text-xl font-semibold mb-6">Quick Actions</h3>
-            <div className="flex flex-wrap gap-4">
-              <Button 
-                variant="outline"
+
+          <div className="mt-12 pt-12 border-t border-white/10">
+            <h3 className="text-lg font-semibold text-gray-500 mb-6 px-2">Danger Zone</h3>
+            <div className="flex flex-wrap gap-4 px-2">
+              <button
                 onClick={() => navigate('/export-data')}
-                className="gap-2"
+                className="action-button px-5 py-2.5 rounded-xl bg-[#111] border border-white/10 hover:bg-white/5 hover:border-white/20 text-gray-400 hover:text-white transition-all flex items-center gap-2 text-sm font-medium"
               >
-                <FileText className="h-4 w-4" />
-                Export My Data
-              </Button>
-              <Button 
-                variant="outline"
-                onClick={() => navigate('/delete-account')}
-                className="gap-2 text-red-400 border-red-400 hover:bg-red-400/10"
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete Account
-              </Button>
-              <Button 
-                variant="outline"
+                <FileText size={16} />
+                Export Data
+              </button>
+              <button
                 onClick={() => navigate('/contact-support')}
-                className="gap-2"
+                className="action-button px-5 py-2.5 rounded-xl bg-[#111] border border-white/10 hover:bg-white/5 hover:border-white/20 text-gray-400 hover:text-white transition-all flex items-center gap-2 text-sm font-medium"
               >
-                <Mail className="h-4 w-4" />
+                <Mail size={16} />
                 Contact Support
-              </Button>
+              </button>
+              <button
+                onClick={() => navigate('/delete-account')}
+                className="action-button px-5 py-2.5 rounded-xl bg-red-950/10 border border-red-900/20 hover:bg-red-900/20 hover:border-red-500/30 text-red-500 transition-all flex items-center gap-2 text-sm font-medium ml-auto"
+              >
+                <Trash2 size={16} />
+                Delete Account
+              </button>
             </div>
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 };
