@@ -1,70 +1,156 @@
-
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Users, LogIn, User, Film } from "lucide-react";
+import { ArrowRight, Users, LogIn, User, Film, Sparkles, Play, Shield, Zap } from "lucide-react";
+import gsap from 'gsap';
+
 const features = [
   {
-    icon: <Users className="h-6 w-6 text-cinemax-400" />,
-    title: "Stream Everything",
-    description: "Access movies, series, anime & more—all in one place."
+    icon: <Users className="h-6 w-6" />,
+    title: "Global Sync",
+    description: "Access movies, series, anime & more—synchronized across every device.",
+    color: "text-blue-500",
+    bgColor: "bg-blue-500/10",
+    borderColor: "border-blue-500/20"
   },
   {
-    icon: <LogIn className="h-6 w-6 text-cinemax-400" />,
-    title: "Watch Instantly",
-    description: "No downloads, no waiting. Hit play and dive right in any time."
+    icon: <Zap className="h-6 w-6" />,
+    title: "Neural Playback",
+    description: "Instant streaming with zero buffer. The precision of high-end engineering.",
+    color: "text-amber-500",
+    bgColor: "bg-amber-500/10",
+    borderColor: "border-amber-500/20"
   },
   {
-    icon: <User className="h-6 w-6 text-cinemax-400" />,
-    title: "Personalized Experience",
-    description: "Save favorites, continue watching, and get personal recommendations for you."
+    icon: <Shield className="h-6 w-6" />,
+    title: "Quantum Secure",
+    description: "Your library and activity are protected by industry-leading encryption.",
+    color: "text-purple-500",
+    bgColor: "bg-purple-500/10",
+    borderColor: "border-purple-500/20"
   },
   {
-    icon: <Film className="h-6 w-6 text-cinemax-400" />,
-    title: "1080p Streaming, Low Data",
-    description: "Stream your favorite movie at 1080p with low data cost."
+    icon: <Play className="h-6 w-6" />,
+    title: "8K Ready",
+    description: "Experience hyper-definition streaming with optimized data efficiency.",
+    color: "text-emerald-500",
+    bgColor: "bg-emerald-500/10",
+    borderColor: "border-emerald-500/20"
   }
 ];
+
 const OnboardingLanding: React.FC = () => {
   const navigate = useNavigate();
-  return <div className="relative min-h-screen bg-gradient-to-tr from-zinc-900 via-[#25032a] to-cinemax-900 overflow-hidden flex flex-col items-center justify-center">
-      {/* Soft floating hero gradient blobs for depth */}
-      <div className="absolute -top-24 -left-32 w-[380px] h-[380px] rounded-full bg-gradient-to-tr from-cinemax-500 via-cinemax-400/80 to-transparent opacity-30 blur-3xl z-0" />
-      <div className="absolute bottom-0 right-0 w-80 h-80 bg-cinemax-700 opacity-20 rounded-full blur-2xl z-0" />
-      <div className="absolute top-1/2 left-[-120px] w-[220px] h-[120px] rounded-[4rem] bg-white/10 dark:bg-cinemax-800/20 opacity-15 blur-2xl z-0" />
+  const containerRef = useRef<HTMLDivElement>(null);
 
-      {/* Hero Section */}
-      <section className="w-full max-w-3xl mx-auto px-6 sm:px-10 pt-24 pb-12 flex flex-col items-center relative z-10">
-        <div className="flex items-center gap-3 mb-2">
-          <span className="bg-gradient-to-r from-cinemax-400 via-cinemax-500 to-cinemax-700 bg-clip-text text-transparent text-4xl font-extrabold tracking-tight drop-shadow">
-            CinemaxStream
-          </span>
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline();
+
+      tl.from(".hero-content > *", {
+        y: 40,
+        opacity: 0,
+        duration: 0.8,
+        stagger: 0.2,
+        ease: "power3.out"
+      });
+
+      gsap.from(".feature-card", {
+        scale: 0.9,
+        opacity: 0,
+        y: 30,
+        duration: 0.7,
+        stagger: 0.1,
+        ease: "back.out(1.7)",
+        delay: 0.6
+      });
+
+      // Floating animation for ambient blobs
+      gsap.to(".ambient-blob", {
+        x: 'random(-50, 50)',
+        y: 'random(-50, 50)',
+        duration: 'random(10, 20)',
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut"
+      });
+    }, containerRef);
+
+    return () => ctx.revert();
+  }, []);
+
+  return (
+    <div className="relative min-h-screen bg-[#0a0a0a] overflow-hidden flex flex-col items-center justify-center font-sans" ref={containerRef}>
+      {/* Premium Ambient Background */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="ambient-blob absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-blue-600/10 rounded-full blur-[120px]" />
+        <div className="ambient-blob absolute top-[20%] -right-[10%] w-[40%] h-[40%] bg-purple-600/10 rounded-full blur-[120px]" />
+        <div className="ambient-blob absolute -bottom-[10%] left-[20%] w-[40%] h-[40%] bg-indigo-600/10 rounded-full blur-[120px]" />
+      </div>
+
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-6 py-20 flex flex-col items-center">
+        {/* Hero Section */}
+        <div className="hero-content flex flex-col items-center text-center space-y-8 mb-24">
+          <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-full backdrop-blur-xl">
+            <Sparkles size={16} className="text-blue-400" />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400">Next Generation Entertainment</span>
+          </div>
+
+          <h1 className="text-5xl md:text-8xl font-black text-white tracking-tighter leading-none">
+            CINEMAX<span className="text-blue-500">STREAM</span>
+          </h1>
+
+          <p className="text-gray-400 text-lg md:text-2xl max-w-3xl font-medium leading-relaxed">
+            The hyper-modern streaming collective. Engineered for the future of cinematic digital consumption.
+          </p>
+
+          <button
+            onClick={() => navigate('/auth')}
+            className="group relative flex items-center gap-3 px-10 py-5 bg-white text-black hover:bg-blue-500 hover:text-white rounded-2xl font-black text-xl md:text-2xl uppercase tracking-tighter transition-all hover:scale-105 active:scale-95 shadow-3xl shadow-white/5"
+          >
+            Enter the Matrix
+            <ArrowRight size={24} className="transition-transform group-hover:translate-x-2" />
+          </button>
         </div>
-        <h1 className="text-center text-2xl sm:text-3xl md:text-4xl font-bold mb-3 text-white leading-tight">
-          The Ultimate Modern Streaming Platform
-        </h1>
-        <p className="text-base sm:text-lg text-cinemax-200/90 text-center max-w-2xl mx-auto mb-6 font-medium">Unlock an endless world of movies, shows and anime. Experience seamless streaming, curated collections, and your own personalized library — all in one elegant platform.</p>
-        <button onClick={() => navigate('/auth')} className="group relative inline-flex items-center justify-center px-8 py-3 mt-2 text-base sm:text-lg font-semibold rounded-xl shadow-xl bg-gradient-to-r from-cinemax-600 to-cinemax-400 hover:from-cinemax-500 hover:to-cinemax-600 text-white transition-all focus:outline-none border-none backdrop-blur-xl border-[1.5px] border-white/10 hover:scale-102 active:scale-98">
-          Get started now
-          <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-          <span className="absolute inset-0 rounded-xl pointer-events-none border-white/10 border blur-sm" />
-        </button>
-      </section>
-      {/* Features Section */}
-      <section className="w-full max-w-5xl mx-auto px-6 pb-14 relative z-10">
-        <div className="flex flex-wrap gap-6 justify-center">
-          {features.map((feat, idx) => <div key={idx} className="group backdrop-blur-2xl bg-white/5 dark:bg-[#3c3440]/20 border border-white/10 shadow-[0_6px_32px_rgba(75,0,75,0.09)] rounded-2xl flex flex-col items-center text-center p-6 w-full min-w-[220px] max-w-xs transition-all hover:scale-105 hover:bg-white/10 hover:shadow-xl">
-              <div className="mb-3">
+
+        {/* Features Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
+          {features.map((feat, idx) => (
+            <div
+              key={idx}
+              className="feature-card group p-8 rounded-[32px] bg-[#111]/40 border border-white/5 backdrop-blur-2xl hover:bg-white/[0.04] hover:border-white/10 transition-all duration-500"
+            >
+              <div className={`w-14 h-14 rounded-2xl ${feat.bgColor} ${feat.color} ${feat.borderColor} border flex items-center justify-center mb-6 shadow-xl group-hover:scale-110 transition-transform duration-500`}>
                 {feat.icon}
               </div>
-              <h3 className="text-lg font-bold text-cinemax-300 group-hover:text-cinemax-500">{feat.title}</h3>
-              <p className="text-sm text-slate-200/70 mt-2">{feat.description}</p>
-            </div>)}
+              <h3 className="text-xl font-black text-white mb-3 uppercase tracking-tight group-hover:text-blue-400 transition-colors">
+                {feat.title}
+              </h3>
+              <p className="text-gray-500 font-medium leading-relaxed">
+                {feat.description}
+              </p>
+            </div>
+          ))}
         </div>
-      </section>
-      {/* Footer style info */}
-      <footer className="text-xs text-slate-400 pb-5 px-4 z-10 text-center">
-        &copy; {new Date().getFullYear()} CinemaxStream. All rights reserved.
+      </div>
+
+      {/* Modern Footer */}
+      <footer className="relative z-10 w-full max-w-7xl mx-auto px-6 py-12 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-xs font-black text-gray-500 uppercase tracking-widest">System Online</span>
+        </div>
+
+        <p className="text-xs font-bold text-gray-600 uppercase tracking-[0.3em]">
+          &copy; {new Date().getFullYear()} Cinemax Stream • Internal Build v4.2.0
+        </p>
+
+        <div className="flex gap-8">
+          <button onClick={() => navigate('/terms')} className="text-xs font-bold text-gray-500 hover:text-white uppercase tracking-widest transition-colors">Terms</button>
+          <button onClick={() => navigate('/privacy')} className="text-xs font-bold text-gray-500 hover:text-white uppercase tracking-widest transition-colors">Privacy</button>
+        </div>
       </footer>
-    </div>;
+    </div>
+  );
 };
+
 export default OnboardingLanding;
