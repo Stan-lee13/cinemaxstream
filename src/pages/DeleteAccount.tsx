@@ -21,7 +21,7 @@ const DeleteAccount: React.FC = () => {
     permanent: false,
     backup: false
   });
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -65,29 +65,25 @@ const DeleteAccount: React.FC = () => {
 
     try {
       // Delete user data in order (due to foreign key constraints)
-      await Promise.all([
-        supabase.from('watch_sessions').delete().eq('user_id', user.id),
-        supabase.from('download_requests').delete().eq('user_id', user.id),
-        supabase.from('user_favorites').delete().eq('user_id', user.id),
-        supabase.from('user_watch_history').delete().eq('user_id', user.id),
-        supabase.from('user_usage').delete().eq('user_id', user.id),
-        supabase.from('user_profiles').delete().eq('id', user.id)
-      ]);
+      const tables = ['watch_sessions', 'download_requests', 'user_favorites', 'user_watch_history', 'user_usage'];
 
-      // Delete the auth user (this will trigger cascade deletes)
-      const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id);
-
-      if (deleteError) {
-        // If admin delete fails, sign out the user anyway
-        console.error('Admin delete failed:', deleteError);
+      for (const table of tables) {
+        await supabase.from(table as 'watch_sessions' | 'download_requests' | 'user_favorites' | 'user_watch_history' | 'user_usage').delete().eq('user_id', user.id);
       }
 
+      // Deactivate profile (soft delete fallback)
+      await supabase.from('user_profiles').update({
+        username: '[DELETED_USER]',
+        subscription_tier: 'free',
+        avatar_url: null
+      }).eq('id', user.id);
+
+      toast.success('Account deactivated and data purged');
       await signOut();
-      toast.success('Account deleted successfully');
       navigate('/');
     } catch (error) {
       console.error('Delete account error:', error);
-      toast.error('Failed to delete account. Please contact support.');
+      toast.error('Automated purge failed. Please contact terminal support for manual override.');
     } finally {
       setIsDeleting(false);
     }

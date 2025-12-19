@@ -39,7 +39,7 @@ const AppSettings = () => {
 
   const [offlineMode, setOfflineMode] = useState(() => {
     const saved = localStorage.getItem('settings_offlineMode');
-    return saved !== null ? JSON.parse(saved) : false;
+    return saved !== null ? JSON.parse(saved) : true;
   });
 
   const [videoQuality, setVideoQuality] = useState(() => {
@@ -122,6 +122,35 @@ const AppSettings = () => {
     localStorage.setItem('settings_subtitleLanguage', subtitleLanguage);
   }, [subtitleLanguage]);
 
+  const [storageStats, setStorageStats] = useState({
+    total: 64,
+    used: 0,
+    downloads: 2.3, // Hardcoded for now as downloads are external links usually
+    cache: 0
+  });
+
+  useEffect(() => {
+    const calculateStorage = () => {
+      let _lsTotal = 0;
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key) {
+          _lsTotal += (localStorage.getItem(key)?.length || 0 + key.length) * 2;
+        }
+      }
+      const cacheInMB = (_lsTotal / (1024 * 1024)).toFixed(2);
+      setStorageStats(prev => ({
+        ...prev,
+        cache: parseFloat(cacheInMB),
+        used: prev.downloads + (parseFloat(cacheInMB) / 1024)
+      }));
+    };
+
+    calculateStorage();
+    window.addEventListener('storage', calculateStorage);
+    return () => window.removeEventListener('storage', calculateStorage);
+  }, []);
+
   const handleSaveSetting = (setting: string) => {
     toast.success(`${setting} updated`);
   };
@@ -130,7 +159,7 @@ const AppSettings = () => {
     try {
       // Clear localStorage cache
       Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('cache_')) {
+        if (key.startsWith('tmdb_') || key.includes('cache')) {
           localStorage.removeItem(key);
         }
       });
@@ -144,6 +173,10 @@ const AppSettings = () => {
       }
 
       toast.success('Cache cleared successfully');
+      // Recalculate
+      setTimeout(() => {
+        setStorageStats(prev => ({ ...prev, cache: 0.01, used: prev.downloads + 0.00001 }));
+      }, 500);
     } catch (error) {
       console.error('Error clearing cache:', error);
       toast.error('Failed to clear cache');
@@ -355,13 +388,13 @@ const AppSettings = () => {
 
                 <div className="relative pt-6 pb-2">
                   <div className="flex justify-between items-end mb-2">
-                    <span className="text-3xl font-bold text-white">2.46<span className="text-sm text-gray-500 ml-1">GB</span></span>
-                    <span className="text-sm text-gray-400">of 64 GB</span>
+                    <span className="text-3xl font-bold text-white">{storageStats.used.toFixed(2)}<span className="text-sm text-gray-500 ml-1">GB</span></span>
+                    <span className="text-sm text-gray-400">of {storageStats.total} GB</span>
                   </div>
                   {/* Progress Visual */}
                   <div className="w-full h-3 bg-white/5 rounded-full overflow-hidden flex">
-                    <div className="w-[20%] h-full bg-emerald-500" />
-                    <div className="w-[5%] h-full bg-blue-500" />
+                    <div className="h-full bg-emerald-500 transition-all duration-1000" style={{ width: `${(storageStats.downloads / storageStats.total) * 100}%` }} />
+                    <div className="h-full bg-blue-500 transition-all duration-1000" style={{ width: `${(storageStats.cache / 1024 / storageStats.total) * 100}%` }} />
                   </div>
                   <div className="flex justify-between mt-3 text-xs text-gray-500 font-medium">
                     <div className="flex items-center gap-1.5">
@@ -382,17 +415,17 @@ const AppSettings = () => {
                 <div className="mt-8 space-y-4">
                   <div className="flex justify-between items-center py-3 border-b border-white/5">
                     <span className="text-gray-400 text-sm">Downloads</span>
-                    <span className="text-white font-medium text-sm">2.3 GB</span>
+                    <span className="text-white font-medium text-sm">{storageStats.downloads} GB</span>
                   </div>
                   <div className="flex justify-between items-center py-3 border-b border-white/5">
                     <span className="text-gray-400 text-sm">Cache</span>
-                    <span className="text-white font-medium text-sm">156 MB</span>
+                    <span className="text-white font-medium text-sm">{storageStats.cache} MB</span>
                   </div>
                 </div>
 
                 <Button
                   variant="outline"
-                  className="w-full mt-6 border-white/10 hover:bg-white/10 text-white hover:text-white rounded-xl h-10"
+                  className="w-full mt-6 border-white/10 hover:bg-white/10 text-white hover:text-white rounded-xl h-10 transition-all active:scale-95"
                   onClick={handleClearCache}
                 >
                   <Trash2 className="w-4 h-4 mr-2" />

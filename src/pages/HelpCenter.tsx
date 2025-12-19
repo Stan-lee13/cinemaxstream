@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,7 @@ import gsap from 'gsap';
 const HelpCenter = () => {
   const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -138,6 +139,15 @@ const HelpCenter = () => {
     }
   ];
 
+  const filteredTopics = helpTopics.map(topic => ({
+    ...topic,
+    items: topic.items.filter(item =>
+      item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      topic.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      topic.description.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  })).filter(topic => topic.items.length > 0 || topic.title.toLowerCase().includes(searchQuery.toLowerCase()));
+
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col" ref={containerRef}>
       <div className="fixed inset-0 pointer-events-none">
@@ -169,44 +179,63 @@ const HelpCenter = () => {
               <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-500 transition-colors" size={24} />
               <Input
                 placeholder="Search the intelligence database..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full h-16 bg-white/5 border-white/10 focus:border-blue-500/30 rounded-[24px] pl-16 pr-6 text-lg font-medium transition-all shadow-2xl"
               />
               <div className="absolute right-3 top-1/2 -translate-y-1/2 px-4 py-2 bg-white/5 rounded-xl border border-white/5 text-[10px] font-black text-gray-600 uppercase tracking-widest hidden md:block">
-                Press / to find
+                {searchQuery ? `${filteredTopics.length} Results` : "Press / to find"}
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-24">
-            {helpTopics.map((topic, index) => (
-              <Card key={index} className="topic-card bg-[#111]/80 border border-white/5 hover:border-white/10 p-8 rounded-[40px] group transition-all backdrop-blur-xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-8 opacity-0 group-hover:opacity-10 transition-opacity">
-                  <Sparkles size={80} className="text-blue-500" />
-                </div>
-
-                <div className="flex items-center gap-4 mb-6 relative z-10">
-                  <div className={`p-4 ${topic.bg} ${topic.border} border rounded-[24px] shadow-lg transition-transform group-hover:scale-110 duration-500`}>
-                    {topic.icon}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-24 min-h-[400px]">
+            {filteredTopics.length > 0 ? (
+              filteredTopics.map((topic, index) => (
+                <Card key={index} className="topic-card bg-[#111]/80 border border-white/5 hover:border-white/10 p-8 rounded-[40px] group transition-all backdrop-blur-xl relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-8 opacity-0 group-hover:opacity-10 transition-opacity">
+                    <Sparkles size={80} className="text-blue-500" />
                   </div>
-                  <h3 className="text-xl font-black text-white uppercase tracking-tighter leading-none">{topic.title}</h3>
+
+                  <div className="flex items-center gap-4 mb-6 relative z-10">
+                    <div className={`p-4 ${topic.bg} ${topic.border} border rounded-[24px] shadow-lg transition-transform group-hover:scale-110 duration-500`}>
+                      {topic.icon}
+                    </div>
+                    <h3 className="text-xl font-black text-white uppercase tracking-tighter leading-none">{topic.title}</h3>
+                  </div>
+                  <p className="text-gray-500 text-sm font-medium mb-8 leading-relaxed relative z-10">{topic.description}</p>
+                  <div className="space-y-4 relative z-10">
+                    {topic.items.map((item, itemIndex) => (
+                      <button
+                        key={itemIndex}
+                        onClick={item.action}
+                        className="flex items-center justify-between w-full group/item text-left"
+                      >
+                        <span className="text-sm font-bold text-gray-400 group-hover/item:text-blue-400 transition-colors uppercase tracking-widest">
+                          {item.title}
+                        </span>
+                        <ChevronRight size={14} className="text-gray-700 group-hover/item:text-white transition-all transform translate-x-0 group-hover/item:translate-x-1" />
+                      </button>
+                    ))}
+                  </div>
+                </Card>
+              ))
+            ) : (
+              <div className="col-span-full flex flex-col items-center justify-center p-20 text-center">
+                <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6">
+                  <Search size={40} className="text-gray-600" />
                 </div>
-                <p className="text-gray-500 text-sm font-medium mb-8 leading-relaxed relative z-10">{topic.description}</p>
-                <div className="space-y-4 relative z-10">
-                  {topic.items.map((item, itemIndex) => (
-                    <button
-                      key={itemIndex}
-                      onClick={item.action}
-                      className="flex items-center justify-between w-full group/item text-left"
-                    >
-                      <span className="text-sm font-bold text-gray-400 group-hover/item:text-blue-400 transition-colors uppercase tracking-widest">
-                        {item.title}
-                      </span>
-                      <ChevronRight size={14} className="text-gray-700 group-hover/item:text-white transition-all transform translate-x-0 group-hover/item:translate-x-1" />
-                    </button>
-                  ))}
-                </div>
-              </Card>
-            ))}
+                <h3 className="text-2xl font-black uppercase text-white mb-2 tracking-tighter">No intelligence match</h3>
+                <p className="text-gray-500 font-medium">Try different keywords or contact direct support.</p>
+                <Button
+                  variant="link"
+                  onClick={() => setSearchQuery("")}
+                  className="mt-4 text-blue-500 font-bold uppercase tracking-widest"
+                >
+                  Clear Command Buffer
+                </Button>
+              </div>
+            )}
           </div>
 
           <div className="support-banner bg-gradient-to-br from-blue-900/20 to-purple-900/20 border border-white/10 rounded-[48px] p-10 md:p-16 text-center relative overflow-hidden group">

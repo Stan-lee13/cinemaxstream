@@ -18,10 +18,18 @@ const SecuritySettings = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
-  const [loginAlerts, setLoginAlerts] = useState(true);
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(() => localStorage.getItem('security_2fa') === 'true');
+  const [loginAlerts, setLoginAlerts] = useState(() => localStorage.getItem('security_alerts') !== 'false');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    localStorage.setItem('security_2fa', String(twoFactorEnabled));
+  }, [twoFactorEnabled]);
+
+  useEffect(() => {
+    localStorage.setItem('security_alerts', String(loginAlerts));
+  }, [loginAlerts]);
 
   useEffect(() => {
     const ctx = gsap.context(() => {

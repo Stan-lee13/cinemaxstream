@@ -11,12 +11,13 @@ import Footer from "@/components/Footer";
 import gsap from 'gsap';
 
 const NotificationSettings = () => {
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [pushNotifications, setPushNotifications] = useState(true);
-  const [newContentAlert, setNewContentAlert] = useState(true);
-  const [downloadComplete, setDownloadComplete] = useState(true);
-  const [promotionalEmails, setPromotionalEmails] = useState(false);
-  const [weeklyDigest, setWeeklyDigest] = useState(true);
+  const [emailNotifications, setEmailNotifications] = useState(() => localStorage.getItem('notif_email') !== 'false');
+  const [pushNotifications, setPushNotifications] = useState(() => localStorage.getItem('notif_push') !== 'false');
+  const [newContentAlert, setNewContentAlert] = useState(() => localStorage.getItem('notif_content') !== 'false');
+  const [downloadComplete, setDownloadComplete] = useState(() => localStorage.getItem('notif_download') !== 'false');
+  const [promotionalEmails, setPromotionalEmails] = useState(() => localStorage.getItem('notif_promo') === 'true');
+  const [weeklyDigest, setWeeklyDigest] = useState(() => localStorage.getItem('notif_weekly') !== 'false');
+  const [isSaving, setIsSaving] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -40,7 +41,20 @@ const NotificationSettings = () => {
     return () => ctx.revert();
   }, []);
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    setIsSaving(true);
+
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    localStorage.setItem('notif_email', String(emailNotifications));
+    localStorage.setItem('notif_push', String(pushNotifications));
+    localStorage.setItem('notif_content', String(newContentAlert));
+    localStorage.setItem('notif_download', String(downloadComplete));
+    localStorage.setItem('notif_promo', String(promotionalEmails));
+    localStorage.setItem('notif_weekly', String(weeklyDigest));
+
+    setIsSaving(false);
     toast.success('Your communication matrix has been updated');
   };
 
@@ -230,9 +244,17 @@ const NotificationSettings = () => {
             <div className="flex justify-center pt-10 settings-card">
               <Button
                 onClick={handleSave}
+                disabled={isSaving}
                 className="w-full md:w-auto px-16 h-16 bg-white text-black hover:bg-cinemax-500 hover:text-white rounded-[24px] font-black text-lg uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-2xl shadow-white/5"
               >
-                Apply Preferences
+                {isSaving ? (
+                  <>
+                    <Zap className="mr-3 h-5 w-5 animate-pulse text-blue-500" />
+                    Synchronizing...
+                  </>
+                ) : (
+                  'Apply Preferences'
+                )}
               </Button>
             </div>
           </div>

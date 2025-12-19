@@ -207,19 +207,6 @@ const Account = () => {
                 <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter">
                   {user.email?.split('@')[0]}
                 </h1>
-                <div className="flex gap-2 justify-center">
-                  <span className="px-4 py-1.5 bg-blue-500 text-white border border-blue-400 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-500/20">
-                    Premium Member
-                  </span>
-                  {user.email?.toLowerCase() === 'stanleyvic13@gmail.com' && (
-                    <button
-                      onClick={() => navigate('/admin')}
-                      className="px-4 py-1.5 bg-emerald-500 text-white border border-emerald-400 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20 hover:scale-105 transition-transform"
-                    >
-                      Admin Access
-                    </button>
-                  )}
-                </div>
               </div>
               <p className="text-white/60 text-xl font-medium mb-8 select-all decoration-blue-500 underline-offset-4 decoration-2">{user.email}</p>
 
