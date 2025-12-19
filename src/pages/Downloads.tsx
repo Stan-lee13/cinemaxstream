@@ -5,9 +5,10 @@ import { useAuth } from '@/contexts/authHooks';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
-import { Download, ExternalLink, Clock, CheckCircle, XCircle, Loader2, FileVideo, HardDrive, Wifi, Tv } from 'lucide-react';
+import { Download, ExternalLink, Clock, CheckCircle, XCircle, Loader2, FileVideo, HardDrive, Wifi, Tv, ArrowRight, Trash2 } from 'lucide-react';
 import LoadingState from '@/components/LoadingState';
 import gsap from 'gsap';
+import { toast } from 'sonner';
 
 interface DownloadRequest {
   id: string;
@@ -64,6 +65,7 @@ const Downloads = () => {
       setDownloads(normalized);
     } catch (error) {
       console.error('Error fetching downloads:', error);
+      toast.error('Failed to load downloads');
     } finally {
       setIsLoading(false);
     }
@@ -78,11 +80,11 @@ const Downloads = () => {
     if (!isLoading && downloads.length > 0) {
       const ctx = gsap.context(() => {
         gsap.from(".download-card", {
-          y: 30,
+          y: 20,
           opacity: 0,
           duration: 0.6,
           stagger: 0.1,
-          ease: "power2.out"
+          ease: "power3.out"
         });
       }, containerRef);
       return () => ctx.revert();
@@ -93,7 +95,7 @@ const Downloads = () => {
     switch (status) {
       case 'pending':
       case 'searching':
-        return <Loader2 className="h-5 w-5 animate-spin text-amber-500" />;
+        return <Loader2 className="h-5 w-5 animate-spin text-blue-500" />;
       case 'completed':
       case 'found':
         return <CheckCircle className="h-5 w-5 text-emerald-500" />;
@@ -104,16 +106,16 @@ const Downloads = () => {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusStyles = (status: string) => {
     switch (status) {
       case 'pending':
       case 'searching':
-        return 'bg-amber-500/10 text-amber-500 border-amber-500/20';
+        return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
       case 'completed':
       case 'found':
-        return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
+        return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
       case 'failed':
-        return 'bg-red-500/10 text-red-500 border-red-500/20';
+        return 'bg-red-500/10 text-red-400 border-red-500/20';
       default:
         return 'bg-white/5 text-gray-400 border-white/10';
     }
@@ -123,7 +125,7 @@ const Downloads = () => {
     return (
       <div className="min-h-screen bg-[#0a0a0a]">
         <Navbar />
-        <LoadingState message="Loading your downloads..." />
+        <LoadingState message="Connecting to storage library..." />
         <Footer />
       </div>
     );
@@ -131,16 +133,16 @@ const Downloads = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] text-white">
+      <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col">
         <Navbar />
-        <div className="container mx-auto px-4 py-32 text-center">
-          <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-6">
-            <Download className="h-10 w-10 text-gray-400" />
+        <div className="flex-1 container mx-auto px-4 flex flex-col items-center justify-center text-center">
+          <div className="w-24 h-24 rounded-3xl bg-white/5 flex items-center justify-center mb-8 border border-white/10 shadow-2xl">
+            <Download className="h-12 w-12 text-gray-500" />
           </div>
-          <h1 className="text-3xl font-bold mb-4">Sign In Required</h1>
-          <p className="text-gray-400 mb-8 max-w-md mx-auto">Please sign in to access your download history and manage your offline content.</p>
-          <Button onClick={() => window.location.href = '/auth'} className="bg-white text-black hover:bg-gray-200">
-            Sign In Now
+          <h1 className="text-4xl font-black mb-4">Access Denied</h1>
+          <p className="text-gray-400 mb-10 max-w-md mx-auto text-lg">Your offline library is waiting. Sign in to manage your collection and view your requests.</p>
+          <Button onClick={() => window.location.href = '/auth'} className="h-14 px-10 rounded-2xl bg-white text-black hover:bg-gray-200 font-bold text-lg shadow-xl transition-all hover:scale-105">
+            Sign In to Downloads
           </Button>
         </div>
         <Footer />
@@ -149,137 +151,140 @@ const Downloads = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white" ref={containerRef}>
+    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col" ref={containerRef}>
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-[20%] left-[-10%] w-[40%] h-[40%] bg-blue-900/10 rounded-full blur-[100px]" />
-        <div className="absolute bottom-[20%] right-[-10%] w-[40%] h-[40%] bg-emerald-900/10 rounded-full blur-[100px]" />
+        <div className="absolute top-[10%] left-[-5%] w-[40%] h-[40%] bg-blue-900/10 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[10%] right-[-5%] w-[40%] h-[40%] bg-emerald-900/10 rounded-full blur-[120px]" />
       </div>
 
       <Navbar />
 
-      <div className="container mx-auto px-4 pt-24 pb-12 relative z-10">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-          <div>
-            <h1 className="text-4xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
-              Downloads
-            </h1>
-            <p className="text-gray-400 text-lg">Manage your download requests and library</p>
-          </div>
-
-          <div className="flex gap-3">
-            <div className="px-4 py-2 rounded-xl bg-white/5 border border-white/5 backdrop-blur-sm flex items-center gap-2 text-sm text-gray-300">
-              <HardDrive size={16} className="text-emerald-500" />
-              <span>{downloads.filter(d => d.status === 'completed' || d.status === 'found').length} Ready</span>
-            </div>
-            <div className="px-4 py-2 rounded-xl bg-white/5 border border-white/5 backdrop-blur-sm flex items-center gap-2 text-sm text-gray-300">
-              <Clock size={16} className="text-amber-500" />
-              <span>{downloads.filter(d => d.status === 'pending' || d.status === 'searching').length} Pending</span>
-            </div>
-          </div>
-        </div>
-
-        {downloads.length === 0 ? (
-          <div className="text-center py-24 bg-white/5 rounded-3xl border border-white/5 backdrop-blur-sm">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-gray-800 to-black mx-auto mb-6 flex items-center justify-center border border-white/10 shadow-2xl">
-              <Download className="h-10 w-10 text-gray-500" />
-            </div>
-            <h2 className="text-2xl font-bold mb-3 text-white">No Downloads Yet</h2>
-            <p className="text-gray-400 mb-8 max-w-sm mx-auto">Start building your offline library by downloading movies and series.</p>
-            <Button onClick={() => window.location.href = '/'} className="h-12 px-8 rounded-full bg-white text-black hover:bg-gray-200 font-bold">
-              Browse Content
-            </Button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {downloads.map((download) => (
-              <div
-                key={download.id}
-                className="download-card group relative overflow-hidden rounded-2xl bg-[#111] border border-white/5 hover:border-white/10 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-black/50"
-              >
-                {/* Status Bar */}
-                <div className={`absolute top-0 left-0 w-1 h-full ${download.status === 'completed' || download.status === 'found' ? 'bg-emerald-500' :
-                    download.status === 'failed' ? 'bg-red-500' : 'bg-amber-500'
-                  }`} />
-
-                <div className="p-6 pl-8">
-                  <div className="flex items-start justify-between gap-4 mb-4">
-                    <div>
-                      <h3 className="font-bold text-lg text-white mb-1 line-clamp-1 group-hover:text-blue-400 transition-colors">
-                        {download.content_title}
-                      </h3>
-                      <div className="flex items-center gap-2 text-xs text-gray-400">
-                        {download.content_type === 'movie' ? <FileVideo size={12} /> : <Tv size={12} />}
-                        <span className="capitalize">{download.content_type}</span>
-                        {download.year && <span>• {download.year}</span>}
-                      </div>
-                    </div>
-                    <div className={`p-2 rounded-full border ${getStatusColor(download.status)}`}>
-                      {getStatusIcon(download.status)}
-                    </div>
-                  </div>
-
-                  <div className="space-y-3 mb-6">
-                    {download.season_number && download.episode_number && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Episode</span>
-                        <span className="text-gray-300">S{download.season_number} E{download.episode_number}</span>
-                      </div>
-                    )}
-
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Quality</span>
-                      <span className="text-gray-300 bg-white/5 px-2 py-0.5 rounded text-xs">
-                        {download.quality || 'HD'}
-                      </span>
-                    </div>
-
-                    {download.file_size && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-500">Size</span>
-                        <span className="text-gray-300">{download.file_size}</span>
-                      </div>
-                    )}
-
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Request Date</span>
-                      <span className="text-gray-300">{new Date(download.created_at).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-
-                  {download.error_message ? (
-                    <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-xs text-red-400 flex items-start gap-2">
-                      <XCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                      {download.error_message}
-                    </div>
-                  ) : (
-                    <div className="flex gap-3">
-                      {download.download_url && download.download_url !== download.nkiri_url && (
-                        <Button
-                          onClick={() => window.open(download.download_url, '_blank')}
-                          className="flex-1 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white shadow-lg shadow-emerald-900/20"
-                        >
-                          <Download className="h-4 w-4 mr-2" />
-                          Download
-                        </Button>
-                      )}
-
-                      {download.nkiri_url && (
-                        <Button
-                          onClick={() => window.open(download.nkiri_url, '_blank')}
-                          variant="outline"
-                          className="flex-1 border-white/10 hover:bg-white/5 text-gray-300"
-                        >
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          Link
-                        </Button>
-                      )}
-                    </div>
-                  )}
+      <div className="flex-1 container mx-auto px-4 pt-24 pb-12 relative z-10">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2.5 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+                  <HardDrive className="w-6 h-6 text-emerald-500" />
                 </div>
+                <span className="text-emerald-500 font-bold uppercase tracking-widest text-xs">Offline Library</span>
               </div>
-            ))}
+              <h1 className="text-4xl md:text-5xl font-black mb-2 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-500">
+                Downloads
+              </h1>
+              <p className="text-gray-400 text-lg">Track your requests and manage offline access.</p>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <div className="px-6 py-4 rounded-[20px] bg-white/5 border border-white/5 backdrop-blur-md flex flex-col items-center justify-center min-w-[120px]">
+                <span className="text-emerald-500 text-2xl font-black">{downloads.filter(d => d.status === 'completed' || d.status === 'found').length}</span>
+                <span className="text-gray-500 text-[10px] uppercase font-bold tracking-tighter">Ready</span>
+              </div>
+              <div className="px-6 py-4 rounded-[20px] bg-white/5 border border-white/5 backdrop-blur-md flex flex-col items-center justify-center min-w-[120px]">
+                <span className="text-blue-500 text-2xl font-black">{downloads.filter(d => d.status === 'pending' || d.status === 'searching').length}</span>
+                <span className="text-gray-500 text-[10px] uppercase font-bold tracking-tighter">Processing</span>
+              </div>
+            </div>
           </div>
-        )}
+
+          {downloads.length === 0 ? (
+            <div className="text-center py-32 bg-[#111] rounded-[32px] border border-white/5 backdrop-blur-sm">
+              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-gray-800 to-black mx-auto mb-8 flex items-center justify-center border border-white/10 shadow-2xl group transition-transform hover:rotate-12">
+                <Download className="h-10 w-10 text-gray-500 group-hover:text-emerald-400" />
+              </div>
+              <h2 className="text-2xl font-bold mb-3 text-white">Your library is empty</h2>
+              <p className="text-gray-400 mb-10 max-w-sm mx-auto text-lg">Save your favorites for offline viewing. Start exploring our collection tonight.</p>
+              <Button onClick={() => window.location.href = '/'} className="h-14 px-10 rounded-2xl bg-white text-black hover:bg-gray-200 font-bold text-lg shadow-xl transition-all hover:scale-105">
+                Browse Masterpieces
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {downloads.map((download) => (
+                <div
+                  key={download.id}
+                  className="download-card group relative overflow-hidden rounded-[28px] bg-[#111] border border-white/5 hover:border-emerald-500/30 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-emerald-900/10"
+                >
+                  <div className="p-6 md:p-8">
+                    <div className="flex items-start justify-between gap-4 mb-6">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className={`p-1.5 rounded-lg ${getStatusStyles(download.status)} scale-90`}>
+                            {getStatusIcon(download.status)}
+                          </div>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">{download.status}</span>
+                        </div>
+                        <h3 className="font-bold text-xl text-white mb-2 line-clamp-2 leading-tight group-hover:text-emerald-400 transition-colors">
+                          {download.content_title}
+                        </h3>
+                        <div className="flex items-center gap-3 text-xs text-gray-500 font-medium">
+                          <span className="flex items-center gap-1 bg-white/5 px-2 py-0.5 rounded-md capitalize">
+                            {download.content_type === 'movie' ? <FileVideo size={12} /> : <Tv size={12} />}
+                            {download.content_type}
+                          </span>
+                          {download.year && <span className="text-gray-600">•</span>}
+                          {download.year && <span>{download.year}</span>}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4 mb-8 bg-black/20 rounded-2xl p-4 border border-white/5">
+                      {download.season_number && download.episode_number && (
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-500 font-medium">Episode</span>
+                          <span className="text-emerald-400 font-bold bg-emerald-500/5 px-2 py-0.5 rounded-lg border border-emerald-500/10">S{download.season_number} E{download.episode_number}</span>
+                        </div>
+                      )}
+
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-500 font-medium">Quality</span>
+                        <span className="text-gray-300 font-bold">
+                          {download.quality || 'Premium HD'}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-500 font-medium">Size</span>
+                        <span className="text-gray-300 font-bold">{download.file_size || 'Calculating...'}</span>
+                      </div>
+                    </div>
+
+                    {download.error_message ? (
+                      <div className="bg-red-500/5 border border-red-500/10 rounded-2xl p-4 text-xs text-red-400/80 flex items-start gap-3">
+                        <XCircle className="w-5 h-5 shrink-0 text-red-500" />
+                        <span className="leading-relaxed">{download.error_message}</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-3">
+                        {download.download_url && download.download_url !== download.nkiri_url && (
+                          <Button
+                            onClick={() => window.open(download.download_url, '_blank')}
+                            className="w-full h-12 bg-white text-black hover:bg-emerald-500 hover:text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 group/btn shadow-lg"
+                          >
+                            <Download className="h-5 w-5 transition-transform group-hover/btn:translate-y-1" />
+                            Download Now
+                          </Button>
+                        )}
+
+                        {download.nkiri_url && (
+                          <Button
+                            onClick={() => window.open(download.nkiri_url, '_blank')}
+                            variant="ghost"
+                            className="w-full h-12 border border-white/5 hover:border-white/10 hover:bg-white/5 text-gray-400 hover:text-white rounded-xl font-medium transition-all group/link"
+                          >
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            Source Link
+                            <ArrowRight className="w-4 h-4 ml-2 opacity-0 group-hover/link:opacity-100 group-hover/link:translate-x-1 transition-all" />
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
       <Footer />
     </div>

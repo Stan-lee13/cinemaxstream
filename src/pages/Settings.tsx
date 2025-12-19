@@ -1,25 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from '@/contexts/authHooks';
 import { useTheme } from '@/hooks/themeContext';
 import BackButton from "@/components/BackButton";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import { toast } from 'sonner';
-import { 
-  Monitor, 
-  Volume2, 
-  Bell, 
-  Shield, 
-  Download, 
-  Wifi,
+import {
+  Monitor,
+  Bell,
+  Shield,
+  Download,
   Moon,
   Sun,
-  Palette
+  Palette,
+  Eye,
+  Zap,
+  Languages,
+  ChevronRight,
+  Wifi,
+  CloudDownload,
+  Settings as SettingsIcon,
+  Sparkles
 } from 'lucide-react';
+import gsap from 'gsap';
+import { useNavigate } from 'react-router-dom';
 
 const Settings = () => {
   const { user } = useAuth();
@@ -29,71 +38,107 @@ const Settings = () => {
   const [highQuality, setHighQuality] = useState(false);
   const [downloadQuality, setDownloadQuality] = useState('1080p');
   const [language, setLanguage] = useState('en');
+  const containerRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.from(".settings-header", {
+        y: 30,
+        opacity: 0,
+        duration: 0.8,
+        ease: "power3.out"
+      });
+
+      gsap.from(".settings-card", {
+        y: 40,
+        opacity: 0,
+        duration: 0.7,
+        stagger: 0.1,
+        delay: 0.2,
+        ease: "power3.out"
+      });
+    }, containerRef);
+    return () => ctx.revert();
+  }, []);
 
   const handleSaveSetting = (setting: string) => {
-    toast.success(`${setting} updated successfully`);
+    toast.success(`${setting} configuration applied`);
   };
 
   const settingsSections = [
     {
-      title: "Display & Playback",
-      icon: <Monitor className="w-5 h-5" />,
+      title: "Playback & Experience",
+      icon: <Monitor className="w-5 h-5 text-blue-500" />,
       settings: [
         {
           label: "Auto-play next episode",
-          description: "Automatically play the next episode in a series",
+          description: "Seamlessly transition between episodes",
+          icon: <Zap className="w-4 h-4" />,
           type: "switch",
           value: autoPlay,
           onChange: setAutoPlay
         },
         {
-          label: "High quality streaming",
-          description: "Use higher quality video when available (uses more data)",
+          label: "Ultra High Quality",
+          description: "Stream in pure 4K when available",
+          icon: <Eye className="w-4 h-4" />,
           type: "switch",
           value: highQuality,
           onChange: setHighQuality
         },
         {
-          label: "Theme",
-          description: "Choose your preferred theme",
+          label: "Interface Theme",
+          description: "Elevate your visual ambiance",
+          icon: <Palette className="w-4 h-4" />,
           type: "select",
           value: theme,
           onChange: setTheme,
           options: [
-            { value: 'default', label: 'Default' },
-            { value: 'midnight', label: 'Midnight' },
-            { value: 'neon', label: 'Neon' },
-            { value: 'sunrise', label: 'Sunrise' },
-            { value: 'forest', label: 'Forest' }
+            { value: 'default', label: 'Classic Noir' },
+            { value: 'midnight', label: 'Midnight Ocean' },
+            { value: 'neon', label: 'Cyber Neon' },
+            { value: 'sunrise', label: 'Golden Hour' },
+            { value: 'forest', label: 'Deep Forest' }
           ]
         }
       ]
     },
     {
-      title: "Downloads",
-      icon: <Download className="w-5 h-5" />,
+      title: "Downloads & Offline",
+      icon: <Download className="w-5 h-5 text-emerald-500" />,
       settings: [
         {
-          label: "Download quality",
-          description: "Quality for downloaded content",
+          label: "Resolution",
+          description: "Preferred quality for offline viewing",
+          icon: <CloudDownload className="w-4 h-4" />,
           type: "select",
           value: downloadQuality,
           onChange: setDownloadQuality,
           options: [
-            { value: '720p', label: '720p (Recommended)' },
-            { value: '1080p', label: '1080p (High Quality)' },
-            { value: '480p', label: '480p (Lower Size)' }
+            { value: '480p', label: 'Standard (SD)' },
+            { value: '720p', label: 'High Definition (HD)' },
+            { value: '1080p', label: 'Full HD (FHD)' }
           ]
+        },
+        {
+          label: "Download via Cellular",
+          description: "Allow downloads on mobile data networks",
+          icon: <Wifi className="w-4 h-4" />,
+          type: "switch",
+          value: false,
+          onChange: () => { }
         }
       ]
     },
     {
-      title: "Notifications",
-      icon: <Bell className="w-5 h-5" />,
+      title: "Communication",
+      icon: <Bell className="w-5 h-5 text-purple-500" />,
       settings: [
         {
-          label: "Push notifications",
-          description: "Receive notifications about new content and updates",
+          label: "Intelligent Alerts",
+          description: "Receive updates about new releases",
+          icon: <Sparkles className="w-4 h-4" />,
           type: "switch",
           value: notifications,
           onChange: setNotifications
@@ -101,20 +146,21 @@ const Settings = () => {
       ]
     },
     {
-      title: "Language & Region",
-      icon: <Palette className="w-5 h-5" />,
+      title: "Localization",
+      icon: <Languages className="w-5 h-5 text-pink-500" />,
       settings: [
         {
-          label: "Language",
-          description: "Choose your preferred language",
+          label: "System Language",
+          description: "Select your primary interface language",
+          icon: <Languages className="w-4 h-4" />,
           type: "select",
           value: language,
           onChange: setLanguage,
           options: [
-            { value: 'en', label: 'English' },
-            { value: 'es', label: 'Spanish' },
-            { value: 'fr', label: 'French' },
-            { value: 'de', label: 'German' }
+            { value: 'en', label: 'English (US)' },
+            { value: 'es', label: 'Español' },
+            { value: 'fr', label: 'Français' },
+            { value: 'de', label: 'Deutsch' }
           ]
         }
       ]
@@ -123,95 +169,132 @@ const Settings = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-background pt-20 pb-12">
-        <div className="container mx-auto px-4">
-          <BackButton className="mb-6" />
-          <div className="max-w-2xl mx-auto text-center">
-            <h1 className="text-4xl font-bold mb-4">Settings</h1>
-            <p className="text-muted-foreground mb-8">Please sign in to access settings</p>
-            <a 
-              href="/auth" 
-              className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-3 rounded-lg font-medium transition-colors"
-            >
-              Sign In
-            </a>
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-[#111] border border-white/5 rounded-[40px] p-12 text-center shadow-3xl">
+          <div className="w-20 h-20 bg-white/5 rounded-[30px] flex items-center justify-center mx-auto mb-10 border border-white/10">
+            <SettingsIcon className="w-10 h-10 text-gray-600" />
           </div>
+          <h1 className="text-3xl font-black text-white mb-4">Settings Locked</h1>
+          <p className="text-gray-400 mb-10 leading-relaxed font-medium">Elevate your experience. Sign in to access personal viewing configurations.</p>
+          <Button
+            onClick={() => navigate('/auth')}
+            className="w-full h-14 bg-white text-black hover:bg-cinemax-500 hover:text-white font-black rounded-2xl transition-all shadow-xl"
+          >
+            Authenticate
+          </Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background pt-20 pb-12">
-      <div className="container mx-auto px-4">
-        <BackButton className="mb-6" />
+    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col" ref={containerRef}>
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-[15%] right-[-5%] w-[45%] h-[45%] bg-blue-900/10 rounded-full blur-[140px]" />
+        <div className="absolute bottom-[-10%] left-[-5%] w-[40%] h-[40%] bg-purple-900/10 rounded-full blur-[140px]" />
+      </div>
+
+      <Navbar />
+
+      <div className="flex-1 container mx-auto px-4 pt-24 pb-12 relative z-10">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl font-bold mb-2">Settings</h1>
-          <p className="text-muted-foreground mb-8">Customize your streaming experience</p>
-          
-          <div className="space-y-8">
+          <div className="mb-10">
+            <BackButton className="hover:bg-white/5 text-gray-400 hover:text-white border-white/10 rounded-xl" />
+          </div>
+
+          <div className="settings-header mb-16 px-4">
+            <h1 className="text-4xl md:text-6xl font-black mb-4 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-500 tracking-tighter">
+              Settings
+            </h1>
+            <p className="text-gray-400 text-lg font-medium leading-relaxed">
+              Precision-tuned experience. Personalize every aspect of your cinematic journey.
+            </p>
+          </div>
+
+          <div className="space-y-10">
             {settingsSections.map((section, sectionIndex) => (
-              <Card key={sectionIndex} className="p-6 bg-card border-border">
-                <div className="flex items-center gap-3 mb-6">
-                  {section.icon}
-                  <h2 className="text-xl font-semibold">{section.title}</h2>
+              <div key={sectionIndex} className="settings-card space-y-6">
+                <div className="flex items-center gap-3 px-6">
+                  <div className="p-2.5 bg-white/5 border border-white/5 rounded-xl">
+                    {section.icon}
+                  </div>
+                  <h2 className="text-lg font-black uppercase tracking-widest text-gray-400">{section.title}</h2>
                 </div>
-                
-                <div className="space-y-6">
-                  {section.settings.map((setting, settingIndex) => (
-                    <div key={settingIndex} className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <Label className="text-base font-medium">{setting.label}</Label>
-                        <p className="text-sm text-muted-foreground mt-1">{setting.description}</p>
+
+                <Card className="p-4 bg-[#111]/80 border border-white/5 backdrop-blur-xl rounded-[32px] overflow-hidden">
+                  <div className="divide-y divide-white/5">
+                    {section.settings.map((setting, settingIndex) => (
+                      <div key={settingIndex} className="p-6 flex items-center justify-between group hover:bg-white/[0.02] transition-colors rounded-2xl">
+                        <div className="flex gap-5 items-start">
+                          <div className="mt-1 p-2 bg-white/5 rounded-lg text-gray-500 group-hover:text-white transition-colors">
+                            {setting.icon}
+                          </div>
+                          <div>
+                            <Label className="text-lg font-black text-gray-100 uppercase tracking-tighter cursor-pointer">
+                              {setting.label}
+                            </Label>
+                            <p className="text-sm text-gray-500 font-medium mt-1 leading-relaxed">{setting.description}</p>
+                          </div>
+                        </div>
+
+                        <div className="ml-6 flex-shrink-0">
+                          {setting.type === 'switch' ? (
+                            <Switch
+                              checked={setting.value as boolean}
+                              onCheckedChange={(checked) => {
+                                if ('onChange' in setting) {
+                                  (setting.onChange as (val: boolean) => void)(checked);
+                                  handleSaveSetting(setting.label);
+                                }
+                              }}
+                              className="data-[state=checked]:bg-blue-500"
+                            />
+                          ) : setting.type === 'select' ? (
+                            <Select
+                              value={setting.value as string}
+                              onValueChange={(value) => {
+                                if ('onChange' in setting) {
+                                  (setting.onChange as (val: string) => void)(value);
+                                  handleSaveSetting(setting.label);
+                                }
+                              }}
+                            >
+                              <SelectTrigger className="w-44 md:w-56 h-12 bg-white/5 border-white/5 rounded-xl font-bold uppercase tracking-widest text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="bg-[#111] border-white/10 rounded-xl">
+                                {setting.options?.map((option) => (
+                                  <SelectItem key={option.value} value={option.value} className="font-bold uppercase tracking-widest text-[10px] focus:bg-blue-500 focus:text-white">
+                                    {option.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : null}
+                        </div>
                       </div>
-                      
-                      <div className="ml-4">
-                        {setting.type === 'switch' ? (
-                          <Switch
-                            checked={setting.value as boolean}
-                            onCheckedChange={(checked) => {
-                              setting.onChange(checked);
-                              handleSaveSetting(setting.label);
-                            }}
-                          />
-                        ) : setting.type === 'select' ? (
-                          <Select
-                            value={setting.value as string}
-                            onValueChange={(value) => {
-                              setting.onChange(value);
-                              handleSaveSetting(setting.label);
-                            }}
-                          >
-                            <SelectTrigger className="w-48">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {setting.options?.map((option) => (
-                                <SelectItem key={option.value} value={option.value}>
-                                  {option.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <Input
-                            value={setting.value as string}
-                            onChange={(e) => {
-                              setting.onChange(e.target.value);
-                              handleSaveSetting(setting.label);
-                            }}
-                            className="w-48"
-                          />
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
+                    ))}
+                  </div>
+                </Card>
+              </div>
             ))}
+          </div>
+
+          <div className="mt-20 p-10 rounded-[32px] bg-gradient-to-br from-blue-900/20 to-purple-900/20 border border-white/5 flex flex-col md:flex-row items-center justify-between gap-8 group">
+            <div>
+              <h3 className="text-2xl font-black mb-2 uppercase tracking-tighter">Professional Calibration?</h3>
+              <p className="text-gray-400 font-medium italic">Our expert systems are ready to optimize your setup.</p>
+            </div>
+            <Button
+              className="h-14 px-8 rounded-2xl bg-white text-black hover:bg-blue-500 hover:text-white font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95"
+              onClick={() => navigate('/contact-support')}
+            >
+              Consult Support
+            </Button>
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 };

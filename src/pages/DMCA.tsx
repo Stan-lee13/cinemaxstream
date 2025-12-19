@@ -1,140 +1,197 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { DMCA_CONTACT } from '@/data/dmcaData';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import BackButton from '@/components/BackButton';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Shield, Mail, FileText, AlertTriangle } from 'lucide-react';
+import { Shield, Mail, FileText, AlertTriangle, Scale, Hammer, Clock, Send, ChevronRight } from 'lucide-react';
+import gsap from 'gsap';
 
 export default function DMCA() {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.from(".dmca-header", {
+        y: 30,
+        opacity: 0,
+        duration: 0.8,
+        ease: "power3.out"
+      });
+
+      gsap.from(".dmca-section", {
+        y: 20,
+        opacity: 0,
+        duration: 0.6,
+        stagger: 0.1,
+        delay: 0.2,
+        ease: "power2.out"
+      });
+    }, containerRef);
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col" ref={containerRef}>
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-[10%] right-[10%] w-[45%] h-[45%] bg-blue-900/5 rounded-full blur-[140px]" />
+        <div className="absolute bottom-[10%] left-[10%] w-[35%] h-[35%] bg-purple-900/5 rounded-full blur-[140px]" />
+      </div>
+
       <Navbar />
-      
-      <main className="pt-24 pb-12">
-        <div className="container mx-auto px-4 max-w-4xl">
-          <BackButton className="mb-6" />
-          
-          <div className="mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold mb-4 flex items-center gap-3">
-              <Shield className="h-8 w-8 text-cinemax-500" />
+
+      <main className="flex-1 container mx-auto px-4 pt-24 pb-12 relative z-10">
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-10">
+            <BackButton className="hover:bg-white/5 text-gray-400 hover:text-white border-white/10 rounded-xl" />
+          </div>
+
+          <div className="dmca-header mb-16 px-2">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2.5 bg-blue-500/10 rounded-2xl border border-blue-500/20 shadow-lg shadow-blue-900/20">
+                <Shield className="w-6 h-6 text-blue-500" />
+              </div>
+              <span className="text-blue-500 font-bold uppercase tracking-widest text-xs">Copyright Protection Unit</span>
+            </div>
+            <h1 className="text-4xl md:text-6xl font-black mb-4 bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-gray-500 tracking-tighter">
               DMCA Policy
             </h1>
-            <p className="text-gray-400 text-lg">
-              Digital Millennium Copyright Act compliance and takedown procedures
+            <p className="text-gray-400 text-xl font-medium leading-relaxed max-w-2xl">
+              Compliance protocols and content indexing regulations in accordance with the Digital Millennium Copyright Act.
             </p>
           </div>
 
           <div className="space-y-8">
             {/* Overview */}
-            <Card className="p-6 bg-secondary/20 border-gray-800">
-              <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-                <FileText className="h-6 w-6 text-cinemax-500" />
-                Overview
-              </h2>
-              <p className="text-gray-300 mb-4">
-                CinemaxStream respects the intellectual property rights of others and expects our users to do the same. 
-                In accordance with the Digital Millennium Copyright Act (DMCA), we will respond to valid takedown notices 
-                and remove infringing content when properly notified.
-              </p>
-              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
-                <div className="flex items-start gap-3">
-                  <AlertTriangle className="h-5 w-5 text-yellow-500 mt-0.5" />
-                  <div>
-                    <p className="text-yellow-200 font-medium">Important Notice</p>
-                    <p className="text-gray-300 text-sm mt-1">
-                      CinemaxStream is a streaming aggregator that indexes content from various sources. 
-                      We do not host any copyrighted material on our servers.
-                    </p>
+            <Card className="dmca-section bg-[#111]/80 border border-white/5 backdrop-blur-xl rounded-[40px] p-8 md:p-12 overflow-hidden relative group">
+              <div className="absolute top-0 right-0 p-32 bg-blue-500/5 rounded-full blur-[100px] pointer-events-none" />
+              <div className="relative z-10">
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="p-3 bg-white/5 rounded-2xl border border-white/5">
+                    <FileText className="w-6 h-6 text-gray-400" />
+                  </div>
+                  <h2 className="text-2xl font-black text-white uppercase tracking-tight">System Overview</h2>
+                </div>
+                <p className="text-gray-400 leading-relaxed font-bold mb-8">
+                  CinemaxStream operating as an intelligence aggregator for digital assets.
+                  We respect the creative sovereignty of originators and respond to validated takedown
+                  signals when properly transmitted through our secure channels.
+                </p>
+                <div className="bg-amber-500/5 border border-amber-500/20 rounded-3xl p-6 md:p-8">
+                  <div className="flex items-start gap-4">
+                    <div className="p-2 bg-amber-500/10 rounded-xl mt-1">
+                      <AlertTriangle className="h-5 w-5 text-amber-500" />
+                    </div>
+                    <div>
+                      <p className="text-amber-500 font-black uppercase tracking-widest text-xs mb-2">Aggregator Protocol Notice</p>
+                      <p className="text-gray-300 text-sm leading-relaxed font-medium">
+                        CinemaxStream is an automated indexing matrix. We do not host raw asset files on local storage nodes.
+                        We facilitate access to decentralized content buffers.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
             </Card>
 
             {/* Filing a DMCA Notice */}
-            <Card className="p-6 bg-secondary/20 border-gray-800">
-              <h2 className="text-2xl font-semibold mb-4">Filing a DMCA Takedown Notice</h2>
-              <p className="text-gray-300 mb-4">
-                If you believe that content on our platform infringes your copyright, please provide the following information:
+            <Card className="dmca-section bg-[#111]/80 border border-white/5 backdrop-blur-xl rounded-[40px] p-8 md:p-12">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="p-3 bg-white/5 rounded-2xl border border-white/5">
+                  <Scale className="w-6 h-6 text-gray-400" />
+                </div>
+                <h2 className="text-2xl font-black text-white uppercase tracking-tight">Signal Transmission</h2>
+              </div>
+              <p className="text-gray-400 leading-relaxed font-medium mb-8">
+                To initiate a content de-indexing sequence, the following neural parameters are required:
               </p>
-              <ul className="list-disc list-inside space-y-2 text-gray-300 mb-6">
-                <li>Your name, address, phone number, and email address</li>
-                <li>Description of the copyrighted work that you claim has been infringed</li>
-                <li>URL or specific location of the infringing material on our platform</li>
-                <li>Statement that you have a good-faith belief that the use is not authorized</li>
-                <li>Statement that the information in your notice is accurate</li>
-                <li>Your physical or electronic signature</li>
-              </ul>
-              <p className="text-gray-400 text-sm">
-                Please note that under Section 512(f) of the DMCA, any person who knowingly materially 
-                misrepresents that material is infringing may be subject to liability.
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+                {[
+                  "Verified Identity & Uplink Address",
+                  "Asset description claiming sovereignty",
+                  "Direct URL of the infringing index",
+                  "Good-faith assertion signature",
+                  "Accuracy validation statement",
+                  "Cryptographic or physical signature"
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-3 p-4 bg-white/[0.02] border border-white/5 rounded-2xl group/row hover:bg-white/5 transition-colors">
+                    <ChevronRight size={14} className="text-blue-500" />
+                    <span className="text-sm font-bold text-gray-300">{item}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 text-center">
+                *Section 512(f) constraints apply to all transmissions.
               </p>
             </Card>
 
             {/* Contact Information */}
-            <Card className="p-6 bg-secondary/20 border-gray-800">
-              <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-                <Mail className="h-6 w-6 text-cinemax-500" />
-                DMCA Contact Information
-              </h2>
-              <div className="bg-gray-800/50 rounded-lg p-4 mb-4">
-                <p className="text-gray-300 mb-2"><strong>DMCA Agent:</strong> {DMCA_CONTACT.agent}</p>
-                <p className="text-gray-300 mb-2"><strong>Email:</strong> {DMCA_CONTACT.email}</p>
-                <p className="text-gray-300 mb-2"><strong>Address:</strong> {DMCA_CONTACT.address}</p>
-                <p className="text-gray-300"><strong>Phone:</strong> {DMCA_CONTACT.phone}</p>
+            <Card className="dmca-section bg-gradient-to-br from-[#111] to-[#0a0a0a] border border-white/5 rounded-[40px] p-8 md:p-12 relative overflow-hidden group">
+              <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="flex items-center gap-4 mb-8 relative z-10">
+                <div className="p-3 bg-blue-500/10 rounded-2xl border border-blue-500/20">
+                  <Mail className="w-6 h-6 text-blue-500" />
+                </div>
+                <h2 className="text-2xl font-black text-white uppercase tracking-tight">Command Contact</h2>
               </div>
-              <Button 
-                className="bg-cinemax-500 hover:bg-cinemax-600"
-                onClick={() => window.location.href = 'mailto:dmca@cinemaxstream.com?subject=DMCA Takedown Notice'}
+              <div className="bg-black/40 border border-white/5 rounded-3xl p-8 mb-8 relative z-10 backdrop-blur-md">
+                <div className="space-y-6">
+                  {[
+                    { label: 'DMCA AGENT', value: DMCA_CONTACT.agent, icon: Scale },
+                    { label: 'UPLINK MAIL', value: DMCA_CONTACT.email, icon: Send },
+                    { label: 'HQ LOCATION', value: DMCA_CONTACT.address, icon: Hammer },
+                    { label: 'DIRECT SIGNAL', value: DMCA_CONTACT.phone, icon: Clock }
+                  ].map((item, i) => (
+                    <div key={i} className="flex flex-col md:flex-row md:items-center justify-between border-b border-white/5 pb-4 last:border-0 last:pb-0">
+                      <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-1 md:mb-0">{item.label}</span>
+                      <span className="text-sm font-bold text-white flex items-center gap-2">
+                        {item.value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <Button
+                className="w-full h-16 bg-white text-black hover:bg-cinemax-500 hover:text-white rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl shadow-white/5 group relative z-10"
+                onClick={() => window.location.href = `mailto:${DMCA_CONTACT.email}?subject=DMCA Takedown Notice`}
               >
-                Send DMCA Notice
+                Launch Transmission Protocol
               </Button>
             </Card>
 
             {/* Response Time */}
-            <Card className="p-6 bg-secondary/20 border-gray-800">
-              <h2 className="text-2xl font-semibold mb-4">Response Time & Process</h2>
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="text-lg font-medium mb-2 text-cinemax-400">Response Time</h3>
-                  <p className="text-gray-300 text-sm">
-                    We aim to respond to valid DMCA notices within 24-48 hours of receipt.
-                  </p>
+            <div className="dmca-section grid md:grid-cols-2 gap-8">
+              <Card className="bg-[#111]/80 border border-white/5 p-8 rounded-[32px] hover:border-blue-500/30 transition-colors group">
+                <div className="p-3 bg-blue-500/10 rounded-2xl border border-blue-500/20 w-fit mb-6 group-hover:rotate-6 transition-transform">
+                  <Clock className="w-5 h-5 text-blue-500" />
                 </div>
-                <div>
-                  <h3 className="text-lg font-medium mb-2 text-cinemax-400">Content Removal</h3>
-                  <p className="text-gray-300 text-sm">
-                    Infringing content will be removed or access disabled promptly after verification.
-                  </p>
+                <h3 className="text-xl font-bold text-white mb-2 uppercase tracking-tight">Latent Response</h3>
+                <p className="text-gray-400 text-sm leading-relaxed font-medium">
+                  Validation of signals typically occurs within 24-48 standard cycles.
+                </p>
+              </Card>
+              <Card className="bg-[#111]/80 border border-white/5 p-8 rounded-[32px] hover:border-emerald-500/30 transition-colors group">
+                <div className="p-3 bg-emerald-500/10 rounded-2xl border border-emerald-500/20 w-fit mb-6 group-hover:rotate-6 transition-transform">
+                  <Hammer className="w-5 h-5 text-emerald-500" />
                 </div>
-              </div>
-            </Card>
-
-            {/* Counter-Notice */}
-            <Card className="p-6 bg-secondary/20 border-gray-800">
-              <h2 className="text-2xl font-semibold mb-4">Counter-Notice Procedure</h2>
-              <p className="text-gray-300 mb-4">
-                If you believe your content was removed in error, you may file a counter-notice containing:
-              </p>
-              <ul className="list-disc list-inside space-y-1 text-gray-300 text-sm">
-                <li>Your name, address, and phone number</li>
-                <li>Identification of the removed material and its former location</li>
-                <li>Statement under penalty of perjury that removal was a mistake</li>
-                <li>Consent to jurisdiction of federal court</li>
-                <li>Your physical or electronic signature</li>
-              </ul>
-            </Card>
+                <h3 className="text-xl font-bold text-white mb-2 uppercase tracking-tight">Asset Removal</h3>
+                <p className="text-gray-400 text-sm leading-relaxed font-medium">
+                  Infringing indices are purged from the aggregator matrix immediately upon verification.
+                </p>
+              </Card>
+            </div>
 
             {/* Last Updated */}
-            <div className="text-center text-gray-500 text-sm">
-              <p>Last updated: {new Date().toLocaleDateString()}</p>
-              <p>This policy is subject to change without prior notice.</p>
+            <div className="dmca-section text-center py-10">
+              <div className="w-12 h-px bg-white/10 mx-auto mb-6" />
+              <p className="text-gray-600 font-bold uppercase tracking-widest text-[10px] mb-1">Matrix Synchronized</p>
+              <p className="text-gray-400 text-xs font-medium">{new Date().toLocaleDateString()}</p>
             </div>
           </div>
         </div>
       </main>
-      
+
       <Footer />
     </div>
   );

@@ -1,260 +1,252 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import BackButton from '@/components/BackButton';
 import { Card } from '@/components/ui/card';
-import { Scale, FileText, Globe, Shield, AlertCircle, Mail } from 'lucide-react';
+import { Scale, FileText, Globe, Shield, AlertCircle, Mail, MapPin, Briefcase, Landmark, ChevronRight, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import gsap from 'gsap';
 
 const Legal = () => {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      gsap.from(".legal-header", {
+        y: 30,
+        opacity: 0,
+        duration: 0.8,
+        ease: "power3.out"
+      });
+
+      gsap.from(".legal-section", {
+        y: 20,
+        opacity: 0,
+        duration: 0.6,
+        stagger: 0.1,
+        delay: 0.2,
+        ease: "power2.out"
+      });
+    }, containerRef);
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col" ref={containerRef}>
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-[10%] left-[5%] w-[45%] h-[45%] bg-blue-900/5 rounded-full blur-[140px]" />
+        <div className="absolute bottom-[10%] right-[5%] w-[35%] h-[35%] bg-indigo-900/5 rounded-full blur-[140px]" />
+      </div>
+
       <Navbar />
-      
-      <main className="pt-24 pb-12">
-        <div className="container mx-auto px-4 max-w-4xl">
-          <BackButton className="mb-6" />
-          
-          <div className="mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold mb-4 flex items-center gap-3">
-              <Scale className="h-8 w-8 text-cinemax-500" />
+
+      <main className="flex-1 container mx-auto px-4 pt-24 pb-12 relative z-10">
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-10">
+            <BackButton className="hover:bg-white/5 text-gray-400 hover:text-white border-white/10 rounded-xl" />
+          </div>
+
+          <div className="legal-header mb-16">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2.5 bg-blue-500/10 rounded-2xl border border-blue-500/20 shadow-lg shadow-blue-900/20">
+                <Scale className="w-6 h-6 text-blue-500" />
+              </div>
+              <span className="text-blue-500 font-bold uppercase tracking-widest text-xs">Governance Hub</span>
+            </div>
+            <h1 className="text-4xl md:text-6xl font-black mb-4 bg-clip-text text-transparent bg-gradient-to-r from-white via-white to-gray-500 tracking-tighter">
               Legal Information
             </h1>
-            <p className="text-gray-400 text-lg">
-              Legal notices, disclaimers, and important information about CinemaxStream
+            <p className="text-gray-400 text-xl font-medium leading-relaxed max-w-2xl">
+              Official disclosures, company parameters, and the regulatory framework of CinemaxStream.
             </p>
           </div>
 
           <div className="space-y-8">
             {/* Service Disclaimer */}
-            <Card className="p-6 bg-secondary/20 border-gray-800">
-              <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-                <AlertCircle className="h-6 w-6 text-yellow-500" />
-                Service Disclaimer
-              </h2>
-              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-4">
-                <p className="text-yellow-200 font-medium mb-2">Important Notice</p>
-                <p className="text-gray-300 text-sm">
-                  CinemaxStream is a content aggregation platform that indexes and provides links to content 
-                  available on the internet. We do not host, store, or distribute any copyrighted material 
-                  on our servers.
+            <Card className="legal-section bg-[#111]/80 border border-white/5 backdrop-blur-xl rounded-[40px] p-8 md:p-12 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-32 bg-amber-500/5 rounded-full blur-[100px] pointer-events-none" />
+              <div className="flex items-center gap-4 mb-8">
+                <div className="p-3 bg-amber-500/10 rounded-2xl border border-amber-500/20">
+                  <AlertCircle className="w-6 h-6 text-amber-500" />
+                </div>
+                <h2 className="text-2xl font-black text-white uppercase tracking-tight">Service Disclaimer</h2>
+              </div>
+              <div className="bg-amber-500/5 border border-amber-500/20 rounded-3xl p-8 mb-8">
+                <p className="text-amber-500 font-black uppercase tracking-widest text-xs mb-3">Host Integration Notice</p>
+                <p className="text-gray-300 leading-relaxed font-bold">
+                  CinemaxStream is a decentralized content aggregation matrix. We index and facilitate
+                  neural links to digital assets across the global network. No proprietary copyrighted
+                  sequences are stored on local nodes.
                 </p>
               </div>
-              <ul className="text-gray-300 space-y-2 text-sm">
-                <li>• All content is sourced from publicly available streaming services and APIs</li>
-                <li>• We respect copyright laws and respond to valid DMCA takedown requests</li>
-                <li>• Users are responsible for ensuring they have proper licensing for content access</li>
-                <li>• The service is provided "as is" without warranties of any kind</li>
-              </ul>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[
+                  "Publicly available streaming buffers",
+                  "Verified DMCA takedown synchronization",
+                  "User-maintained licensing compliance",
+                  "As-is architectural delivery protocol"
+                ].map((item, i) => (
+                  <div key={i} className="flex items-start gap-3 text-gray-400 font-medium">
+                    <ChevronRight size={16} className="text-amber-500 shrink-0 mt-1" />
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
             </Card>
 
             {/* Company Information */}
-            <Card className="p-6 bg-secondary/20 border-gray-800">
-              <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-                <FileText className="h-6 w-6 text-cinemax-500" />
-                Company Information
-              </h2>
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="text-lg font-medium mb-2 text-cinemax-400">Business Details</h3>
-                  <div className="space-y-1 text-gray-300 text-sm">
-                    <p><strong>Company Name:</strong> CinemaxStream LLC</p>
-                    <p><strong>Registration:</strong> Delaware, USA</p>
-                    <p><strong>Business ID:</strong> CMS-2024-001</p>
-                    <p><strong>VAT ID:</strong> US123456789</p>
+            <Card className="legal-section bg-[#111]/80 border border-white/5 backdrop-blur-xl rounded-[40px] p-8 md:p-12">
+              <div className="flex items-center gap-4 mb-10">
+                <div className="p-3 bg-white/5 rounded-2xl border border-white/5">
+                  <Briefcase className="w-6 h-6 text-gray-400" />
+                </div>
+                <h2 className="text-2xl font-black text-white uppercase tracking-tight">Entity Logic</h2>
+              </div>
+              <div className="grid md:grid-cols-2 gap-12">
+                <div className="space-y-6">
+                  <h3 className="text-xs font-black uppercase tracking-[0.2em] text-blue-500">Business Parameters</h3>
+                  <div className="space-y-4">
+                    {[
+                      { l: 'IDENTITY', v: 'CinemaxStream LLC' },
+                      { l: 'VECTOR', v: 'Delaware, USA' },
+                      { l: 'CORE ID', v: 'CMS-2024-001' },
+                      { l: 'VAT BLOCK', v: 'US123456789' }
+                    ].map(i => (
+                      <div key={i.l} className="flex flex-col gap-1 border-l-2 border-white/5 pl-4 hover:border-blue-500/50 transition-colors">
+                        <span className="text-[10px] font-black text-gray-600">{i.l}</span>
+                        <span className="text-sm font-bold text-white">{i.v}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                <div>
-                  <h3 className="text-lg font-medium mb-2 text-cinemax-400">Contact Address</h3>
-                  <div className="space-y-1 text-gray-300 text-sm">
-                    <p>123 Streaming Avenue</p>
-                    <p>Digital City, DC 12345</p>
-                    <p>United States</p>
-                    <p><strong>Email:</strong> legal@cinemaxstream.com</p>
+                <div className="space-y-6">
+                  <h3 className="text-xs font-black uppercase tracking-[0.2em] text-indigo-500">HQ Coordinate</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3">
+                      <MapPin className="w-5 h-5 text-gray-600 shrink-0 mt-1" />
+                      <div className="text-sm font-bold text-gray-400 leading-relaxed">
+                        123 Streaming Avenue<br />
+                        Digital City, DC 12345<br />
+                        United States
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Mail className="w-5 h-5 text-gray-600 shrink-0" />
+                      <span className="text-sm font-bold text-blue-500">legal@cinemaxstream.com</span>
+                    </div>
                   </div>
                 </div>
               </div>
             </Card>
 
             {/* Intellectual Property */}
-            <Card className="p-6 bg-secondary/20 border-gray-800">
-              <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-                <Shield className="h-6 w-6 text-cinemax-500" />
-                Intellectual Property Rights
-              </h2>
-              <div className="space-y-4 text-gray-300">
-                <div>
-                  <h3 className="text-lg font-medium mb-2 text-cinemax-400">Our Content</h3>
-                  <p className="text-sm">
-                    The CinemaxStream website design, logo, branding, and original content are protected by 
-                    copyright and trademark laws. All rights reserved.
-                  </p>
+            <Card className="legal-section bg-[#111]/80 border border-white/5 backdrop-blur-xl rounded-[40px] p-8 md:p-12 group overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
+              <div className="flex items-center gap-4 mb-10">
+                <div className="p-3 bg-white/5 rounded-2xl border border-white/5">
+                  <Shield className="w-6 h-6 text-gray-400" />
                 </div>
-                <div>
-                  <h3 className="text-lg font-medium mb-2 text-cinemax-400">Third-Party Content</h3>
-                  <p className="text-sm">
-                    All movie posters, descriptions, ratings, and metadata are sourced from The Movie Database (TMDB) 
-                    and other publicly available APIs. Content ownership remains with respective copyright holders.
-                  </p>
-                </div>
-                <div>
-                  <h3 className="text-lg font-medium mb-2 text-cinemax-400">User-Generated Content</h3>
-                  <p className="text-sm">
-                    Users retain ownership of their reviews, ratings, and comments. By submitting content, 
-                    you grant us a license to display and distribute it on our platform.
-                  </p>
-                </div>
+                <h2 className="text-2xl font-black text-white uppercase tracking-tight">IP Sovereignty</h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {[
+                  { t: 'Original Assets', d: 'Design systems, neural branding, and architectural logic are proprietary.', i: FileText },
+                  { t: 'Third-Party Metadata', d: 'Asset visuals and descriptions remain property of respective studios (TMDB Sync).', i: Globe },
+                  { t: 'User Transmissions', d: 'Intelligence contributed via reviews remains property of the originator.', i: Lock }
+                ].map((item, i) => (
+                  <div key={i} className="p-6 bg-white/[0.02] border border-white/5 rounded-3xl hover:bg-white/5 transition-colors">
+                    <div className="p-2 bg-blue-500/10 rounded-xl w-fit mb-4">
+                      <item.i className="w-4 h-4 text-blue-500" />
+                    </div>
+                    <h4 className="text-sm font-black text-white uppercase tracking-tight mb-2">{item.t}</h4>
+                    <p className="text-xs text-gray-500 leading-relaxed font-medium">{item.d}</p>
+                  </div>
+                ))}
               </div>
             </Card>
 
             {/* Jurisdiction */}
-            <Card className="p-6 bg-secondary/20 border-gray-800">
-              <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-                <Globe className="h-6 w-6 text-cinemax-500" />
-                Jurisdiction & Governing Law
-              </h2>
-              <div className="space-y-4 text-gray-300">
-                <div>
-                  <h3 className="text-lg font-medium mb-2 text-cinemax-400">Governing Law</h3>
-                  <p className="text-sm">
-                    These terms and any disputes arising from your use of CinemaxStream are governed by 
-                    the laws of Delaware, United States, without regard to conflict of law principles.
-                  </p>
+            <div className="legal-section grid md:grid-cols-2 gap-8">
+              <Card className="bg-gradient-to-br from-[#111] to-[#0a0a0a] border border-white/5 p-10 rounded-[40px]">
+                <div className="p-3 bg-indigo-500/10 rounded-2xl w-fit mb-6">
+                  <Landmark className="w-6 h-6 text-indigo-500" />
                 </div>
-                <div>
-                  <h3 className="text-lg font-medium mb-2 text-cinemax-400">Dispute Resolution</h3>
-                  <p className="text-sm">
-                    Any legal disputes will be resolved through binding arbitration in Delaware, USA. 
-                    Class action lawsuits are waived by using our service.
-                  </p>
+                <h3 className="text-xl font-black text-white mb-4 uppercase tracking-tighter">Governing Law</h3>
+                <p className="text-gray-400 text-sm leading-relaxed font-medium mb-6">
+                  All matrix operations are governed by the laws of Delaware, United States.
+                  Neural disputes are resolved via binding arbitration.
+                </p>
+                <div className="flex items-center gap-2 text-indigo-500">
+                  <span className="text-[10px] font-black uppercase tracking-widest">Delaware Jurisdiction</span>
+                  <ChevronRight size={14} />
                 </div>
-                <div>
-                  <h3 className="text-lg font-medium mb-2 text-cinemax-400">International Users</h3>
-                  <p className="text-sm">
-                    Users outside the United States access our service at their own risk and are responsible 
-                    for compliance with local laws and regulations.
-                  </p>
+              </Card>
+              <Card className="bg-gradient-to-br from-[#111] to-[#0a0a0a] border border-white/5 p-10 rounded-[40px]">
+                <div className="p-3 bg-purple-500/10 rounded-2xl w-fit mb-6">
+                  <Globe className="w-6 h-6 text-purple-500" />
                 </div>
+                <h3 className="text-xl font-black text-white mb-4 uppercase tracking-tighter">Global Protocol</h3>
+                <p className="text-gray-400 text-sm leading-relaxed font-medium mb-6">
+                  International synchronizations are performed at user risk. Local regulatory
+                  compliance remains a user-side responsibility.
+                </p>
+                <div className="flex items-center gap-2 text-purple-500">
+                  <span className="text-[10px] font-black uppercase tracking-widest">Global Compliance</span>
+                  <ChevronRight size={14} />
+                </div>
+              </Card>
+            </div>
+
+            {/* Legal Links */}
+            <Card className="legal-section bg-[#111]/80 border border-white/5 backdrop-blur-xl rounded-[40px] p-8 md:p-12">
+              <h2 className="text-2xl font-black text-white uppercase tracking-tight mb-10 text-center">Core Legal Modules</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {[
+                  { l: 'Terms of Service', u: '/terms', i: FileText, c: 'blue' },
+                  { l: 'Privacy Policy', u: '/privacy', i: Shield, c: 'emerald' },
+                  { l: 'DMCA Policy', u: '/dmca', i: Scale, c: 'indigo' },
+                  { l: 'Cookie Policy', u: '/cookies', i: Globe, c: 'purple' }
+                ].map((link, i) => (
+                  <Button
+                    key={i}
+                    variant="outline"
+                    className="h-24 justify-between px-8 border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10 rounded-3xl transition-all group"
+                    onClick={() => window.location.href = link.u}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`p-3 bg-${link.c}-500/10 rounded-2xl group-hover:scale-110 transition-transform`}>
+                        <link.i className={`w-5 h-5 text-${link.c}-500`} />
+                      </div>
+                      <span className="text-lg font-black text-white uppercase tracking-tight">{link.l}</span>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-gray-600 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                ))}
               </div>
             </Card>
 
-            {/* Compliance */}
-            <Card className="p-6 bg-secondary/20 border-gray-800">
-              <h2 className="text-2xl font-semibold mb-4">Regulatory Compliance</h2>
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="text-lg font-medium mb-2 text-cinemax-400">GDPR Compliance</h3>
-                  <p className="text-gray-300 text-sm">
-                    For EU users, we comply with the General Data Protection Regulation (GDPR). 
-                    You have rights regarding your personal data as outlined in our Privacy Policy.
-                  </p>
-                </div>
-                <div>
-                  <h3 className="text-lg font-medium mb-2 text-cinemax-400">CCPA Compliance</h3>
-                  <p className="text-gray-300 text-sm">
-                    California residents have additional privacy rights under the California Consumer 
-                    Privacy Act (CCPA) as detailed in our Privacy Policy.
-                  </p>
-                </div>
-                <div>
-                  <h3 className="text-lg font-medium mb-2 text-cinemax-400">COPPA Compliance</h3>
-                  <p className="text-gray-300 text-sm">
-                    Our service is not intended for children under 13. We do not knowingly collect 
-                    personal information from children under 13 years of age.
-                  </p>
-                </div>
-                <div>
-                  <h3 className="text-lg font-medium mb-2 text-cinemax-400">Accessibility</h3>
-                  <p className="text-gray-300 text-sm">
-                    We strive to comply with WCAG 2.1 guidelines to ensure our platform is accessible 
-                    to users with disabilities.
-                  </p>
-                </div>
-              </div>
-            </Card>
-
-            {/* Legal Documents */}
-            <Card className="p-6 bg-secondary/20 border-gray-800">
-              <h2 className="text-2xl font-semibold mb-4">Related Legal Documents</h2>
-              <div className="grid md:grid-cols-2 gap-4">
-                <Button 
-                  variant="outline" 
-                  className="justify-start h-auto p-4"
-                  onClick={() => window.location.href = '/terms'}
-                >
-                  <FileText className="h-5 w-5 mr-3" />
-                  <div className="text-left">
-                    <div className="font-medium">Terms of Service</div>
-                    <div className="text-sm text-gray-400">User agreement and service terms</div>
-                  </div>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="justify-start h-auto p-4"
-                  onClick={() => window.location.href = '/privacy'}
-                >
-                  <Shield className="h-5 w-5 mr-3" />
-                  <div className="text-left">
-                    <div className="font-medium">Privacy Policy</div>
-                    <div className="text-sm text-gray-400">How we handle your data</div>
-                  </div>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="justify-start h-auto p-4"
-                  onClick={() => window.location.href = '/dmca'}
-                >
-                  <Scale className="h-5 w-5 mr-3" />
-                  <div className="text-left">
-                    <div className="font-medium">DMCA Policy</div>
-                    <div className="text-sm text-gray-400">Copyright takedown procedures</div>
-                  </div>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="justify-start h-auto p-4"
-                  onClick={() => window.location.href = '/cookies'}
-                >
-                  <Globe className="h-5 w-5 mr-3" />
-                  <div className="text-left">
-                    <div className="font-medium">Cookie Policy</div>
-                    <div className="text-sm text-gray-400">Cookie usage and preferences</div>
-                  </div>
-                </Button>
-              </div>
-            </Card>
-
-            {/* Contact Legal */}
-            <Card className="p-6 bg-secondary/20 border-gray-800">
-              <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
-                <Mail className="h-6 w-6 text-cinemax-500" />
-                Legal Contact
-              </h2>
-              <p className="text-gray-300 mb-4">
-                For legal inquiries, copyright concerns, or business matters, please contact our legal team:
+            <div className="legal-section bg-gradient-to-br from-blue-900/10 to-transparent border border-white/10 rounded-[40px] p-12 text-center group">
+              <Mail className="w-12 h-12 text-blue-500 mx-auto mb-6 group-hover:scale-110 transition-transform" />
+              <h3 className="text-2xl font-black text-white mb-4 uppercase tracking-tighter">Legal Inquiries</h3>
+              <p className="text-gray-400 mb-10 max-w-lg mx-auto font-medium">
+                Direct all neural complaints or business inquiries to our command deck.
+                Standard response latency: 2-3 business cycles.
               </p>
-              <div className="bg-gray-800/50 rounded-lg p-4 mb-4">
-                <p className="text-gray-300 mb-1"><strong>Legal Department</strong></p>
-                <p className="text-gray-300 mb-1">Email: legal@cinemaxstream.com</p>
-                <p className="text-gray-300 mb-1">Response time: 2-3 business days</p>
-              </div>
-              <Button 
-                className="bg-cinemax-500 hover:bg-cinemax-600"
-                onClick={() => window.location.href = 'mailto:legal@cinemaxstream.com?subject=Legal Inquiry'}
+              <Button
+                className="h-16 px-12 bg-white text-black hover:bg-cinemax-500 hover:text-white rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl shadow-white/5"
+                onClick={() => window.location.href = 'mailto:legal@cinemaxstream.com'}
               >
-                Contact Legal Team
+                Launch Inquiry Protocol
               </Button>
-            </Card>
+            </div>
 
-            {/* Last Updated */}
-            <div className="text-center text-gray-500 text-sm">
-              <p>Last updated: {new Date().toLocaleDateString()}</p>
-              <p>This legal information is subject to change. Please review periodically for updates.</p>
+            <div className="legal-section text-center py-6">
+              <p className="text-gray-600 font-bold uppercase tracking-widest text-[10px]">Matrix Synchronized: {new Date().toLocaleDateString()}</p>
             </div>
           </div>
         </div>
       </main>
-      
+
       <Footer />
     </div>
   );
