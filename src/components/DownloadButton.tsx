@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserTier } from '@/hooks/useUserTier';
+import { useNavigate } from 'react-router-dom';
+import DownloadModal from './DownloadModal';
 import UpgradeModal from '@/components/UpgradeModal';
 
 interface DownloadButtonProps {
@@ -31,12 +33,13 @@ const DownloadButton: React.FC<DownloadButtonProps> = ({
   const { user } = useAuth();
   const { tier, isPro, isPremium } = useUserTier(user?.id);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const navigate = useNavigate();
 
   const handleDownload = () => {
     // Check if user has download permissions
     if (!user) {
-      // Redirect to login or show login modal
-      window.location.href = '/login';
+      navigate('/login');
       return;
     }
 
@@ -46,21 +49,8 @@ const DownloadButton: React.FC<DownloadButtonProps> = ({
       return;
     }
 
-    let downloadUrl = '';
-    
-    if (contentType === 'movie') {
-      downloadUrl = `https://dl.vidsrc.vip/movie/${contentId}`;
-    } else if (contentType === 'tv' || contentType === 'series' || contentType === 'anime') {
-      if (seasonNumber !== undefined && episodeNumber !== undefined) {
-        downloadUrl = `https://dl.vidsrc.vip/tv/${contentId}/${seasonNumber}/${episodeNumber}`;
-      } else {
-        downloadUrl = `https://dl.vidsrc.vip/tv/${contentId}/1/1`;
-      }
-    }
-    
-    if (downloadUrl) {
-      window.open(downloadUrl, '_blank');
-    }
+    // Open smart download modal
+    setShowDownloadModal(true);
   };
 
   return (
@@ -82,6 +72,18 @@ const DownloadButton: React.FC<DownloadButtonProps> = ({
         onClose={() => setShowUpgradeModal(false)}
         reason="download"
         currentRole={tier}
+      />
+
+      {/* Smart Download Modal */}
+      <DownloadModal
+        isOpen={showDownloadModal}
+        onClose={() => setShowDownloadModal(false)}
+        contentTitle={contentTitle}
+        contentType={contentType}
+        seasonNumber={seasonNumber}
+        episodeNumber={episodeNumber}
+        year={year}
+        contentId={contentId} // Pass contentId
       />
     </>
   );

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Check, ChevronDown } from "lucide-react";
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -38,24 +38,24 @@ const StreamingProviderSelector = ({
   variant = 'default'
 }: StreamingProviderSelectorProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  
+
   // Find the active provider
   const currentProvider = providers.find(p => p.id === activeProvider) || providers[0];
-  
+
   // Group providers by type for better organization
   const groupedProviders = providers.reduce((acc, provider) => {
-    const group = provider.isPremium ? 'premium' : 
-                  provider.isTorrent ? 'torrent' :
-                  provider.contentType === 'anime' ? 'anime' : 'standard';
-    
+    const group = provider.isPremium ? 'premium' :
+      provider.isTorrent ? 'torrent' :
+        provider.contentType === 'anime' ? 'anime' : 'standard';
+
     if (!acc[group]) {
       acc[group] = [];
     }
-    
+
     acc[group].push(provider);
     return acc;
   }, {} as Record<string, Provider[]>);
-  
+
   if (variant === 'inline') {
     return (
       <div className="flex flex-wrap gap-2">
@@ -65,11 +65,10 @@ const StreamingProviderSelector = ({
             variant="outline"
             size="sm"
             onClick={() => onProviderChange(provider.id)}
-            className={`${
-              activeProvider === provider.id 
-                ? "bg-cinemax-500/20 border-cinemax-500 text-white" 
+            className={`${activeProvider === provider.id
+                ? "bg-cinemax-500/20 border-cinemax-500 text-white"
                 : "bg-background border-gray-700 text-gray-300"
-            }`}
+              }`}
           >
             {provider.name}
             {provider.isTorrent && <span className="text-xs ml-1 text-yellow-500">(Torrent)</span>}
@@ -78,7 +77,7 @@ const StreamingProviderSelector = ({
       </div>
     );
   }
-  
+
   if (variant === 'grid') {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
@@ -88,15 +87,14 @@ const StreamingProviderSelector = ({
             variant="outline"
             size="sm"
             onClick={() => onProviderChange(provider.id)}
-            className={`justify-start ${
-              activeProvider === provider.id 
-                ? "bg-cinemax-500/20 border-cinemax-500 text-white" 
+            className={`justify-start ${activeProvider === provider.id
+                ? "bg-cinemax-500/20 border-cinemax-500 text-white"
                 : "bg-background border-gray-700 text-gray-300"
-            }`}
+              }`}
           >
             <div className="flex items-center gap-2 w-full">
-              <img 
-                src={getProviderIcon(provider.id)} 
+              <img
+                src={getProviderIcon(provider.id)}
                 alt={provider.name}
                 className="w-4 h-4 rounded object-contain"
                 onError={(e) => {
@@ -113,17 +111,17 @@ const StreamingProviderSelector = ({
       </div>
     );
   }
-  
+
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           className="w-full justify-between border-gray-700 bg-gray-800/50 hover:bg-gray-700/50"
         >
           <div className="flex items-center gap-2">
-            <img 
-              src={getProviderIcon(activeProvider)} 
+            <img
+              src={getProviderIcon(activeProvider)}
               alt={currentProvider?.name}
               className="w-5 h-5 rounded object-contain"
               onError={(e) => {
@@ -135,11 +133,11 @@ const StreamingProviderSelector = ({
           <ChevronDown className="h-4 w-4 opacity-50" />
         </Button>
       </DropdownMenuTrigger>
-      
+
       <DropdownMenuContent align="end" className="w-[250px]">
         <DropdownMenuLabel>Select Provider</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        
+
         <ScrollArea className="h-[300px]">
           {/* Recommended providers first */}
           <DropdownMenuGroup>
@@ -157,8 +155,8 @@ const StreamingProviderSelector = ({
                   className="flex items-center justify-between cursor-pointer"
                 >
                   <div className="flex items-center gap-2">
-                    <img 
-                      src={getProviderIcon(provider.id)} 
+                    <img
+                      src={getProviderIcon(provider.id)}
                       alt={provider.name}
                       className="w-4 h-4 rounded object-contain"
                       onError={(e) => {
@@ -173,18 +171,18 @@ const StreamingProviderSelector = ({
                 </DropdownMenuItem>
               ))}
           </DropdownMenuGroup>
-          
+
           <DropdownMenuSeparator />
-          
+
           {/* Show all providers by group */}
           {Object.entries(groupedProviders).map(([group, groupProviders]) => (
             <DropdownMenuGroup key={group}>
               <DropdownMenuLabel className="text-xs text-gray-400">
-                {group === 'premium' ? 'Premium Services' : 
-                 group === 'torrent' ? 'Torrent Sources' :
-                 group === 'anime' ? 'Anime Specific' : 'Standard Sources'}
+                {group === 'premium' ? 'Premium Services' :
+                  group === 'torrent' ? 'Torrent Sources' :
+                    group === 'anime' ? 'Anime Specific' : 'Standard Sources'}
               </DropdownMenuLabel>
-              
+
               {Array.isArray(groupProviders) && groupProviders.map(provider => (
                 <DropdownMenuItem
                   key={provider.id}
@@ -195,8 +193,8 @@ const StreamingProviderSelector = ({
                   className="flex items-center justify-between cursor-pointer"
                 >
                   <div className="flex items-center gap-2">
-                    <img 
-                      src={getProviderIcon(provider.id)} 
+                    <img
+                      src={getProviderIcon(provider.id)}
                       alt={provider.name}
                       className="w-4 h-4 rounded object-contain"
                       onError={(e) => {

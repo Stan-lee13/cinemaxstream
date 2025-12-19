@@ -14,6 +14,7 @@ interface DownloadModalProps {
   seasonNumber?: number;
   episodeNumber?: number;
   year?: string;
+  contentId?: string; // Add contentId prop
   fallbackUrl?: string; // Add fallback URL prop
   onLegacyDownload?: () => void; // Add legacy download callback
 }
@@ -26,6 +27,7 @@ const DownloadModal: React.FC<DownloadModalProps> = ({
   seasonNumber,
   episodeNumber,
   year,
+  contentId, // Destructure contentId
   fallbackUrl, // Receive fallback URL
   onLegacyDownload // Receive legacy download callback
 }) => {
@@ -46,8 +48,9 @@ const DownloadModal: React.FC<DownloadModalProps> = ({
     }
 
     setCurrentStep('searching');
-    const result = await initiateDownload(contentTitle, contentType, seasonNumber, episodeNumber, year);
-    
+    // Pass contentId to initiateDownload
+    const result = await initiateDownload(contentTitle, contentType, seasonNumber, episodeNumber, year, contentId);
+
     if (result.success) {
       if (result.downloadLink && result.downloadLink !== result.nkiriUrl) {
         setCurrentStep('complete');
@@ -55,7 +58,7 @@ const DownloadModal: React.FC<DownloadModalProps> = ({
         setCurrentStep('complete');
       }
     }
-    
+
     setDownloadResult(result);
   };
 
@@ -118,7 +121,7 @@ const DownloadModal: React.FC<DownloadModalProps> = ({
               <p className="text-sm text-gray-300 mb-3">
                 Downloads are available for Pro and Premium users only.
               </p>
-              <Button 
+              <Button
                 className="w-full bg-yellow-600 hover:bg-yellow-700"
                 onClick={() => {
                   window.location.href = '/manage-billing';
@@ -159,13 +162,13 @@ const DownloadModal: React.FC<DownloadModalProps> = ({
                         <CheckCircle className="h-5 w-5" />
                         <span className="font-semibold">Download Ready!</span>
                       </div>
-                      
+
                       {downloadResult.quality && (
                         <div className="text-sm text-gray-300 mb-2">
                           Quality: {downloadResult.quality}
                         </div>
                       )}
-                      
+
                       {downloadResult.fileSize && (
                         <div className="text-sm text-gray-300 mb-3">
                           Size: {downloadResult.fileSize}
@@ -173,8 +176,8 @@ const DownloadModal: React.FC<DownloadModalProps> = ({
                       )}
 
                       <div className="flex gap-2">
-                      {downloadResult.downloadLink && downloadResult.downloadLink !== downloadResult.nkiriUrl ? (
-                          <Button 
+                        {downloadResult.downloadLink && downloadResult.downloadLink !== downloadResult.nkiriUrl ? (
+                          <Button
                             className="flex-1 bg-green-600 hover:bg-green-700"
                             onClick={() => downloadResult.downloadLink && window.open(downloadResult.downloadLink, '_blank')}
                           >
@@ -182,7 +185,7 @@ const DownloadModal: React.FC<DownloadModalProps> = ({
                             Download Now
                           </Button>
                         ) : (
-                          <Button 
+                          <Button
                             className="flex-1 bg-blue-600 hover:bg-blue-700"
                             onClick={() => downloadResult.nkiriUrl && window.open(downloadResult.nkiriUrl, '_blank')}
                           >
@@ -208,7 +211,7 @@ const DownloadModal: React.FC<DownloadModalProps> = ({
 
               {/* Action Buttons */}
               {!isProcessing && !downloadResult && (
-                <Button 
+                <Button
                   onClick={handleDownload}
                   className="w-full bg-cinemax-500 hover:bg-cinemax-600"
                   disabled={!canDownload()}
@@ -223,8 +226,8 @@ const DownloadModal: React.FC<DownloadModalProps> = ({
           {/* Credits Info */}
           {userProfile.role !== 'free' && (
             <div className="text-xs text-gray-400 text-center">
-              {userProfile.role === 'premium' 
-                ? 'Unlimited downloads' 
+              {userProfile.role === 'premium'
+                ? 'Unlimited downloads'
                 : `Downloads remaining today: ${getDownloadsRemaining()}`}
             </div>
           )}

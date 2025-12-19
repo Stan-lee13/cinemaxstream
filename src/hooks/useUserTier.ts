@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export type UserTier = 'free' | 'pro' | 'premium';
@@ -22,7 +22,7 @@ export const useUserTier = (userId?: string) => {
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  const tierBenefits: Record<UserTier, TierBenefits> = {
+  const tierBenefits = useMemo(() => ({
     free: {
       maxStreams: 5,
       maxDownloads: 0,
@@ -44,7 +44,7 @@ export const useUserTier = (userId?: string) => {
       features: ['Unlimited streams', 'Unlimited downloads', '4K streaming', 'Premium-only catalog', 'VIP support'],
       priorityLevel: 1
     }
-  };
+  }), []);
 
   const fetchUserTier = useCallback(async () => {
     if (!userId) {
@@ -105,7 +105,7 @@ export const useUserTier = (userId?: string) => {
     } finally {
       setIsLoading(false);
     }
-  }, [userId]);
+  }, [userId, tierBenefits]);
 
   useEffect(() => {
     fetchUserTier();

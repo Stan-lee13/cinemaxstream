@@ -89,7 +89,7 @@ const HeroSection = () => {
       {/* Background Image (use <img> to avoid inline styles) */}
       <div className="absolute inset-0 transition-all duration-1000">
         <img
-          src={currentContent?.image || ''}
+          src={currentContent?.image?.replace('/w500/', '/original/') || ''}
           alt={currentContent?.title || ''}
           className="absolute inset-0 w-full h-full object-cover"
           loading="lazy"
@@ -97,7 +97,7 @@ const HeroSection = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
       </div>
-      
+
       {/* Content */}
       <div className="relative z-10 container mx-auto px-4 text-white">
         <div className="max-w-2xl">
@@ -115,22 +115,22 @@ const HeroSection = () => {
               <span>{currentContent.duration}</span>
             </div>
           </div>
-          
+
           {/* Title */}
           <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
             {currentContent.title}
           </h1>
-          
+
           {/* Category */}
           <p className="text-cinemax-400 text-lg mb-4 font-medium capitalize">
             {currentContent.category}
           </p>
-          
+
           {/* Description */}
           <p className="text-gray-300 text-lg mb-8 leading-relaxed line-clamp-3">
             {currentContent.description || "Discover amazing content on CinemaxStream."}
           </p>
-          
+
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4">
             <Link
@@ -141,7 +141,7 @@ const HeroSection = () => {
               <Play className="w-6 h-6 fill-current" />
               Watch Now
             </Link>
-            
+
             <Link
               to={`/content/${currentContent.id}`}
               state={{ contentType: currentContent.content_type }}
@@ -153,7 +153,7 @@ const HeroSection = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Removed scroll indicator per request */}
 
       {/* Indicators */}
@@ -165,9 +165,8 @@ const HeroSection = () => {
               aria-label={`Show slide ${index + 1}`}
               title={`Show slide ${index + 1}`}
               aria-current={index === currentIndex ? 'true' : undefined}
-              className={`w-3 h-3 rounded-full transition-all ${
-                index === currentIndex ? 'bg-cinemax-500' : 'bg-white/30'
-              }`}
+              className={`w-3 h-3 rounded-full transition-all ${index === currentIndex ? 'bg-cinemax-500' : 'bg-white/30'
+                }`}
               onClick={() => setCurrentIndex(index)}
             >
               <span className="sr-only">{`Show slide ${index + 1}`}</span>

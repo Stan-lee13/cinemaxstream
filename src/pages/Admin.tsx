@@ -9,12 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { 
-  Users, 
-  TrendingUp, 
-  Shield, 
-  Ban, 
-  Crown, 
+import {
+  Users,
+  TrendingUp,
+  Shield,
+  Ban,
+  Crown,
   Search,
   RefreshCw,
   ArrowUpRight,
@@ -85,7 +85,7 @@ const Admin = () => {
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTab, setSelectedTab] = useState("overview");
-  
+
   // Promo code form state
   const [newPromoCode, setNewPromoCode] = useState({
     code: "",
@@ -154,11 +154,12 @@ const Admin = () => {
 
       // Fetch promo codes
       try {
-        const { data: promoData, error: promoError } = await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: promoData, error: promoError } = await (supabase as any)
           .from('premium_codes')
           .select('*')
           .order('created_at', { ascending: false });
-        
+
         if (!promoError && promoData) {
           setPromoCodes(promoData as PromoCode[]);
         }
@@ -197,6 +198,7 @@ const Admin = () => {
       setUsers(usersWithRoles);
       setContent(contentData);
     } catch (error) {
+      console.error('Failed to fetch data:', error);
       toast.error("Failed to fetch data");
     } finally {
       setIsLoading(false);
@@ -214,10 +216,11 @@ const Admin = () => {
       await supabase
         .from('user_roles')
         .upsert({ user_id: userId, role: 'free' as const });
-      
+
       toast.success("User access restricted");
       fetchData();
     } catch (error) {
+      console.error('Failed to ban user:', error);
       toast.error("Failed to update user");
     }
   };
@@ -247,9 +250,10 @@ const Admin = () => {
           .insert({ user_id: userId, role: 'premium' as const });
         toast.success("User upgraded to premium");
       }
-      
+
       fetchData();
     } catch (error) {
+      console.error('Failed to upgrade user:', error);
       toast.error("Failed to update user role");
     }
   };
@@ -259,24 +263,55 @@ const Admin = () => {
       const newValue = !currentValue;
       await supabase
         .from('content')
-        .update({ trending: newValue })
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .update({ trending: newValue } as any)
         .eq('id', contentId);
-      
+
       toast.success(`Content ${newValue ? 'marked as' : 'removed from'} trending`);
       fetchData();
     } catch (error) {
+      console.error('Failed to toggle trending:', error);
       toast.error("Failed to update content");
     }
   };
 
   const handleSetEarlyAccess = async (contentId: string, days: number) => {
-    // Early access feature not yet in DB schema
-    toast.info(`Early access feature coming soon (${days} days for content ${contentId})`);
+    try {
+      const date = new Date();
+      date.setDate(date.getDate() + days);
+
+      const { error } = await supabase
+        .from('content')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .update({ early_access_until: date.toISOString() } as any)
+        .eq('id', contentId);
+
+      if (error) throw error;
+
+      toast.success(`Early access set for ${days} days`);
+      fetchData();
+    } catch (error) {
+      console.error('Error setting early access:', error);
+      toast.error("Failed to set early access");
+    }
   };
 
   const handleRemoveEarlyAccess = async (contentId: string) => {
-    // Early access feature not yet in DB schema
-    toast.info(`Early access feature coming soon for content ${contentId}`);
+    try {
+      const { error } = await supabase
+        .from('content')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .update({ early_access_until: null } as any)
+        .eq('id', contentId);
+
+      if (error) throw error;
+
+      toast.success("Early access removed");
+      fetchData();
+    } catch (error) {
+      console.error('Error removing early access:', error);
+      toast.error("Failed to remove early access");
+    }
   };
 
   // Promo code functions
@@ -287,7 +322,8 @@ const Admin = () => {
     }
 
     try {
-      const { data, error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
         .from('premium_codes')
         .insert({
           code: newPromoCode.code.trim().toUpperCase(),
@@ -310,13 +346,15 @@ const Admin = () => {
       });
       fetchData();
     } catch (error) {
+      console.error('Failed to create promo code:', error);
       toast.error("Failed to create promo code");
     }
   };
 
   const handleTogglePromoCode = async (codeId: string, isActive: boolean) => {
     try {
-      await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any)
         .from('premium_codes')
         .update({ is_active: !isActive })
         .eq('id', codeId);
@@ -324,13 +362,15 @@ const Admin = () => {
       toast.success(`Promo code ${!isActive ? 'activated' : 'deactivated'}`);
       fetchData();
     } catch (error) {
+      console.error('Failed to toggle promo code:', error);
       toast.error("Failed to update promo code");
     }
   };
 
   const handleDeletePromoCode = async (codeId: string) => {
     try {
-      await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any)
         .from('premium_codes')
         .delete()
         .eq('id', codeId);
@@ -338,20 +378,21 @@ const Admin = () => {
       toast.success("Promo code deleted");
       fetchData();
     } catch (error) {
+      console.error('Failed to delete promo code:', error);
       toast.error("Failed to delete promo code");
     }
   };
 
-  const filteredUsers = users.filter(u => 
+  const filteredUsers = users.filter(u =>
     u.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     u.username?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredContent = content.filter(c => 
+  const filteredContent = content.filter(c =>
     c.title?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredPromoCodes = promoCodes.filter(c => 
+  const filteredPromoCodes = promoCodes.filter(c =>
     c.code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.notes?.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -415,7 +456,7 @@ const Admin = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-sm text-gray-400">
-                    {analytics.totalUsers > 0 
+                    {analytics.totalUsers > 0
                       ? `${((analytics.premiumUsers / analytics.totalUsers) * 100).toFixed(1)}% conversion`
                       : '0% conversion'}
                   </div>
@@ -531,7 +572,7 @@ const Admin = () => {
                       </div>
                     </div>
                   ))}
-                  
+
                   {filteredUsers.length === 0 && (
                     <p className="text-center text-gray-400 py-8">No users found</p>
                   )}
@@ -611,7 +652,7 @@ const Admin = () => {
                       </div>
                     </div>
                   ))}
-                  
+
                   {filteredContent.length === 0 && (
                     <p className="text-center text-gray-400 py-8">No content found</p>
                   )}
@@ -634,45 +675,45 @@ const Admin = () => {
                     <Input
                       placeholder="e.g., SUMMER2024"
                       value={newPromoCode.code}
-                      onChange={(e) => setNewPromoCode({...newPromoCode, code: e.target.value})}
+                      onChange={(e) => setNewPromoCode({ ...newPromoCode, code: e.target.value })}
                     />
                   </div>
-                  
+
                   <div>
                     <label className="text-sm font-medium mb-1 block">Max Uses</label>
                     <Input
                       type="number"
                       min="1"
                       value={newPromoCode.max_uses}
-                      onChange={(e) => setNewPromoCode({...newPromoCode, max_uses: parseInt(e.target.value) || 1})}
+                      onChange={(e) => setNewPromoCode({ ...newPromoCode, max_uses: parseInt(e.target.value) || 1 })}
                     />
                   </div>
-                  
+
                   <div>
                     <label className="text-sm font-medium mb-1 block">Expiration Date (Optional)</label>
                     <Input
                       type="date"
                       value={newPromoCode.expires_at}
-                      onChange={(e) => setNewPromoCode({...newPromoCode, expires_at: e.target.value})}
+                      onChange={(e) => setNewPromoCode({ ...newPromoCode, expires_at: e.target.value })}
                     />
                   </div>
-                  
+
                   <div>
                     <label className="text-sm font-medium mb-1 block">Notes (Optional)</label>
                     <Input
                       placeholder="e.g., Summer promotion"
                       value={newPromoCode.notes}
-                      onChange={(e) => setNewPromoCode({...newPromoCode, notes: e.target.value})}
+                      onChange={(e) => setNewPromoCode({ ...newPromoCode, notes: e.target.value })}
                     />
                   </div>
-                  
+
                   <Button onClick={handleCreatePromoCode} className="w-full gap-2">
                     <Plus size={16} />
                     Create Promo Code
                   </Button>
                 </CardContent>
               </Card>
-              
+
               {/* Promo Codes List */}
               <Card className="bg-secondary/30 border-gray-800 lg:col-span-2">
                 <CardHeader>
@@ -704,31 +745,31 @@ const Admin = () => {
                               </Badge>
                             )}
                           </div>
-                          
+
                           <div className="flex flex-wrap gap-2 mt-2">
                             <span className="text-xs text-gray-400">
                               Uses: {code.current_uses}/{code.max_uses || '∞'}
                             </span>
-                            
+
                             {code.expires_at && (
                               <span className="text-xs text-gray-400 flex items-center gap-1">
                                 <Calendar size={12} />
                                 Expires: {new Date(code.expires_at).toLocaleDateString()}
                               </span>
                             )}
-                            
+
                             {code.notes && (
                               <span className="text-xs text-gray-400">
                                 {code.notes}
                               </span>
                             )}
                           </div>
-                          
+
                           <p className="text-xs text-gray-500 mt-1">
                             Created {new Date(code.created_at).toLocaleDateString()}
                           </p>
                         </div>
-                        
+
                         <div className="flex gap-2">
                           <Button
                             size="sm"
@@ -738,7 +779,7 @@ const Admin = () => {
                           >
                             {code.is_active ? 'Deactivate' : 'Activate'}
                           </Button>
-                          
+
                           <Button
                             size="sm"
                             variant="destructive"
@@ -750,7 +791,7 @@ const Admin = () => {
                         </div>
                       </div>
                     ))}
-                    
+
                     {filteredPromoCodes.length === 0 && (
                       <p className="text-center text-gray-400 py-8">No promo codes found</p>
                     )}
@@ -814,7 +855,7 @@ const Admin = () => {
                   </div>
                   <div className="p-4 bg-background/50 rounded-lg text-center">
                     <p className="text-3xl font-bold text-blue-500">
-                      {analytics.totalUsers > 0 
+                      {analytics.totalUsers > 0
                         ? ((analytics.activeToday / analytics.totalUsers) * 100).toFixed(1)
                         : 0}%
                     </p>
@@ -822,7 +863,7 @@ const Admin = () => {
                   </div>
                   <div className="p-4 bg-background/50 rounded-lg text-center">
                     <p className="text-3xl font-bold text-yellow-500">
-                      {analytics.totalUsers > 0 
+                      {analytics.totalUsers > 0
                         ? ((analytics.premiumUsers / analytics.totalUsers) * 100).toFixed(1)
                         : 0}%
                     </p>

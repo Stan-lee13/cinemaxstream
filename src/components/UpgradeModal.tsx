@@ -12,11 +12,11 @@ interface UpgradeModalProps {
   currentRole: 'free' | 'pro' | 'premium';
 }
 
-const UpgradeModal: React.FC<UpgradeModalProps> = ({ 
-  isOpen, 
-  onClose, 
-  reason, 
-  currentRole 
+const UpgradeModal: React.FC<UpgradeModalProps> = ({
+  isOpen,
+  onClose,
+  reason,
+  currentRole
 }) => {
   const { isPremium } = useAuth();
   const [isUpgrading, setIsUpgrading] = useState(false);
@@ -75,7 +75,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
 
   const getMessage = () => {
     if (reason === 'streaming') {
-      return currentRole === 'free' 
+      return currentRole === 'free'
         ? "You've reached your daily streaming limit of 5 videos."
         : "You've reached your daily streaming limit of 12 videos.";
     } else {
@@ -87,20 +87,20 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
 
   const handleUpgrade = async (planName: string) => {
     setIsUpgrading(true);
-    
+
     try {
       // Implement actual payment flow - for now just close
       // Production-ready Stripe payment URL
-      const paymentUrl = import.meta.env.VITE_STRIPE_PAYMENT_URL 
+      const paymentUrl = import.meta.env.VITE_STRIPE_PAYMENT_URL
         || `https://billing.cinemax-stream.com/upgrade?plan=${planName.toLowerCase()}`;
-      
+
       window.open(paymentUrl, '_blank');
       await new Promise(resolve => setTimeout(resolve, 1000));
       onClose();
     } catch (error) {
       // Log to production error tracking
       if (typeof window !== 'undefined') {
-        const globalWindow = window as Window & { errorReporter?: { captureException?: (err: Error, context?: string, severity?: string) => void | Promise<void> } };
+        const globalWindow = window as unknown as Window & { errorReporter?: { captureException?: (err: Error, context?: string, severity?: string) => void | Promise<void> } };
         if (globalWindow.errorReporter?.captureException) {
           void globalWindow.errorReporter.captureException(error as Error, 'UpgradeModal', 'high');
         }
@@ -138,13 +138,12 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {getUpgradeOptions().map((plan) => (
-            <div 
+            <div
               key={plan.name}
-              className={`relative border rounded-lg p-6 transition-all duration-200 hover:shadow-lg ${
-                plan.recommended 
-                  ? 'border-cinemax-500 bg-cinemax-500/5 shadow-cinemax-500/20' 
+              className={`relative border rounded-lg p-6 transition-all duration-200 hover:shadow-lg ${plan.recommended
+                  ? 'border-cinemax-500 bg-cinemax-500/5 shadow-cinemax-500/20'
                   : 'border-border bg-secondary/30'
-              }`}
+                }`}
             >
               {plan.recommended && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
@@ -172,12 +171,11 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
                 ))}
               </ul>
 
-              <Button 
-                className={`w-full transition-all duration-200 ${
-                  plan.recommended 
-                    ? 'bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-semibold' 
+              <Button
+                className={`w-full transition-all duration-200 ${plan.recommended
+                    ? 'bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-semibold'
                     : 'bg-secondary hover:bg-secondary/80'
-                }`}
+                  }`}
                 onClick={() => handleUpgrade(plan.name)}
                 disabled={isUpgrading}
               >
@@ -193,7 +191,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
               Have a promo code? Click here to activate premium
             </Button>
           </PremiumPromoModal>
-          
+
           <Button variant="ghost" onClick={onClose} className="text-muted-foreground hover:text-foreground">
             Maybe Later
           </Button>

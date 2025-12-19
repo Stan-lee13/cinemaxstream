@@ -3,14 +3,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useLocation } from 'react-router-dom';
-import { 
-  Play, 
-  Search, 
-  Heart, 
-  Download, 
-  Settings, 
-  Bell, 
-  User, 
+import {
+  Play,
+  Search,
+  Heart,
+  Download,
+  Settings,
+  Bell,
+  User,
   Home,
   ChevronRight,
   ChevronLeft,
@@ -52,15 +52,15 @@ const desktopSteps: WalkthroughStep[] = [
   },
   {
     title: 'Downloads',
-    description: 'Download movies and episodes for offline viewing. For series, you can download individual episodes.',
+    description: 'Download movies and episodes for offline viewing. Look for the download button on content details pages.',
     icon: <Download className="h-12 w-12 text-cinemax-500" />,
-    tourId: 'download-button'
+    // Removed tourId as button is not on home page
   },
   {
     title: 'Video Playback',
-    description: 'When watching, use the provider selector above the video to switch between different streaming sources if one is not working.',
+    description: 'When watching, use the provider selector above the video to switch between different streaming sources.',
     icon: <Play className="h-12 w-12 text-cinemax-500" />,
-    tourId: 'provider-selector'
+    // Removed tourId as selector is not on home page
   },
   {
     title: 'Notifications',
@@ -102,15 +102,15 @@ const mobileSteps: WalkthroughStep[] = [
   },
   {
     title: 'Downloads',
-    description: 'Tap the download button on any movie or episode. Downloaded content is available offline.',
+    description: 'Tap the download button on any movie or episode to watch offline.',
     icon: <Download className="h-12 w-12 text-cinemax-500" />,
-    tourId: 'download-button'
+    // Removed tourId
   },
   {
     title: 'Switch Providers',
     description: 'If a video does not play, use the source selector above the player to try a different streaming provider.',
     icon: <Play className="h-12 w-12 text-cinemax-500" />,
-    tourId: 'provider-selector'
+    // Removed tourId
   },
   {
     title: 'Notifications',
@@ -149,7 +149,7 @@ const Walkthrough = ({ forceShow = false, onComplete }: WalkthroughProps) => {
     if (location.pathname === '/') {
       return;
     }
-    
+
     if ((forceShow || !hasSeenWalkthrough) && isAuthenticated && user) {
       // Small delay to let the app load first
       const timer = setTimeout(() => {
@@ -162,24 +162,24 @@ const Walkthrough = ({ forceShow = false, onComplete }: WalkthroughProps) => {
   // Handle spotlight effect for tour elements
   useEffect(() => {
     if (!isOpen || currentStep >= steps.length) return;
-    
+
     const tourId = steps[currentStep].tourId;
     if (!tourId) {
       setShowSpotlight(false);
       return;
     }
-    
+
     // Find the element with the tour ID
     const element = document.querySelector(`[data-tour-id="${tourId}"]`);
     if (!element) {
       setShowSpotlight(false);
       return;
     }
-    
+
     // Position spotlight over the element
     const rect = element.getBoundingClientRect();
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    
+
     if (spotlightRef.current) {
       spotlightRef.current.style.width = `${rect.width}px`;
       spotlightRef.current.style.height = `${rect.height}px`;
@@ -232,7 +232,7 @@ const Walkthrough = ({ forceShow = false, onComplete }: WalkthroughProps) => {
     <>
       {/* Spotlight overlay */}
       {showSpotlight && (
-        <div 
+        <div
           ref={spotlightRef}
           className="fixed z-50 border-4 border-cinemax-500 rounded-lg shadow-lg shadow-cinemax-500/50 pointer-events-none transition-all duration-300"
           style={{
@@ -240,14 +240,14 @@ const Walkthrough = ({ forceShow = false, onComplete }: WalkthroughProps) => {
           }}
         />
       )}
-      
+
       {/* Walkthrough modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div 
+        <div
           className="absolute inset-0 bg-black/70"
           onClick={handleSkip}
         />
-        
+
         <div className="relative bg-background rounded-lg max-w-md w-full border border-border shadow-xl z-50">
           <div className="relative">
             {/* Progress indicator */}
@@ -255,9 +255,8 @@ const Walkthrough = ({ forceShow = false, onComplete }: WalkthroughProps) => {
               {steps.map((_, index) => (
                 <div
                   key={index}
-                  className={`h-1 flex-1 rounded-full transition-colors ${
-                    index <= currentStep ? 'bg-cinemax-500' : 'bg-secondary'
-                  }`}
+                  className={`h-1 flex-1 rounded-full transition-colors ${index <= currentStep ? 'bg-cinemax-500' : 'bg-secondary'
+                    }`}
                 />
               ))}
             </div>

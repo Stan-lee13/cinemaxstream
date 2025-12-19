@@ -15,24 +15,26 @@ export type ProviderOptions = {
 // Internal source mapping - NEVER expose provider names to UI
 // Source 1-5 map to these internal providers
 const INTERNAL_SOURCES: Record<number, string> = {
-  1: 'vidsrc_embed_ru',
-  2: 'vidsrc_embed_su',
-  3: 'vidsrcme_su',
-  4: 'vsrc_su',
+  1: 'vidsrc_me',
+  2: 'vidsrcme_ru',
+  3: 'vidsrc_embed_ru',
+  4: 'vidsrc_embed_su',
   5: 'vidrock_net'
 };
 
 // Provider domain mapping - INTERNAL ONLY
 const PROVIDER_DOMAINS: Record<string, string> = {
-  vidsrc_embed_ru: 'vidsrc-embed.ru',
-  vidsrc_embed_su: 'vidsrc-embed.su',
-  vidsrcme_su: 'vidsrcme.su',
-  vsrc_su: 'vsrc.su',
+  vidsrc_me: 'vidsrc.me',
+  vidsrcme_ru: 'vidsrcme.ru',
+  vidsrc_embed_ru: 'vidsrc.vip', // Updated to working domain
+  vidsrc_embed_su: 'vidsrc.cc',  // Updated to working domain
   vidrock_net: 'vidrock.net'
 };
 
 const DEFAULT_SOURCE = 1;
 const PREMIUM_DEFAULT_SOURCE = 5; // VidRock for premium users
+
+// ... existing helper functions like getSourceNumber ...
 
 /**
  * Get source number from provider ID (for display)
@@ -79,17 +81,30 @@ const clampEpisodeInfo = (value?: number | null, fallback = 1) => {
 
 /**
  * Build embed URL for provider
- * Uses TMDB ID format: /embed/movie/tmdb/{id} or /embed/tv/tmdb/{id}/{season}/{episode}
+ * Handles specific URL patterns for each provider
  */
 const buildEmbedUrl = (providerId: string, tmdbId: string, opts: ProviderOptions): string => {
-  const domain = PROVIDER_DOMAINS[providerId] || PROVIDER_DOMAINS.vidsrc_embed_ru;
+  const domain = PROVIDER_DOMAINS[providerId];
+  if (!domain) return ''; // Should not happen with correct mappings
+
   const season = clampEpisodeInfo(opts.season, 1);
   const episode = clampEpisodeInfo(opts.episodeNum, 1);
-  
-  if (isMovieContent(opts.contentType)) {
-    return `https://${domain}/embed/movie/tmdb/${tmdbId}`;
+  const isMovie = isMovieContent(opts.contentType);
+
+  // VidRock has a unique structure for movies
+  if (providerId === 'vidrock_net') {
+    if (isMovie) {
+      return `https://${domain}/embed/${tmdbId}`;
+    }
+    return `https://${domain}/embed/tv/${tmdbId}/${season}/${episode}`;
   }
-  return `https://${domain}/embed/tv/tmdb/${tmdbId}/${season}/${episode}`;
+
+  // Standard vidsrc structure (vidsrc.me, vidsrcme.ru, vidsrc-embed.ru, vidsrc-embed.su)
+  // All follow /embed/movie/{id} or /embed/tv/{id}/{s}/{e}
+  if (isMovie) {
+    return `https://${domain}/embed/movie/${tmdbId}`;
+  }
+  return `https://${domain}/embed/tv/${tmdbId}/${season}/${episode}`;
 };
 
 /**

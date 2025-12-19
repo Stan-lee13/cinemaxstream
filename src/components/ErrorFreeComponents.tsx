@@ -28,15 +28,15 @@ export class ComponentErrorBoundary extends Component<ErrorBoundaryProps, ErrorB
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Log to production error tracking service
     if (typeof window !== 'undefined') {
-      const globalWindow = window as Window & { errorReporter?: { captureException?: (err: Error, context?: string, severity?: string) => void | Promise<void> } };
+      const globalWindow = window as unknown as Window & { errorReporter?: { captureException?: (err: Error, context?: string, severity?: string) => void | Promise<void> } };
       if (globalWindow.errorReporter?.captureException) {
         void globalWindow.errorReporter.captureException(error, 'ComponentError', 'high');
       }
     }
-    
+
     // Call custom error handler if provided
     this.props.onError?.(error, errorInfo);
-    
+
     // Show user-friendly toast
     toast.error('Something went wrong. Please refresh the page.');
   }
@@ -48,7 +48,7 @@ export class ComponentErrorBoundary extends Component<ErrorBoundaryProps, ErrorB
           <div>
             <h3 className="text-lg font-semibold mb-2">Something went wrong</h3>
             <p className="text-muted-foreground mb-4">Please refresh the page to try again.</p>
-            <button 
+            <button
               className="px-4 py-2 bg-primary text-primary-foreground rounded-md"
               onClick={() => window.location.reload()}
             >
@@ -64,12 +64,12 @@ export class ComponentErrorBoundary extends Component<ErrorBoundaryProps, ErrorB
 }
 
 // Safe component wrapper for potentially problematic components
-export const SafeComponent = ({ 
-  children, 
-  fallback 
-}: { 
-  children: ReactNode; 
-  fallback?: ReactNode; 
+export const SafeComponent = ({
+  children,
+  fallback
+}: {
+  children: ReactNode;
+  fallback?: ReactNode;
 }) => (
   <ComponentErrorBoundary fallback={fallback}>
     {children}
@@ -77,9 +77,9 @@ export const SafeComponent = ({
 );
 
 // Safe image component with error handling
-export const SafeImage = ({ 
-  src, 
-  alt, 
+export const SafeImage = ({
+  src,
+  alt,
   fallback = 'https://images.unsplash.com/photo-1489599767810-b49fa91cd65b?w=300&h=450&fit=crop&crop=center',
   className = '',
   ...props
@@ -88,7 +88,7 @@ export const SafeImage = ({
   alt: string;
   fallback?: string;
   className?: string;
-} & React.ImgHTMLAttributes<HTMLImageElement>) => {
+} & { [key: string]: unknown }) => {
   const [imgSrc, setImgSrc] = React.useState(src);
   const [isLoading, setIsLoading] = React.useState(true);
 

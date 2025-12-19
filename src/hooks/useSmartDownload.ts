@@ -43,7 +43,8 @@ export const useSmartDownload = () => {
     contentType: string,
     seasonNumber?: number,
     episodeNumber?: number,
-    year?: string
+    year?: string,
+    contentId?: string
   ): Promise<DownloadResult> => {
     if (!user) {
       toast.error('Please sign in to download content');
@@ -106,18 +107,19 @@ export const useSmartDownload = () => {
 
       setCurrentRequest(mappedRequest);
 
-      // Step 1: AI Smart Search
-      const searchResult = await performAISearch(requestData.id, contentTitle, contentType, seasonNumber, episodeNumber, year);
-      
-      if (!searchResult.success) {
-        await updateRequestStatus(requestData.id, 'failed', searchResult.error || 'Search failed');
-        return searchResult;
+      // Attempt AI/Smart Search first
+      let searchResult: DownloadResult = { success: false, error: 'Initial' };
+
+      try {
+        searchResult = await performAISearch(requestData.id, contentTitle, contentType, seasonNumber, episodeNumber, year);
+      } catch (err) {
+        console.warn('AI search failed, falling back to direct link', err);
       }
 
-      // Step 2: Backend Scraping (Pro/Premium only)
-      if (isPro && searchResult.nkiriUrl) {
+      // Step 2: Backend Scraping (Pro/Premium only) if AI search found something
+      if (searchResult.success && isPro && searchResult.nkiriUrl) {
         const scrapeResult = await performBackendScraping(requestData.id, searchResult.nkiriUrl);
-        
+
         if (scrapeResult.success) {
           // Deduct download credit
           await deductDownloadCredit();
@@ -127,13 +129,46 @@ export const useSmartDownload = () => {
         }
       }
 
-      // Fallback: Just provide Nkiri URL for manual access
-      await updateRequestStatus(requestData.id, 'found');
-      return {
-        success: true,
-        nkiriUrl: searchResult.nkiriUrl,
-        downloadLink: searchResult.nkiriUrl
-      };
+      // Use Legacy vidsrc.vip Fallback if contentId is available
+      if (contentId) {
+        let legacyUrl = '';
+
+        if (contentType === 'movie') {
+          legacyUrl = `https://dl.vidsrc.vip/movie/${contentId}`;
+        } else if (contentType === 'tv' || contentType === 'series' || contentType === 'anime') {
+          if (seasonNumber !== undefined && episodeNumber !== undefined) {
+            legacyUrl = `https://dl.vidsrc.vip/tv/${contentId}/${seasonNumber}/${episodeNumber}`;
+          } else {
+            legacyUrl = `https://dl.vidsrc.vip/tv/${contentId}/1/1`; // Default logic
+          }
+        }
+
+        if (legacyUrl) {
+          // Deduct credit since we represent this as a successful download
+          await deductDownloadCredit();
+          await updateRequestStatus(requestData.id, 'completed');
+
+          return {
+            success: true,
+            downloadLink: legacyUrl,
+            quality: 'HD', // Assumed
+            fileSize: 'Unknown'
+          };
+        }
+      }
+
+      // Fallback: Just provide Nkiri URL for manual access if AI search succeeded but scraping failed
+      if (searchResult.success && searchResult.nkiriUrl) {
+        await updateRequestStatus(requestData.id, 'found');
+        return {
+          success: true,
+          nkiriUrl: searchResult.nkiriUrl,
+          downloadLink: searchResult.nkiriUrl
+        };
+      }
+
+      await updateRequestStatus(requestData.id, 'failed', searchResult.error || 'No fallback available');
+      return { success: false, error: 'Download generation failed' };
 
     } catch (error) {
       console.error('Download initiation error:', error);

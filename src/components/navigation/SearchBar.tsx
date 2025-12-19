@@ -30,7 +30,7 @@ const SearchBar: React.FC = () => {
       try {
         const searchResults = await searchContent(query);
         // Map from API response to SearchResult
-        const mappedResults: SearchResult[] = ((searchResults?.results || []) as any[])
+        const mappedResults: SearchResult[] = (searchResults?.results || [])
           .slice(0, 8)
           .map(item => ({
             id: item.id,

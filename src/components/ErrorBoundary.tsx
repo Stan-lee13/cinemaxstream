@@ -29,7 +29,9 @@ class ErrorBoundary extends Component<Props, State> {
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Log to production error tracking service
     if (typeof window !== 'undefined') {
-      const globalWindow = window as Window & { errorReporter?: ErrorReporter };
+      // Assert window to unknown first, then to the specific type to handle potential linting issues
+      // where window might be implicitly 'any' in some environments or configurations.
+      const globalWindow = window as unknown as Window & { errorReporter?: ErrorReporter };
       if (globalWindow.errorReporter?.captureException) {
         // captureException may return a Promise in some implementations; use void to avoid unhandled promise
         void globalWindow.errorReporter.captureException(error, 'ErrorBoundary', 'critical');
@@ -46,13 +48,13 @@ class ErrorBoundary extends Component<Props, State> {
             <h1 className="text-2xl font-bold text-foreground">Something went wrong</h1>
             <p className="text-muted-foreground">An unexpected error occurred. Please try refreshing the page.</p>
             <div className="space-x-4">
-              <button 
-                onClick={() => window.location.reload()} 
+              <button
+                onClick={() => window.location.reload()}
                 className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
               >
                 Refresh Page
               </button>
-              <button 
+              <button
                 onClick={() => this.setState({ hasError: false })}
                 className="px-4 py-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground rounded-md transition-colors"
               >

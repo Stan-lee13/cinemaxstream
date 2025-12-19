@@ -13,15 +13,33 @@ type ContentRow = DB['public']['Tables']['content']['Row'];
 type ContentCategoryRow = DB['public']['Tables']['content_categories']['Row'];
 
 // Extend ContentRow with additional properties
-interface ContentWithCategory extends ContentRow {
+interface ContentWithCategory {
   content_categories?: ContentCategoryRow | null;
+  // Include all properties from ContentRow
+  category_id?: string | null;
+  content_type?: string;
+  created_at?: string;
+  description?: string | null;
+  duration?: string | null;
+  featured?: boolean | null;
+  id?: string;
+  image_url?: string | null;
+  popular?: boolean | null;
+  rating?: string | null;
+  title?: string;
+  trending?: boolean | null;
+  updated_at?: string;
+  year?: string | null;
 }
 
 // Extend ContentRow with additional properties
-export interface Content extends ContentRow {
+export interface Content extends Omit<ContentRow, 'content_type' | 'rating'> {
   content_categories?: ContentCategoryRow | null;
   is_premium?: boolean | null;
   tmdb_id?: string | null;
+  // Make these properties optional to avoid conflicts
+  content_type?: string;
+  rating?: string | null;
 }
 
 export const useContentDetail = (contentId: string | undefined, contentTypeHint?: string) => {
@@ -45,15 +63,15 @@ export const useContentDetail = (contentId: string | undefined, contentTypeHint?
   const availableProviders = contentId ? getAvailableProviders(contentId, content?.content_type || 'movie') : [];
   const isPremiumContent = content?.is_premium || (content?.rating && parseFloat(String(content.rating)) > 8.0);
   const canAccessPremium = isPremium;
-  
+
   // Check if content is in early access (feature not yet in DB schema)
   const isEarlyAccess = false;
 
   // Fetch content details
   useEffect(() => {
     if (!contentId) return;
-  window.scrollTo(0, 0);
-  setIsLoading(true);
+    window.scrollTo(0, 0);
+    setIsLoading(true);
     const fetchContent = async () => {
       try {
         // Fetch content details with type assertion
@@ -64,7 +82,7 @@ export const useContentDetail = (contentId: string | undefined, contentTypeHint?
           .single();
         const contentData = contentResp.data as ContentWithCategory | null;
         const contentError = contentResp.error;
-        
+
         if (contentError) {
           // If the content is not in our database, fetch from TMDB
           // Use contentTypeHint if provided to ensure correct content type detection
@@ -95,16 +113,16 @@ export const useContentDetail = (contentId: string | undefined, contentTypeHint?
               tmdb_id: contentId,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
-            });
-            
+            } as Content);
+
             // Try to get trailer URL
             try {
               const trailer = await getTrailerUrl(contentId, tmdbContent.type || 'movie');
               setTrailerUrl(trailer);
             } catch (e) {
-            // Error fetching trailer - continue without trailer
+              // Error fetching trailer - continue without trailer
             }
-            
+
             // Fetch related content from TMDB
             const similar = await tmdbApi.getSimilarContent(contentId, tmdbContent.type || 'movie');
             setRelatedContent(similar.map(item => ({
@@ -126,7 +144,7 @@ export const useContentDetail = (contentId: string | undefined, contentTypeHint?
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             })));
-            
+
             // If it's a TV show, fetch seasons and episodes
             if (tmdbContent.type === 'series' || tmdbContent.type === 'anime') {
               try {
@@ -134,15 +152,15 @@ export const useContentDetail = (contentId: string | undefined, contentTypeHint?
                 if (tvSeasons.length > 0) {
                   // Fetch episodes for the first season
                   const firstSeasonEpisodes = await tmdbApi.getTvShowEpisodes(
-                    contentId, 
+                    contentId,
                     tvSeasons[0].season_number
                   );
-                  
+
                   // Update the first season's episodes
                   if (firstSeasonEpisodes.length > 0) {
                     tvSeasons[0].episodes = firstSeasonEpisodes;
                   }
-                  
+
                   setSeasons(tvSeasons);
                 } else {
                   setSeasons([]);
@@ -151,19 +169,19 @@ export const useContentDetail = (contentId: string | undefined, contentTypeHint?
                 setSeasons([]);
               }
             }
-            
+
             setIsLoading(false);
             return;
           }
-          
+
           throw contentError;
         }
-        
+
         // Content found in database - try to get TMDB ID
         // Extract TMDB ID from image URL if possible
         let extractedTmdbId = contentId; // fallback to contentId
-        
-        if (contentData?.image_url) {
+
+        if (contentData && contentData.image_url) {
           // Try to extract TMDB ID from image URL
           // TMDB image URLs follow pattern: https://image.tmdb.org/t/p/w500/{tmdb_id}.jpg
           const tmdbImageRegex = new RegExp('/t/p/[^/]+/([^./]+)\\.(?:jpg|png|jpeg)');
@@ -172,13 +190,13 @@ export const useContentDetail = (contentId: string | undefined, contentTypeHint?
             extractedTmdbId = match[1];
           }
         }
-        
+
         setTmdbId(extractedTmdbId);
         setContent({
           ...contentData,
           tmdb_id: extractedTmdbId
         } as Content);
-        
+
         // Try to get trailer URL
         try {
           if (contentData) {
@@ -188,7 +206,7 @@ export const useContentDetail = (contentId: string | undefined, contentTypeHint?
         } catch (e) {
           // Error fetching trailer - continue without trailer
         }
-        
+
         // Check if user has liked this content
         if (isAuthenticated && user) {
           const favRes = await supabase
@@ -200,7 +218,7 @@ export const useContentDetail = (contentId: string | undefined, contentTypeHint?
 
           setLiked(!!favRes.data);
         }
-        
+
         // Fetch related content from the same category
         if (contentData && contentData.category_id) {
           const relatedRes = await supabase
@@ -236,48 +254,38 @@ export const useContentDetail = (contentId: string | undefined, contentTypeHint?
             updated_at: new Date().toISOString()
           })));
         }
-        
+
         // If it's a TV show or anime, fetch seasons and episodes from TMDB
         if (contentData && (contentData.content_type === 'series' || contentData.content_type === 'anime')) {
           try {
             const tvSeasons = await tmdbApi.getTvShowSeasons(extractedTmdbId);
-            
+
             if (tvSeasons && tvSeasons.length > 0) {
               // Fetch episodes for the first season only initially
               const firstSeasonEpisodes = await tmdbApi.getTvShowEpisodes(
-                extractedTmdbId, 
+                extractedTmdbId,
                 tvSeasons[0].season_number
               );
-              
+
               tvSeasons[0].episodes = firstSeasonEpisodes || [];
               setSeasons(tvSeasons);
-             } else {
-               setSeasons([]);
-             }
-           } catch (error) {
-             setSeasons([]);
-           }
+            } else {
+              setSeasons([]);
+            }
+          } catch (_error) {
+            setSeasons([]);
+          }
         }
-      } catch (error) {
+      } catch (_error) {
         // Error fetching content
         setContent(null);
       } finally {
         setIsLoading(false);
       }
     };
-    
+
     fetchContent();
   }, [contentId, isAuthenticated, user, contentTypeHint]);
-
-  // Handle early access gating
-  const checkEarlyAccess = (setShowUpgradeModal: (show: boolean) => void, setUpgradeReason: (reason: 'streaming' | 'download') => void) => {
-    if (isEarlyAccess && (!user || (user && !isPremium))) {
-      setUpgradeReason('streaming');
-      setShowUpgradeModal(true);
-      return true;
-    }
-    return false;
-  };
 
   // Handle favorite toggle
   const toggleFavorite = async () => {
@@ -285,9 +293,9 @@ export const useContentDetail = (contentId: string | undefined, contentTypeHint?
       toast.error("Please sign in to add favorites");
       return;
     }
-    
+
     if (!contentId || !user) return;
-    
+
     try {
       if (liked) {
         // Remove from favorites
@@ -296,7 +304,7 @@ export const useContentDetail = (contentId: string | undefined, contentTypeHint?
           .delete()
           .eq('user_id', user.id)
           .eq('content_id', contentId);
-        
+
         toast.success("Removed from favorites");
       } else {
         // Add to favorites
@@ -304,16 +312,16 @@ export const useContentDetail = (contentId: string | undefined, contentTypeHint?
           user_id: user.id,
           content_id: contentId
         };
-        
+
         await supabase
           .from('user_favorites')
           .insert(favoriteData);
-        
+
         toast.success("Added to favorites");
       }
-      
+
       setLiked(!liked);
-    } catch (error) {
+    } catch (_error) {
       toast.error("Error updating favorites");
       // Error updating favorites
     }
@@ -326,22 +334,22 @@ export const useContentDetail = (contentId: string | undefined, contentTypeHint?
       setShowPremiumModal(true);
       return;
     }
-    
+
     // Show splash screen first
     setShowSplashScreen(true);
-    
+
     // After splash screen completes
     setTimeout(() => {
       setShowSplashScreen(false);
       setIsPlaying(true);
-      
+
       // Activate neon effect after a slight delay
       setTimeout(() => {
         setShowNeonEffect(true);
       }, 500);
     }, 3000);
   };
-  
+
   // Handle episode selection
   const handleEpisodeSelect = (seasonNumber: number, episodeNumber: number) => {
     if (isPremiumContent && !canAccessPremium) {
@@ -349,11 +357,11 @@ export const useContentDetail = (contentId: string | undefined, contentTypeHint?
       setShowPremiumModal(true);
       return;
     }
-    
+
     // Update current season and episode first
     setCurrentSeason(seasonNumber);
     setCurrentEpisode(episodeNumber);
-    
+
     // If already playing, just update the video (force re-render by toggling playing state)
     if (isPlaying) {
       setIsPlaying(false);
@@ -362,14 +370,14 @@ export const useContentDetail = (contentId: string | undefined, contentTypeHint?
       }, 100);
       return;
     }
-    
+
     // Show splash screen for first play
     setShowSplashScreen(true);
-    
+
     setTimeout(() => {
       setShowSplashScreen(false);
       setIsPlaying(true);
-      
+
       setTimeout(() => {
         setShowNeonEffect(true);
       }, 500);
@@ -379,7 +387,7 @@ export const useContentDetail = (contentId: string | undefined, contentTypeHint?
   // Load episodes for a season
   const loadEpisodesForSeason = async (seasonNumber: number) => {
     if (!contentId) return;
-    
+
     try {
       const episodes = await tmdbApi.getTvShowEpisodes(contentId, seasonNumber);
       if (episodes && episodes.length > 0) {
