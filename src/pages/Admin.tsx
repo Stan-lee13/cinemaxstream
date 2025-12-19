@@ -183,6 +183,20 @@ const Admin = () => {
     }
   };
 
+  const handleBanUser = async (userId: string) => {
+    if (userId === user?.id) {
+      toast.error("Cannot restrict root node");
+      return;
+    }
+    try {
+      await supabase.from('user_roles').upsert({ user_id: userId, role: 'free' as const });
+      toast.success("Node Restricted");
+      fetchData();
+    } catch (error) {
+      toast.error("Operation Failed");
+    }
+  };
+
   const filteredUsers = users.filter(u => u.username?.toLowerCase().includes(searchQuery.toLowerCase()));
 
   if (authLoading || isLoading) return <LoadingState message="Hyper-threading Nexus Core..." />;
@@ -282,8 +296,8 @@ const Admin = () => {
                               <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Joined {new Date(u.created_at).toLocaleDateString()}</div>
                             </div>
                           </div>
-                          <Badge className={u.role === 'premium' ? 'bg-amber-500 text-black font-black' : 'bg-white/5 text-gray-500 border-white/5'}>
-                            {u.role.toUpperCase()}
+                          <Badge className={(u.role || 'free') === 'premium' ? 'bg-amber-500 text-black font-black' : 'bg-white/5 text-gray-500 border-white/5'}>
+                            {(u.role || 'free').toUpperCase()}
                           </Badge>
                         </div>
                       ))}
@@ -339,8 +353,8 @@ const Admin = () => {
                         <div>
                           <div className="flex items-center gap-4 mb-1">
                             <span className="font-black text-2xl text-white tracking-tight group-hover/node:text-blue-400 transition-colors uppercase">{u.username || 'Anonymous'}</span>
-                            <Badge className={u.role === 'premium' ? 'bg-amber-500 text-black font-black uppercase tracking-widest text-[8px]' : 'bg-gray-800 text-gray-400 font-black uppercase tracking-widest text-[8px]'}>
-                              {u.role}
+                            <Badge className={(u.role || 'free') === 'premium' ? 'bg-amber-500 text-black font-black uppercase tracking-widest text-[8px]' : 'bg-gray-800 text-gray-400 font-black uppercase tracking-widest text-[8px]'}>
+                              {u.role || 'free'}
                             </Badge>
                           </div>
                           <div className="text-[10px] text-gray-600 font-bold uppercase tracking-[0.2em] flex items-center gap-2">

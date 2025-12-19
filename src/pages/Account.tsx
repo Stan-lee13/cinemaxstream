@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { User, Settings, CreditCard, Download, Bell, Shield, FileText, Trash2, Mail, ChevronRight, LogOut, History, Bookmark, Sparkles } from 'lucide-react';
+import { User, Settings, CreditCard, Download, Bell, Shield, FileText, Trash2, Mail, ChevronRight, LogOut, History, Bookmark, Sparkles, Calendar } from 'lucide-react';
 import BackButton from "@/components/BackButton";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
