@@ -9,7 +9,7 @@
     --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
     
-    --card: 240 10% 3.9%;
+    --card: 240 10% 8%;
     --card-foreground: 0 0% 98%;
     
     --popover: 240 10% 3.9%;
@@ -37,7 +37,117 @@
     --radius: 0.5rem;
   }
   
-  /* Removed unnecessary themes - keeping only dark theme */
+  /* Midnight Theme - Deep blue gradient */
+  [data-theme="midnight"] {
+    --background: 230 25% 5%;
+    --foreground: 0 0% 98%;
+    
+    --card: 230 25% 10%;
+    --card-foreground: 0 0% 98%;
+    
+    --popover: 230 25% 8%;
+    --popover-foreground: 0 0% 98%;
+    
+    --primary: 250 85% 65%;
+    --primary-foreground: 0 0% 98%;
+    
+    --secondary: 230 20% 18%;
+    --secondary-foreground: 0 0% 98%;
+    
+    --muted: 230 15% 20%;
+    --muted-foreground: 230 10% 65%;
+    
+    --accent: 250 50% 40%;
+    --accent-foreground: 0 0% 98%;
+    
+    --border: 230 20% 20%;
+    --input: 230 20% 15%;
+    --ring: 250 60% 70%;
+  }
+  
+  /* Neon Theme - Cyberpunk green */
+  [data-theme="neon"] {
+    --background: 160 30% 3%;
+    --foreground: 0 0% 98%;
+    
+    --card: 160 25% 8%;
+    --card-foreground: 0 0% 98%;
+    
+    --popover: 160 25% 6%;
+    --popover-foreground: 0 0% 98%;
+    
+    --primary: 140 80% 50%;
+    --primary-foreground: 0 0% 5%;
+    
+    --secondary: 160 20% 15%;
+    --secondary-foreground: 0 0% 98%;
+    
+    --muted: 160 15% 18%;
+    --muted-foreground: 160 10% 60%;
+    
+    --accent: 140 60% 35%;
+    --accent-foreground: 0 0% 98%;
+    
+    --border: 160 20% 18%;
+    --input: 160 20% 12%;
+    --ring: 140 70% 55%;
+  }
+  
+  /* Sunrise Theme - Warm amber */
+  [data-theme="sunrise"] {
+    --background: 30 20% 4%;
+    --foreground: 0 0% 98%;
+    
+    --card: 30 20% 9%;
+    --card-foreground: 0 0% 98%;
+    
+    --popover: 30 20% 7%;
+    --popover-foreground: 0 0% 98%;
+    
+    --primary: 35 90% 55%;
+    --primary-foreground: 0 0% 5%;
+    
+    --secondary: 30 15% 16%;
+    --secondary-foreground: 0 0% 98%;
+    
+    --muted: 30 12% 18%;
+    --muted-foreground: 30 8% 60%;
+    
+    --accent: 35 60% 40%;
+    --accent-foreground: 0 0% 98%;
+    
+    --border: 30 15% 18%;
+    --input: 30 15% 12%;
+    --ring: 35 80% 60%;
+  }
+  
+  /* Forest Theme - Deep emerald */
+  [data-theme="forest"] {
+    --background: 150 25% 4%;
+    --foreground: 0 0% 98%;
+    
+    --card: 150 25% 9%;
+    --card-foreground: 0 0% 98%;
+    
+    --popover: 150 25% 7%;
+    --popover-foreground: 0 0% 98%;
+    
+    --primary: 160 70% 45%;
+    --primary-foreground: 0 0% 5%;
+    
+    --secondary: 150 18% 16%;
+    --secondary-foreground: 0 0% 98%;
+    
+    --muted: 150 12% 18%;
+    --muted-foreground: 150 8% 58%;
+    
+    --accent: 160 50% 35%;
+    --accent-foreground: 0 0% 98%;
+    
+    --border: 150 15% 18%;
+    --input: 150 15% 12%;
+    --ring: 160 60% 50%;
+  }
   
 }
 

@@ -253,6 +253,45 @@ export type Database = {
         }
         Relationships: []
       }
+      premium_codes: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          current_uses: number | null
+          description: string | null
+          duration_days: number | null
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          max_uses: number | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          current_uses?: number | null
+          description?: string | null
+          duration_days?: number | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          current_uses?: number | null
+          description?: string | null
+          duration_days?: number | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+        }
+        Relationships: []
+      }
       user_favorites: {
         Row: {
           content_id: string | null

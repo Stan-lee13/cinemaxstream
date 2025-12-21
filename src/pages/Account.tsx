@@ -247,7 +247,7 @@ const Account = () => {
                       <div
                         key={i}
                         onClick={() => navigate(item.route)}
-                        className={`settings-card group p-8 rounded-[32px] bg-[#111]/60 border transition-all cursor-pointer flex items-center gap-6 relative overflow-hidden backdrop-blur-xl ${isBilling ? 'border-amber-500/30 bg-amber-500/[0.03] hover:bg-amber-500/[0.06] hover:border-amber-500' : 'border-white/5 hover:border-white/20 hover:bg-[#161616]'}`}
+                        className={`settings-card group p-8 rounded-[32px] border transition-all cursor-pointer flex items-center gap-6 relative overflow-hidden backdrop-blur-xl ${isBilling ? 'bg-amber-500/10 border-amber-500/30 hover:bg-amber-500/20 hover:border-amber-500' : 'bg-[#161616] border-white/10 hover:border-white/20 hover:bg-[#1a1a1a]'}`}
                       >
                         <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500" />
 
@@ -261,14 +261,14 @@ const Account = () => {
                           <Icon size={32} />
                         </div>
                         <div className="flex-1">
-                          <h3 className={`font-black text-xl mb-1 uppercase tracking-tight transition-colors ${isBilling ? 'text-amber-400' : 'text-gray-100 group-hover:text-blue-400'}`}>
+                          <h3 className={`font-black text-xl mb-1 uppercase tracking-tight transition-colors ${isBilling ? 'text-amber-400' : 'text-white group-hover:text-blue-400'}`}>
                             {item.title}
                           </h3>
-                          <p className="text-sm text-gray-400 font-medium leading-relaxed group-hover:text-gray-300 transition-colors">
+                          <p className="text-sm text-gray-300 font-medium leading-relaxed group-hover:text-white transition-colors">
                             {item.description}
                           </p>
                         </div>
-                        <ChevronRight className={`transition-all duration-300 ${isBilling ? 'text-amber-500' : 'text-gray-700 group-hover:text-white'} group-hover:translate-x-2`} size={28} />
+                        <ChevronRight className={`transition-all duration-300 ${isBilling ? 'text-amber-500' : 'text-gray-500 group-hover:text-white'} group-hover:translate-x-2`} size={28} />
                       </div>
                     );
                   })}
