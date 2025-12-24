@@ -20,11 +20,7 @@ const RoutedApp = () => {
   }, [location.pathname]);
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen w-full flex items-center justify-center bg-background">
-        <div className="w-8 h-8 border-4 border-cinemax-400 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
+    return <SplashScreen onComplete={() => {}} />;
   }
 
   // Not authenticated and on the main route: first landing, then auth after CTA

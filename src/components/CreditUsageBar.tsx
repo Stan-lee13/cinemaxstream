@@ -45,7 +45,6 @@ const CreditUsageBar: React.FC = () => {
       </div>
 
       <div className="space-y-4">
-        {/* Streaming Usage */}
         <div>
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
@@ -53,21 +52,11 @@ const CreditUsageBar: React.FC = () => {
               <span className="text-sm font-medium">Streams Today</span>
             </div>
             <span className="text-sm text-gray-400">
-              {limits.unlimited 
-                ? `${userUsage.watched_today} / ∞`
-                : `${userUsage.watched_today} / ${limits.maxStreams}`
-              }
+              {`${userUsage.watched_today} / ∞`}
             </span>
           </div>
-          {!limits.unlimited && (
-            <Progress 
-              value={(userUsage.watched_today / limits.maxStreams) * 100} 
-              className="h-2"
-            />
-          )}
         </div>
 
-        {/* Download Usage */}
         <div>
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
@@ -75,17 +64,15 @@ const CreditUsageBar: React.FC = () => {
               <span className="text-sm font-medium">Downloads Today</span>
             </div>
             <span className="text-sm text-gray-400">
-              {userProfile.role === 'free' 
-                ? 'Not Available'
-                : limits.unlimited 
-                  ? `${userUsage.downloads_today} / ∞`
-                  : `${userUsage.downloads_today} / ${limits.maxDownloads}`
+              {limits.unlimited || userProfile.role === 'pro' || userProfile.role === 'premium'
+                ? `${userUsage.downloads_today} / ∞`
+                : `${userUsage.downloads_today} / ${limits.maxDownloads}`
               }
-            </span>
+          </span>
           </div>
-          {userProfile.role !== 'free' && !limits.unlimited && (
-            <Progress 
-              value={(userUsage.downloads_today / limits.maxDownloads) * 100} 
+          {!(limits.unlimited || userProfile.role === 'pro' || userProfile.role === 'premium') && limits.maxDownloads > 0 && (
+            <Progress
+              value={(userUsage.downloads_today / limits.maxDownloads) * 100}
               className="h-2"
             />
           )}

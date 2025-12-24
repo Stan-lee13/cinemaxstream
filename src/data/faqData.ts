@@ -9,7 +9,7 @@ export const FAQ_DATA = [
   },
   {
     question: "Can I download content for offline viewing?",
-    answer: "Yes, premium subscribers can download select movies and TV shows for offline viewing on their devices."
+    answer: "Yes, Pro and Premium subscribers can download select movies and TV shows for offline viewing on their devices."
   },
   {
     question: "What devices are supported?",
@@ -32,4 +32,3 @@ export const FAQ_DATA = [
     answer: "We add new movies, TV shows, and anime regularly. Check our 'New Releases' section for the latest additions."
   }
 ]
-

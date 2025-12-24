@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/authHooks';
 import Navbar from '@/components/Navbar';
@@ -7,8 +7,9 @@ import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Download, ExternalLink, Clock, CheckCircle, XCircle, Loader2, FileVideo, HardDrive, Wifi, Tv, ArrowRight, Trash2 } from 'lucide-react';
 import LoadingState from '@/components/LoadingState';
-import gsap from 'gsap';
 import { toast } from 'sonner';
+import { motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 interface DownloadRequest {
   id: string;
@@ -31,7 +32,7 @@ const Downloads = () => {
   const { user } = useAuth();
   const [downloads, setDownloads] = useState<DownloadRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const prefersReducedMotion = useReducedMotion();
 
   const fetchDownloads = useCallback(async () => {
     if (!user) return;
@@ -74,22 +75,6 @@ const Downloads = () => {
   useEffect(() => {
     fetchDownloads();
   }, [fetchDownloads]);
-
-  // Animation effect when downloads are loaded
-  useEffect(() => {
-    if (!isLoading && downloads.length > 0) {
-      const ctx = gsap.context(() => {
-        gsap.from(".download-card", {
-          y: 20,
-          opacity: 0,
-          duration: 0.6,
-          stagger: 0.1,
-          ease: "power3.out"
-        });
-      }, containerRef);
-      return () => ctx.revert();
-    }
-  }, [isLoading, downloads.length]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -151,7 +136,7 @@ const Downloads = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col" ref={containerRef}>
+    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col">
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-[10%] left-[-5%] w-[40%] h-[40%] bg-blue-900/10 rounded-full blur-[120px]" />
         <div className="absolute bottom-[10%] right-[-5%] w-[40%] h-[40%] bg-emerald-900/10 rounded-full blur-[120px]" />
@@ -201,9 +186,13 @@ const Downloads = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {downloads.map((download) => (
-                <div
+                <motion.div
                   key={download.id}
                   className="download-card group relative overflow-hidden rounded-[28px] bg-[#111] border border-white/5 hover:border-emerald-500/30 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-emerald-900/10"
+                  initial={prefersReducedMotion ? undefined : { opacity: 0, y: 20 }}
+                  whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: '-100px' }}
+                  transition={{ duration: 0.6, ease: 'easeOut' }}
                 >
                   <div className="p-6 md:p-8">
                     <div className="flex items-start justify-between gap-4 mb-6">
@@ -280,7 +269,7 @@ const Downloads = () => {
                       </div>
                     )}
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           )}

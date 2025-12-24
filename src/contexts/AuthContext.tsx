@@ -117,7 +117,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     
     try {
-      // Validate the premium code
       const { validatePremiumCode } = await import('@/utils/authUtils');
       const isValid = await validatePremiumCode(promoCode);
       
@@ -125,33 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         toast.error('Invalid or expired promo code');
         return false;
       }
-      
-      // Update user role to premium
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .upsert({ 
-          user_id: user.id, 
-          role: 'premium' 
-        });
-      
-      if (roleError) {
-        throw roleError;
-      }
-      
-      // Also update user_profiles for backward compatibility
-      const { error: profileError } = await supabase
-        .from('user_profiles')
-        .update({ 
-          role: 'premium',
-          subscription_expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() // 1 year from now
-        })
-        .eq('id', user.id);
-      
-      if (profileError) {
-        throw profileError;
-      }
-      
-      // Refresh the isPremium state
+
       setIsPremium(true);
       
       toast.success('Premium activated successfully!');

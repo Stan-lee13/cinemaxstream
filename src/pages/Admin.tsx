@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -34,7 +34,6 @@ import { Label } from "@/components/ui/label";
 import LoadingState from "@/components/LoadingState";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import gsap from "gsap";
 
 const ADMIN_EMAIL = "stanleyvic13@gmail.com";
 
@@ -76,10 +75,33 @@ interface Submission {
   created_at: string;
 }
 
+interface PromoCode {
+  id: string;
+  code: string;
+  description?: string | null;
+  is_active: boolean;
+  max_uses: number | null;
+  current_uses: number;
+  expires_at: string | null;
+  tier?: string | null;
+  months_granted?: number | null;
+  per_user_limit?: number | null;
+  notes?: string | null;
+}
+
+interface AdminActionLog {
+  id: string;
+  admin_id: string | null;
+  target_user_id: string | null;
+  action_type: string;
+  action_description: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+}
+
 const Admin = () => {
   const { user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const containerRef = useRef<HTMLDivElement>(null);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [users, setUsers] = useState<UserData[]>([]);
@@ -97,6 +119,21 @@ const Admin = () => {
   const [contentSearch, setContentSearch] = useState("");
   const [selectedTab, setSelectedTab] = useState("overview");
 
+  const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
+  const [promoSearch, setPromoSearch] = useState("");
+  const [newPromo, setNewPromo] = useState({
+    code: "",
+    description: "",
+    tier: "premium",
+    months: "12",
+    maxUses: "",
+    perUserLimit: "",
+    expiresAt: "",
+    notes: ""
+  });
+  const [isSavingPromo, setIsSavingPromo] = useState(false);
+  const [adminLogs, setAdminLogs] = useState<AdminActionLog[]>([]);
+
   // Add Content State
   const [newContent, setNewContent] = useState({
     title: "",
@@ -108,28 +145,33 @@ const Admin = () => {
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user || user.email?.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
-      if (!user) navigate("/");
-      else {
-        toast.error("Level 5 Authorization required");
+    const verifyAccess = async () => {
+      if (!user) {
+        navigate("/");
+        return;
+      }
+
+      try {
+        const { isAdmin } = await import('@/utils/authUtils');
+        const hasAdminRole = await isAdmin();
+        const isRootEmail = user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+
+        if (!hasAdminRole && !isRootEmail) {
+          toast.error("Level 5 Authorization required");
+          navigate("/");
+          return;
+        }
+
+        setIsAuthorized(true);
+        fetchData();
+      } catch {
+        toast.error("Authorization check failed");
         navigate("/");
       }
-      return;
-    }
-    setIsAuthorized(true);
-    fetchData();
-  }, [user, authLoading, navigate]);
+    };
 
-  useEffect(() => {
-    if (isAuthorized && !isLoading) {
-      const ctx = gsap.context(() => {
-        gsap.from(".admin-header", { y: -20, opacity: 0, duration: 0.4, ease: "power2.out" });
-        gsap.from(".stat-card", { scale: 0.98, opacity: 0, y: 20, duration: 0.3, stagger: 0.05, ease: "power2.out" });
-        gsap.from(".admin-tab-content", { opacity: 0, y: 10, duration: 0.3, ease: "power2.out" });
-      }, containerRef);
-      return () => ctx.revert();
-    }
-  }, [isAuthorized, isLoading, selectedTab]);
+    verifyAccess();
+  }, [user, authLoading, navigate]);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -139,13 +181,17 @@ const Admin = () => {
         { data: roles },
         { data: sessions },
         { data: contentData },
-        { data: submissionData }
+        { data: submissionData },
+        { data: promoData },
+        { data: logsData }
       ] = await Promise.all([
         supabase.from('user_profiles').select('*').order('created_at', { ascending: false }),
         supabase.from('user_roles').select('*'),
         supabase.from('watch_sessions').select('id, created_at').gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()),
         supabase.from('content').select('*').order('created_at', { ascending: false }),
-        supabase.from('contact_submissions').select('*').order('created_at', { ascending: false })
+        supabase.from('contact_submissions').select('*').order('created_at', { ascending: false }),
+        (supabase as any).from('premium_codes').select('*').order('created_at', { ascending: false }),
+        (supabase as any).from('admin_action_logs').select('*').order('created_at', { ascending: false }).limit(100)
       ]);
 
       const premiumCount = roles?.filter(r => r.role === 'premium').length || 0;
@@ -180,6 +226,8 @@ const Admin = () => {
         image_url: c.image_url
       })));
       setSubmissions(submissionData || []);
+      setPromoCodes((promoData || []) as unknown as PromoCode[]);
+      setAdminLogs((logsData || []) as AdminActionLog[]);
     } catch (error) {
       toast.error("Nexus Link Failure");
     } finally {
@@ -187,15 +235,46 @@ const Admin = () => {
     }
   };
 
+  const recordAdminAction = async (actionType: string, targetUserId?: string, metadata?: unknown) => {
+    if (!user) return;
+    try {
+      await (supabase as any).from('admin_action_logs').insert({
+        admin_id: user.id,
+        target_user_id: targetUserId || null,
+        action_type: actionType,
+        action_description: null,
+        metadata: (metadata ?? {}) as Record<string, unknown>,
+      });
+    // eslint-disable-next-line no-empty
+    } catch {
+    }
+  };
+
   const handleUpgradeUser = async (userId: string) => {
+    if (!isAuthorized) {
+      toast.error("Admin access required");
+      return;
+    }
     try {
       const { data: existing } = await supabase.from('user_roles').select('*').eq('user_id', userId).eq('role', 'premium').maybeSingle();
       if (existing) {
         await supabase.from('user_roles').delete().eq('user_id', userId).eq('role', 'premium');
+         await supabase.from('user_profiles').update({
+          subscription_tier: 'free',
+          subscription_expires_at: null
+        }).eq('id', userId);
         toast.success("Node Downgraded");
+        await recordAdminAction('downgrade_user', userId, { previousRole: 'premium' });
       } else {
         await supabase.from('user_roles').insert({ user_id: userId, role: 'premium' as const });
+        const expiryDate = new Date();
+        expiryDate.setMonth(expiryDate.getMonth() + 12);
+        await supabase.from('user_profiles').update({
+          subscription_tier: 'premium',
+          subscription_expires_at: expiryDate.toISOString()
+        }).eq('id', userId);
         toast.success("Node Elevated to Premium");
+        await recordAdminAction('upgrade_user', userId, { newRole: 'premium' });
       }
       fetchData();
     } catch (error) {
@@ -204,13 +283,22 @@ const Admin = () => {
   };
 
   const handleBanUser = async (userId: string) => {
+    if (!isAuthorized) {
+      toast.error("Admin access required");
+      return;
+    }
     if (userId === user?.id) {
       toast.error("Cannot restrict root node");
       return;
     }
     try {
       await supabase.from('user_roles').upsert({ user_id: userId, role: 'free' as const });
+      await supabase.from('user_profiles').update({
+        subscription_tier: 'free',
+        subscription_expires_at: null
+      }).eq('id', userId);
       toast.success("Node Restricted");
+      await recordAdminAction('restrict_user', userId);
       fetchData();
     } catch (error) {
       toast.error("Operation Failed");
@@ -218,10 +306,15 @@ const Admin = () => {
   };
 
   const handleDeleteContent = async (id: string) => {
+    if (!isAuthorized) {
+      toast.error("Admin access required");
+      return;
+    }
     try {
       const { error } = await supabase.from('content').delete().eq('id', id);
       if (error) throw error;
       toast.success("Content purged from library");
+      await recordAdminAction('delete_content', undefined, { contentId: id });
       fetchData();
     } catch (error) {
       toast.error("Purge Failed");
@@ -229,10 +322,15 @@ const Admin = () => {
   };
 
   const handleDeleteSubmission = async (id: string) => {
+    if (!isAuthorized) {
+      toast.error("Admin access required");
+      return;
+    }
     try {
       const { error } = await supabase.from('contact_submissions').delete().eq('id', id);
       if (error) throw error;
       toast.success("Transmission data cleared");
+      await recordAdminAction('delete_support_ticket', undefined, { submissionId: id });
       fetchData();
     } catch (error) {
       toast.error("Clear Failed");
@@ -241,6 +339,10 @@ const Admin = () => {
 
   const handleAddContent = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAuthorized) {
+      toast.error("Admin access required");
+      return;
+    }
     if (!newContent.title) return;
     try {
       const { error } = await supabase.from('content').insert(newContent);
@@ -255,12 +357,168 @@ const Admin = () => {
 
   const filteredUsers = users.filter(u => u.username?.toLowerCase().includes(searchQuery.toLowerCase()));
   const filteredContent = content.filter(c => c.title.toLowerCase().includes(contentSearch.toLowerCase()));
+  const filteredPromoCodes = promoCodes.filter(code =>
+    code.code.toLowerCase().includes(promoSearch.toLowerCase()) ||
+    (code.description || "").toLowerCase().includes(promoSearch.toLowerCase())
+  );
+
+  const handleCopyPromoCode = async (code: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      toast.success("Promo code copied to clipboard");
+    } catch {
+      toast.error("Unable to copy promo code");
+    }
+  };
+
+  const handleCreatePromoCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!isAuthorized) {
+      toast.error("Admin access required");
+      return;
+    }
+
+    const rawCode = newPromo.code.trim().toUpperCase();
+
+    if (!/^[A-Z0-9]{5,20}$/.test(rawCode)) {
+      toast.error("Code must be 5-20 characters (A-Z, 0-9)");
+      return;
+    }
+
+    const months = parseInt(newPromo.months, 10);
+
+    if (Number.isNaN(months) || months < 1 || months > 36) {
+      toast.error("Months must be between 1 and 36");
+      return;
+    }
+
+    const maxUses = newPromo.maxUses ? parseInt(newPromo.maxUses, 10) : null;
+    if (maxUses !== null && (Number.isNaN(maxUses) || maxUses <= 0)) {
+      toast.error("Max uses must be a positive number");
+      return;
+    }
+
+    const perUserLimit = newPromo.perUserLimit ? parseInt(newPromo.perUserLimit, 10) : null;
+    if (perUserLimit !== null && (Number.isNaN(perUserLimit) || perUserLimit <= 0)) {
+      toast.error("Per-user limit must be a positive number");
+      return;
+    }
+
+    let expiresAt: string | null = null;
+    if (newPromo.expiresAt) {
+      const date = new Date(newPromo.expiresAt);
+      if (Number.isNaN(date.getTime())) {
+        toast.error("Invalid expiration date");
+        return;
+      }
+      expiresAt = date.toISOString();
+    }
+
+    setIsSavingPromo(true);
+
+    try {
+      const { error } = await supabase.from('premium_codes').insert({
+        code: rawCode,
+        description: newPromo.description || null,
+        tier: newPromo.tier,
+        months_granted: months,
+        max_uses: maxUses,
+        per_user_limit: perUserLimit,
+        expires_at: expiresAt,
+        notes: newPromo.notes || null,
+        created_by: user?.id
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success("Promo code created");
+      await recordAdminAction('create_promo_code', undefined, {
+        code: rawCode,
+        tier: newPromo.tier,
+        months
+      });
+
+      setNewPromo({
+        code: "",
+        description: "",
+        tier: "premium",
+        months: "12",
+        maxUses: "",
+        perUserLimit: "",
+        expiresAt: "",
+        notes: ""
+      });
+
+      fetchData();
+    } catch {
+      toast.error("Failed to create promo code");
+    } finally {
+      setIsSavingPromo(false);
+    }
+  };
+
+  const handleTogglePromoActive = async (promo: PromoCode) => {
+    if (!isAuthorized) {
+      toast.error("Admin access required");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('premium_codes')
+        .update({ is_active: !promo.is_active })
+        .eq('id', promo.id);
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success(!promo.is_active ? "Promo code activated" : "Promo code deactivated");
+      await recordAdminAction(!promo.is_active ? 'activate_promo_code' : 'deactivate_promo_code', undefined, {
+        code: promo.code
+      });
+
+      fetchData();
+    } catch {
+      toast.error("Failed to update promo code");
+    }
+  };
+
+  const handleDeletePromoCode = async (promo: PromoCode) => {
+    if (!isAuthorized) {
+      toast.error("Admin access required");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('premium_codes')
+        .delete()
+        .eq('id', promo.id);
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success("Promo code deleted");
+      await recordAdminAction('delete_promo_code', undefined, {
+        code: promo.code
+      });
+
+      fetchData();
+    } catch {
+      toast.error("Failed to delete promo code");
+    }
+  };
 
   if (authLoading || isLoading) return <LoadingState message="Hyper-threading Nexus Core..." />;
   if (!isAuthorized) return null;
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col font-sans selection:bg-blue-500/30" ref={containerRef}>
+    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col font-sans selection:bg-blue-500/30">
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-[5%] right-[5%] w-[40%] h-[40%] bg-blue-600/[0.03] rounded-full blur-[120px]" />
         <div className="absolute bottom-[5%] left-[5%] w-[40%] h-[40%] bg-indigo-600/[0.03] rounded-full blur-[120px]" />
@@ -296,7 +554,7 @@ const Admin = () => {
           <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-8">
             <div className="flex justify-start overflow-x-auto pb-4 hide-scrollbar">
               <TabsList className="bg-white/5 p-1.5 border border-white/5 rounded-2xl backdrop-blur-3xl h-auto flex gap-1">
-                {['overview', 'users', 'content', 'support', 'analytics'].map((tab) => (
+                {['overview', 'users', 'content', 'support', 'promo', 'analytics', 'audit'].map((tab) => (
                   <TabsTrigger key={tab} value={tab} className="px-8 py-3 rounded-xl font-black uppercase text-[10px] tracking-[0.2em] data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all shadow-xl">
                     {tab}
                   </TabsTrigger>
@@ -308,12 +566,39 @@ const Admin = () => {
               <TabsContent value="overview" className="mt-0">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
                   {[
-                    { label: 'Neural Nodes', value: analytics.totalUsers, icon: Users, color: 'text-blue-400', sub: `+${analytics.newUsersThisWeek} New` },
-                    { label: 'Premium Sync', value: analytics.premiumUsers, icon: Crown, color: 'text-amber-400', sub: `${((analytics.premiumUsers / Math.max(analytics.totalUsers, 1)) * 100).toFixed(1)}% Ratio` },
-                    { label: 'Content Units', value: analytics.totalContent, icon: Layers, color: 'text-purple-400', sub: 'Total Records' },
-                    { label: 'Grid Integrity', value: '100%', icon: Server, color: 'text-emerald-500', sub: 'Status Optimal' },
+                    {
+                      label: 'Total Users',
+                      value: analytics.totalUsers,
+                      icon: Users,
+                      color: 'text-blue-400',
+                      sub: `+${analytics.newUsersThisWeek} this week`
+                    },
+                    {
+                      label: 'Premium Members',
+                      value: analytics.premiumUsers,
+                      icon: Crown,
+                      color: 'text-amber-400',
+                      sub: `${((analytics.premiumUsers / Math.max(analytics.totalUsers, 1)) * 100).toFixed(1)}% of users`
+                    },
+                    {
+                      label: 'Content Items',
+                      value: analytics.totalContent,
+                      icon: Layers,
+                      color: 'text-purple-400',
+                      sub: 'Movies and series'
+                    },
+                    {
+                      label: 'Active Sessions (24h)',
+                      value: analytics.watchSessions,
+                      icon: Server,
+                      color: 'text-emerald-500',
+                      sub: `${analytics.activeToday} unique viewers`
+                    }
                   ].map((stat, i) => (
-                    <div key={i} className="stat-card p-8 rounded-[36px] bg-white/[0.03] border border-white/5 backdrop-blur-3xl hover:bg-white/[0.05] transition-all group overflow-hidden relative">
+                    <div
+                      key={i}
+                      className="stat-card p-8 rounded-[36px] bg-white/[0.03] border border-white/5 backdrop-blur-3xl hover:bg-white/[0.05] transition-all group overflow-hidden relative"
+                    >
                       <div className={`absolute -right-4 -top-4 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity ${stat.color}`}>
                         <stat.icon size={120} />
                       </div>
@@ -322,10 +607,14 @@ const Admin = () => {
                           <div className={`p-2 rounded-xl bg-white/5 ${stat.color} border border-current/20`}>
                             <stat.icon size={18} />
                           </div>
-                          <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">{stat.label}</span>
+                          <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">
+                            {stat.label}
+                          </span>
                         </div>
                         <div className="text-4xl font-black text-white mb-2 tracking-tighter">{stat.value}</div>
-                        <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">{stat.sub}</div>
+                        <div className="text-[10px] font-bold text-gray-600 uppercase tracking-widest">
+                          {stat.sub}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -536,6 +825,220 @@ const Admin = () => {
                 </div>
               </TabsContent>
 
+              <TabsContent value="promo" className="mt-0 space-y-10">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white/5 p-8 rounded-3xl border border-white/5">
+                  <div>
+                    <h3 className="text-xl font-black uppercase tracking-tight flex items-center gap-3 italic">
+                      <Crown className="text-amber-500" /> Promo Codes
+                    </h3>
+                    <p className="text-xs text-gray-500 mt-2 font-medium">
+                      Configure premium access tokens with usage limits and expiry.
+                    </p>
+                  </div>
+                  <div className="relative w-full md:w-96">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+                    <Input
+                      placeholder="SEARCH CODES OR DESCRIPTIONS..."
+                      value={promoSearch}
+                      onChange={(e) => setPromoSearch(e.target.value)}
+                      className="pl-12 bg-white/5 border-white/10 h-14 rounded-2xl text-xs uppercase font-black"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                  <div className="lg:col-span-2 space-y-4">
+                    {filteredPromoCodes.map(code => (
+                      <div
+                        key={code.id}
+                        className="p-6 rounded-[32px] bg-white/[0.03] border border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-white/[0.06] transition-all"
+                      >
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-3">
+                            <span className="text-lg font-black tracking-[0.25em] uppercase text-white">
+                              {code.code}
+                            </span>
+                            <Badge className={code.is_active ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-gray-800 text-gray-400"}>
+                              {code.is_active ? "ACTIVE" : "INACTIVE"}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-gray-500 max-w-xl">
+                            {code.description || "No description"}
+                          </p>
+                        <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                          <Badge className="bg-amber-500/10 text-amber-400 border-amber-500/20">
+                              Tier: {(code.tier || 'premium').toUpperCase()}
+                          </Badge>
+                          <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/20">
+                              {(code.months_granted ?? 12)} Months
+                          </Badge>
+                            <Badge className="bg-white/5 text-gray-400">
+                              Uses: {code.current_uses}{code.max_uses !== null ? ` / ${code.max_uses}` : " / ∞"}
+                            </Badge>
+                            {code.per_user_limit !== null && code.per_user_limit !== undefined && (
+                              <Badge className="bg-purple-500/10 text-purple-300 border-purple-500/20">
+                                Per-User: {code.per_user_limit}
+                              </Badge>
+                            )}
+                            {code.expires_at && (
+                              <span className="text-[10px] text-gray-500">
+                                Expires {new Date(code.expires_at).toLocaleDateString()}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Button
+                            variant="outline"
+                            className="h-10 rounded-2xl px-4 text-[10px] font-black uppercase tracking-widest"
+                            onClick={() => handleCopyPromoCode(code.code)}
+                          >
+                            Share Code
+                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="w-10 h-10 rounded-2xl p-0 border border-white/10">
+                                <ChevronRight size={18} />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="bg-[#050505] border border-white/10">
+                              <DropdownMenuItem onClick={() => handleTogglePromoActive(code)}>
+                                {code.is_active ? "Deactivate" : "Activate"}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="text-red-500" onClick={() => handleDeletePromoCode(code)}>
+                                Delete Code
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+                    ))}
+                    {filteredPromoCodes.length === 0 && (
+                      <div className="p-8 rounded-[32px] bg-white/[0.02] border border-dashed border-white/10 text-center text-sm text-gray-500">
+                        No promo codes found. Create one on the right to begin.
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="p-8 rounded-[32px] bg-white/[0.03] border border-white/5">
+                      <h4 className="text-lg font-black uppercase tracking-tighter mb-4 flex items-center gap-2">
+                        <Zap className="text-blue-500" size={18} /> Create Promo Code
+                      </h4>
+                      <form onSubmit={handleCreatePromoCode} className="space-y-4">
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">
+                            Code
+                          </Label>
+                          <Input
+                            value={newPromo.code}
+                            onChange={(e) => setNewPromo({ ...newPromo, code: e.target.value.toUpperCase() })}
+                            placeholder="CINEMAX2025"
+                            className="bg-white/5 border-white/10 rounded-2xl h-11 font-mono text-xs tracking-[0.3em]"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">
+                            Description
+                          </Label>
+                          <Input
+                            value={newPromo.description}
+                            onChange={(e) => setNewPromo({ ...newPromo, description: e.target.value })}
+                            placeholder="Launch promo - 1 month premium"
+                            className="bg-white/5 border-white/10 rounded-2xl h-11 text-xs"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">
+                              Tier
+                            </Label>
+                            <select
+                              value={newPromo.tier}
+                              onChange={(e) => setNewPromo({ ...newPromo, tier: e.target.value })}
+                              className="w-full bg-white/5 border-white/10 border rounded-2xl h-11 px-4 text-xs font-bold uppercase"
+                            >
+                              <option value="pro">PRO</option>
+                              <option value="premium">PREMIUM</option>
+                            </select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">
+                              Months Granted
+                            </Label>
+                            <Input
+                              type="number"
+                              min={1}
+                              max={36}
+                              value={newPromo.months}
+                              onChange={(e) => setNewPromo({ ...newPromo, months: e.target.value })}
+                              className="bg-white/5 border-white/10 rounded-2xl h-11 text-xs"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">
+                              Max Uses
+                            </Label>
+                            <Input
+                              type="number"
+                              min={1}
+                              value={newPromo.maxUses}
+                              onChange={(e) => setNewPromo({ ...newPromo, maxUses: e.target.value })}
+                              placeholder="Unlimited if empty"
+                              className="bg-white/5 border-white/10 rounded-2xl h-11 text-xs"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">
+                              Per-User Limit
+                            </Label>
+                            <Input
+                              type="number"
+                              min={1}
+                              value={newPromo.perUserLimit}
+                              onChange={(e) => setNewPromo({ ...newPromo, perUserLimit: e.target.value })}
+                              placeholder="Default 1"
+                              className="bg-white/5 border-white/10 rounded-2xl h-11 text-xs"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">
+                            Expiration Date
+                          </Label>
+                          <Input
+                            type="date"
+                            value={newPromo.expiresAt}
+                            onChange={(e) => setNewPromo({ ...newPromo, expiresAt: e.target.value })}
+                            className="bg-white/5 border-white/10 rounded-2xl h-11 text-xs"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">
+                            Notes (Internal)
+                          </Label>
+                          <textarea
+                            value={newPromo.notes}
+                            onChange={(e) => setNewPromo({ ...newPromo, notes: e.target.value })}
+                            className="w-full bg-white/5 border-white/10 rounded-2xl h-20 text-xs p-3 resize-none"
+                            placeholder="Optional internal notes about this code"
+                          />
+                        </div>
+                        <Button
+                          type="submit"
+                          disabled={isSavingPromo}
+                          className="w-full h-12 bg-blue-600 hover:bg-blue-500 text-white font-black uppercase tracking-[0.2em] text-[11px] rounded-[18px] shadow-2xl shadow-blue-500/20 transition-all active:scale-95 disabled:opacity-60"
+                        >
+                          {isSavingPromo ? "Creating..." : "Generate Code"}
+                        </Button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+
               <TabsContent value="analytics" className="mt-0">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                   <div className="p-12 rounded-[48px] bg-white/[0.03] border border-white/5 space-y-10 shadow-2xl">
@@ -601,6 +1104,52 @@ const Admin = () => {
                       </div>
                     </div>
                   </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="audit" className="mt-0 space-y-8">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-2xl font-black uppercase tracking-tighter flex items-center gap-3">
+                    <Shield className="text-blue-500" /> Admin Audit Log
+                  </h3>
+                  <Badge className="bg-white/5 text-gray-400 border-white/10">
+                    {adminLogs.length} Events
+                  </Badge>
+                </div>
+                <div className="max-h-[480px] overflow-y-auto space-y-3 pr-1">
+                  {adminLogs.map(log => (
+                    <div
+                      key={log.id}
+                      className="p-5 rounded-3xl bg-white/[0.03] border border-white/5 flex items-start justify-between gap-4 text-xs"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-blue-400">
+                            {log.action_type}
+                          </span>
+                        </div>
+                        <div className="text-gray-400">
+                          {log.action_description || "Admin action recorded"}
+                        </div>
+                        <div className="text-[9px] text-gray-600 font-bold uppercase tracking-widest">
+                          Admin: {log.admin_id || "Unknown"} • Target: {log.target_user_id || "N/A"}
+                        </div>
+                      </div>
+                      <div className="text-[9px] text-gray-500 text-right flex flex-col items-end gap-1">
+                        <span>{new Date(log.created_at).toLocaleString()}</span>
+                        {log.metadata && (
+                          <span className="max-w-[220px] truncate text-[9px] text-gray-600">
+                            {JSON.stringify(log.metadata)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {adminLogs.length === 0 && (
+                    <div className="p-8 rounded-[32px] bg-white/[0.02] border border-dashed border-white/10 text-center text-sm text-gray-500">
+                      No admin actions recorded yet.
+                    </div>
+                  )}
                 </div>
               </TabsContent>
             </div>

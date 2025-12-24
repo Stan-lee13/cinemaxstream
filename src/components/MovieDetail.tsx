@@ -4,7 +4,6 @@ import { Play, Heart, Info, Plus } from 'lucide-react';
 import BackButton from "./BackButton";
 import PremiumBadge from "./PremiumBadge";
 import TrailerModal from "./TrailerModal";
-import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 interface Content {
@@ -37,9 +36,7 @@ const MovieDetail = ({
   startWatching
 }: MovieDetailProps) => {
   const [showTrailerModal, setShowTrailerModal] = useState(false);
-  const { isPremium } = useAuth();
   const isPremiumContent = content?.is_premium || (content?.rating && parseFloat(String(content.rating)) > 8.0);
-  const canAccessPremium = isPremium;
 
   const handleWatchButtonClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -47,10 +44,6 @@ const MovieDetail = ({
     // Navigate to content detail page
     
     try {
-      if (isPremiumContent && !canAccessPremium) {
-        toast.error("Premium subscription required to watch this content");
-        return;
-      }
       startWatching();
     } catch (error) {
       // Log to production error tracking
@@ -118,7 +111,7 @@ const MovieDetail = ({
             </span>
             
             {isPremiumContent && (
-              <PremiumBadge showLock={!canAccessPremium} />
+              <PremiumBadge />
             )}
 
             <span className="text-gray-400 text-sm">{content.year || "—"}</span>

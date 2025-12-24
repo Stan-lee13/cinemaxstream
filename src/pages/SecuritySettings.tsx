@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +11,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import gsap from 'gsap';
+import { motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 const SecuritySettings = () => {
   const navigate = useNavigate();
@@ -21,7 +22,7 @@ const SecuritySettings = () => {
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(() => localStorage.getItem('security_2fa') === 'true');
   const [loginAlerts, setLoginAlerts] = useState(() => localStorage.getItem('security_alerts') !== 'false');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const prefersReducedMotion = useReducedMotion();
 
   useEffect(() => {
     localStorage.setItem('security_2fa', String(twoFactorEnabled));
@@ -30,34 +31,6 @@ const SecuritySettings = () => {
   useEffect(() => {
     localStorage.setItem('security_alerts', String(loginAlerts));
   }, [loginAlerts]);
-
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      gsap.from(".security-header", {
-        scale: 0.95,
-        opacity: 0,
-        duration: 0.8,
-        ease: "power3.out"
-      });
-
-      gsap.from(".security-section", {
-        y: 30,
-        opacity: 0,
-        duration: 0.7,
-        stagger: 0.1,
-        delay: 0.2,
-        ease: "power3.out"
-      });
-
-      gsap.from(".danger-zone", {
-        opacity: 0,
-        duration: 0.8,
-        delay: 0.6,
-        ease: "power2.out"
-      });
-    }, containerRef);
-    return () => ctx.revert();
-  }, []);
 
   const handlePasswordChange = async () => {
     if (!newPassword || !confirmPassword) {
@@ -115,7 +88,7 @@ const SecuritySettings = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col" ref={containerRef}>
+    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col">
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-[15%] right-[-5%] w-[45%] h-[45%] bg-emerald-900/10 rounded-full blur-[140px]" />
         <div className="absolute bottom-[-10%] left-[-5%] w-[40%] h-[40%] bg-blue-900/10 rounded-full blur-[140px]" />
@@ -129,7 +102,12 @@ const SecuritySettings = () => {
             <BackButton className="hover:bg-white/5 text-gray-400 hover:text-white border-white/10 rounded-xl" />
           </div>
 
-          <div className="security-header mb-16 px-4">
+          <motion.div
+            className="security-header mb-16 px-4"
+            initial={prefersReducedMotion ? undefined : { opacity: 0, y: 30 }}
+            animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+          >
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2.5 bg-emerald-500/10 rounded-2xl border border-emerald-500/20 shadow-lg shadow-emerald-900/20">
                 <Shield className="w-6 h-6 text-emerald-500" />
@@ -142,11 +120,17 @@ const SecuritySettings = () => {
             <p className="text-gray-400 text-lg font-medium leading-relaxed max-w-2xl">
               Fortify your presence. Manage cryptographic keys and authentication layers for absolute data integrity.
             </p>
-          </div>
+          </motion.div>
 
-          <div className="grid grid-cols-1 gap-12">
+            <div className="grid grid-cols-1 gap-12">
             {/* Password Section */}
-            <div className="security-section space-y-6">
+            <motion.div
+              className="security-section space-y-6"
+              initial={prefersReducedMotion ? undefined : { opacity: 0, y: 30 }}
+              whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-100px' }}
+              transition={{ duration: 0.7, ease: 'easeOut' }}
+            >
               <div className="flex items-center gap-3 px-6">
                 <div className="p-2 bg-white/5 border border-white/5 rounded-xl">
                   <Key className="w-5 h-5 text-blue-400" />
@@ -215,11 +199,17 @@ const SecuritySettings = () => {
                   </Button>
                 </div>
               </Card>
-            </div>
+            </motion.div>
 
             {/* 2FA & Pulse Section */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="security-section space-y-6">
+              <motion.div
+                className="security-section space-y-6"
+                initial={prefersReducedMotion ? undefined : { opacity: 0, y: 30 }}
+                whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-100px' }}
+                transition={{ duration: 0.7, ease: 'easeOut', delay: 0.1 }}
+              >
                 <div className="flex items-center gap-3 px-6">
                   <div className="p-2 bg-white/5 border border-white/5 rounded-xl">
                     <Smartphone className="w-5 h-5 text-emerald-400" />
@@ -255,9 +245,15 @@ const SecuritySettings = () => {
                     )}
                   </div>
                 </Card>
-              </div>
+              </motion.div>
 
-              <div className="security-section space-y-6">
+              <motion.div
+                className="security-section space-y-6"
+                initial={prefersReducedMotion ? undefined : { opacity: 0, y: 30 }}
+                whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-100px' }}
+                transition={{ duration: 0.7, ease: 'easeOut', delay: 0.2 }}
+              >
                 <div className="flex items-center gap-3 px-6">
                   <div className="p-2 bg-white/5 border border-white/5 rounded-xl">
                     <History className="w-5 h-5 text-purple-400" />
@@ -297,11 +293,17 @@ const SecuritySettings = () => {
                     </span>
                   </div>
                 </Card>
-              </div>
+              </motion.div>
             </div>
 
             {/* Danger Zone */}
-            <div className="danger-zone">
+            <motion.div
+              className="danger-zone"
+              initial={prefersReducedMotion ? undefined : { opacity: 0 }}
+              whileInView={prefersReducedMotion ? undefined : { opacity: 1 }}
+              viewport={{ once: true, margin: '-100px' }}
+              transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }}
+            >
               <div className="p-8 md:p-12 border border-red-500/10 rounded-[40px] bg-red-500/[0.02] relative overflow-hidden group">
                 <div className="absolute top-[-20%] right-[-10%] w-[60%] h-[150%] bg-red-500/5 rounded-full blur-[120px] pointer-events-none transition-all duration-1000 group-hover:bg-red-500/10" />
 
@@ -325,7 +327,7 @@ const SecuritySettings = () => {
                   <ChevronRight size={40} className="text-red-900/20 hidden lg:block self-center" />
                 </div>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </div>

@@ -67,20 +67,14 @@ export const isAdmin = async (): Promise<boolean> => {
   }
 };
 
-/**
- * Validate premium code using database function
- */
 export const validatePremiumCode = async (code: string): Promise<boolean> => {
   try {
-    // Validate input
     if (!code || typeof code !== 'string') {
       return false;
     }
 
-    // Trim and normalize the code
     const normalizedCode = code.trim().toUpperCase();
 
-    // Check minimum length requirement
     if (normalizedCode.length < 5) {
       return false;
     }
@@ -90,7 +84,6 @@ export const validatePremiumCode = async (code: string): Promise<boolean> => {
 
     if (!user) return false;
 
-    // Direct table check for the code
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: codeData, error } = await (supabase as any)
       .from('premium_codes')
@@ -104,32 +97,48 @@ export const validatePremiumCode = async (code: string): Promise<boolean> => {
       return false;
     }
 
-    // Check expiration
     if (codeData.expires_at && new Date(codeData.expires_at) < new Date()) {
       return false;
     }
 
-    // Check usage limits
     if (codeData.max_uses !== null && codeData.current_uses >= codeData.max_uses) {
       return false;
     }
 
-    // Code is valid - update usage count
+    if (codeData.per_user_limit !== null && codeData.per_user_limit !== undefined) {
+      const { count: userUsageCount } = await (supabase as any)
+        .from('promo_code_redemptions')
+        .select('id', { count: 'exact', head: true })
+        .eq('code_id', codeData.id)
+        .eq('user_id', user.id);
+
+      if ((userUsageCount ?? 0) >= codeData.per_user_limit) {
+        return false;
+      }
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any)
       .from('premium_codes')
       .update({ current_uses: codeData.current_uses + 1 })
       .eq('id', codeData.id);
 
-    // Grant premium role to user
+    await (supabase as any).from('promo_code_redemptions').insert({
+      code_id: codeData.id,
+      user_id: user.id
+    });
+
     await supabase.from('user_roles').insert({
       user_id: user.id,
       role: 'premium'
     });
 
-    // Also update profile subscription_tier/expires_at as a backup
+    const months = codeData.months_granted && typeof codeData.months_granted === 'number'
+      ? codeData.months_granted
+      : 12;
+
     const expiryDate = new Date();
-    expiryDate.setDate(expiryDate.getDate() + 30); // Default 30 days for code
+    expiryDate.setMonth(expiryDate.getMonth() + months);
 
     await supabase.from('user_profiles').update({
       subscription_tier: 'premium',

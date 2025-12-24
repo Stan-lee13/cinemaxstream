@@ -1,66 +1,26 @@
-import React, { useRef, useEffect } from 'react';
+import React from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
-import { Crown, Check, X, Star, Zap, Shield, HelpCircle } from 'lucide-react';
+import { Check, X, Star, Zap, Shield, HelpCircle, Crown } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { PremiumPromoModal } from '@/components/PremiumPromoModal';
 import BackButton from '@/components/BackButton';
 import { useNavigate } from 'react-router-dom';
-import gsap from 'gsap';
 
 const ManageBillingPage = () => {
   const { isPremium } = useAuth();
   const navigate = useNavigate();
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      // Hero Animation
-      gsap.from(".hero-text", {
-        y: 20,
-        opacity: 0,
-        duration: 0.4,
-        stagger: 0.1,
-        ease: "power2.out"
-      });
-
-      // Plans Animation
-      gsap.from(".plan-card", {
-        y: 30,
-        opacity: 0,
-        duration: 0.4,
-        stagger: 0.08,
-        delay: 0.2,
-        ease: "back.out(1.2)"
-      });
-
-      // FAQ Animation
-      gsap.from(".faq-item", {
-        y: 10,
-        opacity: 0,
-        duration: 0.4,
-        stagger: 0.05,
-        delay: 0.4,
-        scrollTrigger: {
-          trigger: ".faq-section",
-          start: "top 80%"
-        }
-      });
-    }, containerRef);
-
-    return () => ctx.revert();
-  }, []);
 
   const plans = [
     {
       name: 'Free',
       price: '₦0',
       features: [
-        '5 streams per day',
+        'Unlimited streaming',
         'Standard quality',
         'Basic support',
-        'Limited content'
+        'Access to full catalog'
       ],
       limitations: [
         'No downloads',
@@ -74,33 +34,17 @@ const ManageBillingPage = () => {
       price: '₦500',
       period: '/month',
       features: [
-        '12 streams per day',
-        '5 downloads per day',
+        'Unlimited streaming',
+        'Unlimited downloads',
         'HD quality',
         'Priority download queue',
-        'Priority support',
-        'All content access'
+        'Priority support'
       ],
       limitations: [
-        'Daily limits apply'
+        'Billed monthly'
       ],
       recommended: true,
       icon: Zap
-    },
-    {
-      name: 'Premium',
-      price: '₦1500',
-      period: '/month',
-      features: [
-        'Unlimited streams',
-        'Unlimited downloads',
-        '4K streaming',
-        'Premium-only catalog',
-        'VIP support'
-      ],
-      limitations: [],
-      current: isPremium,
-      icon: Crown
     }
   ];
 
@@ -112,7 +56,7 @@ const ManageBillingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white overflow-hidden" ref={containerRef}>
+    <div className="min-h-screen bg-[#0a0a0a] text-white overflow-hidden">
       {/* Background Ambience */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-purple-900/10 rounded-full blur-[120px]" />

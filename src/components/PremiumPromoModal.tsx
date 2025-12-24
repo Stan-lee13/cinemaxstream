@@ -51,7 +51,7 @@ export function PremiumPromoModal({ children }: PremiumPromoModalProps) {
     return (
       <div className="flex items-center gap-2 text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">
         <Sparkles className="h-3 w-3" />
-        <span className="text-xs font-bold uppercase tracking-wide">Premium Active</span>
+        <span className="text-xs font-bold uppercase tracking-wide">Pro Access Active</span>
       </div>
     );
   }
@@ -83,7 +83,7 @@ export function PremiumPromoModal({ children }: PremiumPromoModalProps) {
 
             <h2 className="text-2xl font-bold text-white mb-2">Have a Promo Code?</h2>
             <p className="text-gray-400 text-sm mb-8 max-w-xs mx-auto">
-              Enter your code below to unlock exclusive premium features instantly.
+              Enter your code below to unlock exclusive Pro features instantly.
             </p>
 
             <form onSubmit={handleSubmit} className="w-full space-y-4">
@@ -122,7 +122,7 @@ export function PremiumPromoModal({ children }: PremiumPromoModalProps) {
                   <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
                   <span className="flex items-center gap-2">
-                    Activate Premium <ArrowRight className="h-4 w-4" />
+                    Activate Access <ArrowRight className="h-4 w-4" />
                   </span>
                 )}
               </Button>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -10,7 +10,6 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import LoadingState from "@/components/LoadingState";
 import { getErrorMessage } from "@/utils/errorHelpers";
-import gsap from "gsap";
 
 type WatchHistoryItem = {
   id: string;
@@ -58,7 +57,6 @@ const WatchHistory: React.FC = () => {
   const navigate = useNavigate();
   const [history, setHistory] = useState<WatchHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -153,22 +151,6 @@ const WatchHistory: React.FC = () => {
     fetchHistory();
   }, [user]);
 
-  // Animation effect
-  useEffect(() => {
-    if (!isLoading && history.length > 0) {
-      const ctx = gsap.context(() => {
-        gsap.from(".history-item", {
-          y: 20,
-          opacity: 0,
-          duration: 0.5,
-          stagger: 0.08,
-          ease: "power2.out"
-        });
-      }, containerRef);
-      return () => ctx.revert();
-    }
-  }, [isLoading, history.length]);
-
   // Handle continue watching
   const handleContinueWatching = (item: WatchHistoryItem) => {
     navigate(`/content/${item.contentId}`, {
@@ -187,12 +169,10 @@ const WatchHistory: React.FC = () => {
       // Animate removal first
       const el = document.getElementById(`history-${item.id}`);
       if (el) {
-        await gsap.to(el, {
-          scale: 0.95,
-          opacity: 0,
-          duration: 0.3,
-          ease: "power2.in"
-        });
+        el.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+        el.style.transform = 'scale(0.95)';
+        el.style.opacity = '0';
+        await new Promise((resolve) => setTimeout(resolve, 300));
       }
 
       if (user) {
@@ -250,7 +230,7 @@ const WatchHistory: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col" ref={containerRef}>
+    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col">
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-[10%] left-[20%] w-[40%] h-[40%] bg-blue-900/10 rounded-full blur-[120px]" />
         <div className="absolute bottom-[20%] right-[10%] w-[30%] h-[30%] bg-purple-900/10 rounded-full blur-[120px]" />

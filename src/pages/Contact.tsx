@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { MessageCircle, Mail, Clock, Send, Zap, Activity, User, AtSign, Tag } from 'lucide-react';
 import BackButton from "@/components/BackButton";
@@ -12,7 +12,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import gsap from 'gsap';
+import { motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 const contactSchema = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters'),
@@ -30,15 +31,7 @@ const Contact = () => {
     message: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      gsap.from(".contact-header", { scale: 0.95, opacity: 0, duration: 0.8, ease: "power3.out" });
-      gsap.from(".contact-card", { y: 30, opacity: 0, duration: 0.8, delay: 0.2, ease: "power3.out" });
-    }, containerRef);
-    return () => ctx.revert();
-  }, []);
+  const prefersReducedMotion = useReducedMotion();
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -74,19 +67,30 @@ const Contact = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col" ref={containerRef}>
+    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col">
       <Navbar />
       <div className="flex-1 container mx-auto px-4 pt-24 pb-12 relative z-10">
         <div className="max-w-4xl mx-auto">
           <BackButton className="mb-10 hover:bg-white/5 text-gray-400 hover:text-white border-white/10 rounded-xl" />
 
-          <div className="contact-header mb-12">
+          <motion.div
+            className="contact-header mb-12"
+            initial={prefersReducedMotion ? undefined : { opacity: 0, scale: 0.95 }}
+            animate={prefersReducedMotion ? undefined : { opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+          >
             <h1 className="text-4xl md:text-6xl font-black mb-4 tracking-tighter italic">Contact Support</h1>
             <p className="text-gray-400 text-lg">Direct communication line to our technical operatives.</p>
-          </div>
+          </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="md:col-span-2">
+            <motion.div
+              className="md:col-span-2"
+              initial={prefersReducedMotion ? undefined : { opacity: 0, y: 30 }}
+              whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-100px' }}
+              transition={{ duration: 0.8, ease: 'easeOut', delay: 0.1 }}
+            >
               <Card className="contact-card bg-[#111]/80 border border-white/5 p-8 rounded-[32px] overflow-hidden relative">
                 <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -134,9 +138,15 @@ const Contact = () => {
                   </Button>
                 </form>
               </Card>
-            </div>
+            </motion.div>
 
-            <div className="space-y-6">
+            <motion.div
+              className="space-y-6"
+              initial={prefersReducedMotion ? undefined : { opacity: 0, x: 30 }}
+              whileInView={prefersReducedMotion ? undefined : { opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: '-100px' }}
+              transition={{ duration: 0.8, ease: 'easeOut', delay: 0.15 }}
+            >
               <Card className="p-6 bg-[#111] border border-white/5 rounded-[24px]">
                 <div className="flex items-center gap-3 mb-4">
                   <Clock className="w-5 h-5 text-emerald-400" />
@@ -151,7 +161,7 @@ const Contact = () => {
                 </div>
                 <p className="text-xs text-gray-500">support@cinemax-stream.com</p>
               </Card>
-            </div>
+            </motion.div>
           </div>
         </div>
       </div>

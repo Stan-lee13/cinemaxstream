@@ -70,10 +70,6 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
     ([_, config]) => config.theme || config.color
   )
 
-  if (!colorConfig.length) {
-    return null
-  }
-
   // Security: Build CSS safely without dangerouslySetInnerHTML
   const cssRules = React.useMemo(() => {
     const rules: string[] = []
@@ -106,6 +102,10 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
 
   // Use React's built-in style element with proper escaping
   React.useEffect(() => {
+    if (!cssRules) {
+      return
+    }
+
     const styleEl = document.createElement('style')
     styleEl.setAttribute('data-chart-style', id.replace(/[^a-zA-Z0-9-_]/g, ''))
     styleEl.textContent = cssRules

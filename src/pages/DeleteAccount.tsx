@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Trash2, AlertTriangle, ShieldX, ArrowLeft, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,8 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import gsap from 'gsap';
+import { motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 const DeleteAccount: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -22,36 +23,7 @@ const DeleteAccount: React.FC = () => {
     backup: false
   });
   const [isDeleting, setIsDeleting] = useState(true);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      gsap.from(".delete-header", {
-        y: 30,
-        opacity: 0,
-        duration: 0.8,
-        ease: "power3.out"
-      });
-
-      gsap.from(".warning-card", {
-        scale: 0.95,
-        opacity: 0,
-        duration: 0.6,
-        delay: 0.2,
-        ease: "power3.out"
-      });
-
-      gsap.from(".confirmation-step", {
-        x: -20,
-        opacity: 0,
-        duration: 0.4,
-        stagger: 0.05,
-        delay: 0.5,
-        ease: "power2.out"
-      });
-    }, containerRef);
-    return () => ctx.revert();
-  }, []);
+  const prefersReducedMotion = useReducedMotion();
 
   const canDelete = confirmText === 'DELETE MY ACCOUNT' &&
     confirmations.understand &&
@@ -97,7 +69,7 @@ const DeleteAccount: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white" ref={containerRef}>
+    <div className="min-h-screen bg-[#0a0a0a] text-white">
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-[20%] right-[10%] w-[40%] h-[40%] bg-red-900/10 rounded-full blur-[120px]" />
         <div className="absolute bottom-[10%] left-[20%] w-[30%] h-[30%] bg-orange-900/10 rounded-full blur-[120px]" />
@@ -116,7 +88,12 @@ const DeleteAccount: React.FC = () => {
             Back to Security
           </Button>
 
-          <div className="delete-header mb-8 text-center">
+          <motion.div
+            className="delete-header mb-8 text-center"
+            initial={prefersReducedMotion ? undefined : { opacity: 0, y: 30 }}
+            animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+          >
             <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-red-500/10 mb-6 border border-red-500/20 shadow-lg shadow-red-900/20">
               <Trash2 className="w-10 h-10 text-red-500" />
             </div>
@@ -124,10 +101,16 @@ const DeleteAccount: React.FC = () => {
             <p className="text-gray-400 max-w-md mx-auto">
               Permanently remove your account and all associated data from CinemaxStream.
             </p>
-          </div>
+          </motion.div>
 
           <div className="space-y-6">
-            <div className="warning-card bg-[#111] border border-red-500/30 rounded-3xl overflow-hidden shadow-2xl shadow-red-900/10">
+            <motion.div
+              className="warning-card bg-[#111] border border-red-500/30 rounded-3xl overflow-hidden shadow-2xl shadow-red-900/10"
+              initial={prefersReducedMotion ? undefined : { opacity: 0, scale: 0.95 }}
+              whileInView={prefersReducedMotion ? undefined : { opacity: 1, scale: 1 }}
+              viewport={{ once: true, margin: '-100px' }}
+              transition={{ duration: 0.7, ease: 'easeOut', delay: 0.1 }}
+            >
               <div className="p-6 bg-gradient-to-b from-red-500/10 to-transparent border-b border-red-500/10">
                 <div className="flex items-center gap-3 mb-2">
                   <AlertTriangle className="w-6 h-6 text-red-500" />
@@ -230,7 +213,7 @@ const DeleteAccount: React.FC = () => {
                   )}
                 </Button>
               </div>
-            </div>
+            </motion.div>
 
             <div className="flex items-center gap-4 bg-[#111] border border-white/5 rounded-2xl p-4">
               <div className="p-2 bg-blue-500/10 rounded-lg">

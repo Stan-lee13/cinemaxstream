@@ -1,45 +1,23 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { useLocation, Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Home, Compass } from "lucide-react";
-import gsap from 'gsap';
+import { motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 const NotFound = () => {
   const location = useLocation();
-  const containerRef = useRef<HTMLDivElement>(null);
+  const prefersReducedMotion = useReducedMotion();
 
   useEffect(() => {
     // Silently handle 404 errors in production
     console.log("404 Error: Page not found - ", location.pathname);
   }, [location.pathname]);
 
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      gsap.from(".not-found-content", {
-        y: 30,
-        opacity: 0,
-        duration: 1,
-        ease: "power3.out"
-      });
-
-      gsap.to(".glitch-text", {
-        keyframes: [
-          { x: 2, duration: 0.1 },
-          { x: -2, duration: 0.1 },
-          { x: 0, duration: 0.1 }
-        ],
-        repeat: -1,
-        repeatDelay: 5,
-        ease: "steps(1)"
-      });
-    }, containerRef);
-    return () => ctx.revert();
-  }, []);
-
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col" ref={containerRef}>
+    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col">
       <Navbar />
 
       <div className="flex-1 flex items-center justify-center relative overflow-hidden">
@@ -49,15 +27,24 @@ const NotFound = () => {
           <div className="absolute bottom-[20%] right-[30%] w-[30%] h-[30%] bg-blue-900/10 rounded-full blur-[120px]" />
         </div>
 
-        <div className="text-center relative z-10 px-4 not-found-content">
+        <motion.div
+          className="text-center relative z-10 px-4 not-found-content"
+          initial={prefersReducedMotion ? undefined : { opacity: 0, y: 30 }}
+          animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: 'easeOut' }}
+        >
           <div className="relative inline-block">
             <h1 className="text-[150px] md:text-[250px] leading-none font-black text-transparent bg-clip-text bg-gradient-to-b from-white/10 to-transparent select-none">
               404
             </h1>
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400 glitch-text">
+              <motion.span
+                className="text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400 glitch-text"
+                animate={prefersReducedMotion ? undefined : { x: [0, 2, -2, 2, 0] }}
+                transition={{ duration: 0.3, repeat: Infinity, repeatDelay: 5, ease: 'linear' }}
+              >
                 Lost in Space?
-              </span>
+              </motion.span>
             </div>
           </div>
 
@@ -79,7 +66,7 @@ const NotFound = () => {
               </Button>
             </Link>
           </div>
-        </div>
+        </motion.div>
       </div>
 
       <Footer />

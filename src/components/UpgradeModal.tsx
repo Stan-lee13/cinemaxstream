@@ -33,38 +33,17 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
         period: '/month',
         description: 'Perfect for casual viewing',
         features: [
-          '12 streams per day',
-          '5 downloads per day',
-          'HD quality (1080p)',
-          'Priority download queue',
-          'Standard Support'
-        ],
-        accent: 'blue',
-        recommended: reason === 'streaming' && currentRole === 'free'
-      },
-      {
-        id: 'premium',
-        name: 'Premium',
-        price: '₦1500',
-        period: '/month',
-        description: 'The ultimate experience',
-        features: [
-          'Unlimited streams',
+          'Unlimited streaming',
           'Unlimited downloads',
-          '4K Ultra HD quality',
-          'Premium-only catalog',
-          'VIP 24/7 Support',
-          'Early access to new releases'
+          'HD quality',
+          'Priority download queue',
+          'Priority support'
         ],
         accent: 'gold',
-        recommended: true
+        recommended: reason === 'streaming' && currentRole === 'free'
       }
     ];
 
-    // If user is already Pro, only show Premium upgrade
-    if (currentRole === 'pro') {
-      return options.filter(o => o.id === 'premium');
-    }
     return options;
   };
 
@@ -117,8 +96,8 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
 
                 <p className="text-gray-400 text-sm leading-relaxed mb-6">
                   {reason === 'streaming'
-                    ? "You've hit your daily viewing limit. Break free with our premium plans."
-                    : "Downloads are exclusive to our premium members. Take your movies anywhere."}
+                    ? "You've hit your daily viewing limit. Unlock more with the Pro plan."
+                    : "Downloads are exclusive to Pro members. Take your movies anywhere."}
                 </p>
               </div>
 

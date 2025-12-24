@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Send, MessageCircle, Phone, Mail, Clock, CheckCircle, HelpCircle, User, AtSign, Tag, Info, ChevronRight, Activity, Globe, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,14 +11,15 @@ import { toast } from 'sonner';
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BackButton from "@/components/BackButton";
-import gsap from 'gsap';
 import { Card } from '@/components/ui/card';
+import { motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 const ContactSupport: React.FC = () => {
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const prefersReducedMotion = useReducedMotion();
 
   const [formData, setFormData] = useState({
     name: user?.email?.split('@')[0] || '',
@@ -28,35 +29,6 @@ const ContactSupport: React.FC = () => {
     message: '',
     priority: 'medium'
   });
-
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      gsap.from(".support-header", {
-        scale: 0.95,
-        opacity: 0,
-        duration: 0.8,
-        ease: "power3.out"
-      });
-
-      gsap.from(".support-form-container", {
-        y: 40,
-        opacity: 0,
-        duration: 0.8,
-        delay: 0.2,
-        ease: "power4.out"
-      });
-
-      gsap.from(".sidebar-card", {
-        x: 30,
-        opacity: 0,
-        duration: 0.8,
-        delay: 0.4,
-        stagger: 0.1,
-        ease: "power3.out"
-      });
-    }, containerRef);
-    return () => ctx.revert();
-  }, []);
 
   const categories = [
     { value: 'technical', label: 'Technical Issue' },
@@ -152,7 +124,7 @@ const ContactSupport: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col" ref={containerRef}>
+    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col">
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-[10%] right-[-5%] w-[45%] h-[45%] bg-blue-900/10 rounded-full blur-[140px]" />
         <div className="absolute bottom-[-5%] left-[-5%] w-[40%] h-[40%] bg-purple-900/10 rounded-full blur-[140px]" />
@@ -166,7 +138,12 @@ const ContactSupport: React.FC = () => {
             <BackButton className="hover:bg-white/5 text-gray-400 hover:text-white border-white/10 rounded-xl" />
           </div>
 
-          <div className="support-header mb-16 px-4">
+          <motion.div
+            className="support-header mb-16 px-4"
+            initial={prefersReducedMotion ? undefined : { opacity: 0, y: 30 }}
+            animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+          >
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2.5 bg-blue-500/10 rounded-2xl border border-blue-500/20 shadow-lg shadow-blue-900/20">
                 <MessageCircle className="w-6 h-6 text-blue-500" />
@@ -179,11 +156,16 @@ const ContactSupport: React.FC = () => {
             <p className="text-gray-400 text-xl font-medium leading-relaxed max-w-3xl">
               Initiate a direct communication stream with our elite tech operatives. We prioritize system integrity and user experience above all.
             </p>
-          </div>
+          </motion.div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 px-4">
-            {/* Contact Form */}
-            <div className="lg:col-span-8 support-form-container">
+            <motion.div
+              className="lg:col-span-8 support-form-container"
+              initial={prefersReducedMotion ? undefined : { opacity: 0, y: 40 }}
+              whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-100px' }}
+              transition={{ duration: 0.8, ease: 'easeOut', delay: 0.1 }}
+            >
               <Card className="bg-[#111]/80 border border-white/5 backdrop-blur-2xl rounded-[40px] overflow-hidden p-8 md:p-12 relative shadow-2xl">
                 <div className="absolute top-0 right-0 p-32 bg-blue-500/5 rounded-full blur-[100px] pointer-events-none" />
 
@@ -306,10 +288,15 @@ const ContactSupport: React.FC = () => {
                   </div>
                 </form>
               </Card>
-            </div>
+            </motion.div>
 
-            {/* Sidebar Info */}
-            <div className="lg:col-span-4 space-y-8">
+            <motion.div
+              className="lg:col-span-4 space-y-8"
+              initial={prefersReducedMotion ? undefined : { opacity: 0, x: 30 }}
+              whileInView={prefersReducedMotion ? undefined : { opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: '-100px' }}
+              transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }}
+            >
               <Card className="sidebar-card bg-[#111]/80 border border-white/5 backdrop-blur-xl rounded-[40px] p-8 shadow-2xl relative overflow-hidden group">
                 <div className="absolute top-0 right-0 p-8 opacity-0 group-hover:opacity-10 transition-opacity">
                   <Clock size={80} className="text-emerald-500" />
@@ -385,7 +372,7 @@ const ContactSupport: React.FC = () => {
                   Query Hub FAQ
                 </Button>
               </Card>
-            </div>
+            </motion.div>
           </div>
         </div>
       </div>

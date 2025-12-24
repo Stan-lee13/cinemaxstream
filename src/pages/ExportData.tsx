@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { Download, FileText, Calendar, Star, Clock, ShieldCheck, Database, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import useAuth from '@/contexts/authHooks';
@@ -8,43 +8,15 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import gsap from 'gsap';
+import { motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 const ExportData: React.FC = () => {
   const { user } = useAuth();
   const { profileData } = useUserProfile();
   const [isExporting, setIsExporting] = useState(false);
   const navigate = useNavigate();
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      gsap.from(".export-header", {
-        y: 30,
-        opacity: 0,
-        duration: 0.8,
-        ease: "power3.out"
-      });
-
-      gsap.from(".info-card", {
-        y: 30,
-        opacity: 0,
-        duration: 0.8,
-        delay: 0.2,
-        ease: "power3.out"
-      });
-
-      gsap.from(".data-type-item", {
-        y: 20,
-        opacity: 0,
-        duration: 0.5,
-        stagger: 0.1,
-        delay: 0.4,
-        ease: "power2.out"
-      });
-    }, containerRef);
-    return () => ctx.revert();
-  }, []);
+  const prefersReducedMotion = useReducedMotion();
 
   const handleExportData = async () => {
     if (!user) {
@@ -204,7 +176,7 @@ const ExportData: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white" ref={containerRef}>
+    <div className="min-h-screen bg-[#0a0a0a] text-white">
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-[30%] left-[10%] w-[30%] h-[30%] bg-blue-900/10 rounded-full blur-[120px]" />
         <div className="absolute bottom-[20%] right-[10%] w-[40%] h-[40%] bg-purple-900/10 rounded-full blur-[120px]" />
@@ -223,7 +195,12 @@ const ExportData: React.FC = () => {
             Back to Account
           </Button>
 
-          <div className="export-header mb-10 text-center">
+          <motion.div
+            className="export-header mb-10 text-center"
+            initial={prefersReducedMotion ? undefined : { opacity: 0, y: 30 }}
+            animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+          >
             <div className="inline-flex items-center justify-center p-4 rounded-2xl bg-blue-500/10 text-blue-500 mb-6 border border-blue-500/20 shadow-lg shadow-blue-900/20">
               <Database className="w-8 h-8" />
             </div>
@@ -233,13 +210,26 @@ const ExportData: React.FC = () => {
             <p className="text-gray-400 max-w-xl mx-auto">
               Download a transparency report containing your personal data, preferences, and activity history in a readable format.
             </p>
-          </div>
+          </motion.div>
 
-          <div className="info-card bg-[#111] border border-white/5 rounded-3xl overflow-hidden shadow-2xl p-1">
+          <motion.div
+            className="info-card bg-[#111] border border-white/5 rounded-3xl overflow-hidden shadow-2xl p-1"
+            initial={prefersReducedMotion ? undefined : { opacity: 0, y: 30 }}
+            whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-100px' }}
+            transition={{ duration: 0.8, ease: 'easeOut', delay: 0.1 }}
+          >
             <div className="p-6 md:p-8 bg-black/20 rounded-[20px]">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                 {dataTypes.map((type, index) => (
-                  <div key={index} className={`data-type-item flex items-start gap-4 p-4 ${type.color} border rounded-2xl transition-transform hover:scale-[1.02]`}>
+                  <motion.div
+                    key={index}
+                    className={`data-type-item flex items-start gap-4 p-4 ${type.color} border rounded-2xl transition-transform hover:scale-[1.02]`}
+                    initial={prefersReducedMotion ? undefined : { opacity: 0, y: 20 }}
+                    whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: '-100px' }}
+                    transition={{ duration: 0.5, ease: 'easeOut', delay: 0.15 + index * 0.05 }}
+                  >
                     <div className="p-2 bg-black/20 rounded-xl backdrop-blur-sm">
                       {type.icon}
                     </div>
@@ -247,7 +237,7 @@ const ExportData: React.FC = () => {
                       <h3 className="font-bold text-white mb-1">{type.title}</h3>
                       <p className="text-sm text-gray-400 leading-snug">{type.description}</p>
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
 
@@ -283,7 +273,7 @@ const ExportData: React.FC = () => {
                 </Button>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
       <Footer />

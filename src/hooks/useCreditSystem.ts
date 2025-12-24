@@ -54,17 +54,16 @@ export const useCreditSystem = () => {
 
   // Get subscription plan based on user role (hardcoded since table doesn't exist)
   const fetchSubscriptionPlan = useCallback(async (role: string) => {
-    // Hardcoded plan definitions since subscription_plans table doesn't exist in schema
     const plans: Record<string, SubscriptionPlan> = {
       free: {
         id: 'free',
         plan_id: 'free',
         name: 'Free Plan',
         price_naira: 0,
-        max_streams: 5,
+        max_streams: 1000000,
         max_downloads: 0,
         unlimited: false,
-        features: ['5 streams per day', 'Standard quality'],
+        features: ['Unlimited streaming', 'Standard quality', 'Basic support', 'Access to full catalog'],
         priority_level: 3,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -74,10 +73,10 @@ export const useCreditSystem = () => {
         plan_id: 'pro',
         name: 'Pro Plan',
         price_naira: 2000,
-        max_streams: 12,
-        max_downloads: 5,
-        unlimited: false,
-        features: ['12 streams per day', '5 downloads per day', 'HD quality'],
+        max_streams: 1000000,
+        max_downloads: 1000000,
+        unlimited: true,
+        features: ['Unlimited streaming', 'Unlimited downloads', 'HD quality'],
         priority_level: 2,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -85,12 +84,12 @@ export const useCreditSystem = () => {
       premium: {
         id: 'premium',
         plan_id: 'premium',
-        name: 'Premium Plan',
+        name: 'Pro Plan',
         price_naira: 5000,
-        max_streams: 0,
-        max_downloads: 0,
+        max_streams: 1000000,
+        max_downloads: 1000000,
         unlimited: true,
-        features: ['Unlimited streams', 'Unlimited downloads', '4K quality', 'VidRock default', 'Ad-free'],
+        features: ['Unlimited streaming', 'Unlimited downloads', 'HD quality'],
         priority_level: 1,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -104,29 +103,6 @@ export const useCreditSystem = () => {
 
   // Get credit limits based on subscription plan
   const getCreditLimits = useCallback((plan: SubscriptionPlan | null, subscriptionExpiresAt?: string): CreditLimits => {
-    // Check if premium subscription is still valid
-    if (plan?.plan_id === 'premium' || plan?.plan_id === 'paid') {
-      if (subscriptionExpiresAt) {
-        const expiryDate = new Date(subscriptionExpiresAt);
-        const now = new Date();
-        if (expiryDate > now) {
-          // Premium is active - unlimited access
-          return { maxStreams: 0, maxDownloads: 0, unlimited: true };
-        }
-        // Premium expired, revert to free plan limits
-        const freePlan = subscriptionPlan?.plan_id === 'free' ? subscriptionPlan : null;
-        if (freePlan) {
-          return { 
-            maxStreams: freePlan.max_streams, 
-            maxDownloads: freePlan.max_downloads, 
-            unlimited: freePlan.unlimited 
-          };
-        }
-      }
-      // No expiry date means unlimited premium
-      return { maxStreams: 0, maxDownloads: 0, unlimited: true };
-    }
-    
     if (plan) {
       return { 
         maxStreams: plan.max_streams, 
@@ -135,9 +111,8 @@ export const useCreditSystem = () => {
       };
     }
     
-    // Default to free plan limits
-    return { maxStreams: 5, maxDownloads: 0, unlimited: false };
-  }, [subscriptionPlan]);
+    return { maxStreams: 1000000, maxDownloads: 10, unlimited: false };
+  }, []);
 
   // Stable function to check and reset daily limits
   const checkAndResetDailyLimits = useCallback(async (usage: UserUsage, timezone: string) => {
@@ -335,11 +310,7 @@ export const useCreditSystem = () => {
   // Check if user can stream
   const canStream = (): boolean => {
     if (!userProfile || !userUsage) return false;
-    
-    const limits = getCreditLimits(subscriptionPlan, userProfile.subscription_expires_at);
-    if (limits.unlimited) return true;
-    
-    return userUsage.watched_today < limits.maxStreams;
+    return true;
   };
 
   // Check if user can download
@@ -347,9 +318,20 @@ export const useCreditSystem = () => {
     if (!userProfile || !userUsage) return false;
     
     const limits = getCreditLimits(subscriptionPlan, userProfile.subscription_expires_at);
-    if (limits.unlimited) return true; // Premium users can download
-    if (userProfile.role === 'free') return false; // Free users can't download
-    
+
+    if (userProfile.role === 'pro' || userProfile.role === 'premium') {
+      return true;
+    }
+
+    if (userProfile.role === 'free') {
+      const maxDownloads = limits.maxDownloads || 10;
+      return userUsage.downloads_today < maxDownloads;
+    }
+
+    if (limits.unlimited) {
+      return true;
+    }
+
     return userUsage.downloads_today < limits.maxDownloads;
   };
 
@@ -406,7 +388,8 @@ export const useCreditSystem = () => {
     if (!userProfile || !userUsage) return 0;
     
     const limits = getCreditLimits(subscriptionPlan, userProfile.subscription_expires_at);
-    if (limits.unlimited || userProfile.role === 'free') return 0;
+    if (userProfile.role === 'pro' || userProfile.role === 'premium') return 0;
+    if (limits.unlimited) return 0;
     
     return Math.max(0, limits.maxDownloads - userUsage.downloads_today);
   };
@@ -414,11 +397,7 @@ export const useCreditSystem = () => {
   // Get remaining streams for the day
   const getStreamsRemaining = (): number => {
     if (!userProfile || !userUsage) return 0;
-    
-    const limits = getCreditLimits(subscriptionPlan, userProfile.subscription_expires_at);
-    if (limits.unlimited) return 0;
-    
-    return Math.max(0, limits.maxStreams - userUsage.watched_today);
+    return 0;
   };
 
   return {

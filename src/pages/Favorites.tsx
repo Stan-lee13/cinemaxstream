@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -9,7 +9,6 @@ import { Heart, Play, Trash2, Film, Tv, Star, ChevronRight, Bookmark } from "luc
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import LoadingState from "@/components/LoadingState";
-import gsap from "gsap";
 
 interface FavoriteItem {
   id: string;
@@ -24,7 +23,6 @@ const Favorites = () => {
   const navigate = useNavigate();
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -88,22 +86,6 @@ const Favorites = () => {
     fetchFavorites();
   }, [user]);
 
-  // Animation effect
-  useEffect(() => {
-    if (!isLoading && favorites.length > 0) {
-      const ctx = gsap.context(() => {
-        gsap.from(".favorite-card", {
-          scale: 0.9,
-          opacity: 0,
-          duration: 0.6,
-          stagger: 0.05,
-          ease: "power3.out"
-        });
-      }, containerRef);
-      return () => ctx.revert();
-    }
-  }, [isLoading, favorites.length]);
-
   // Remove from favorites
   const handleRemoveFavorite = async (favoriteId: string, contentId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -118,20 +100,7 @@ const Favorites = () => {
 
       if (error) throw error;
 
-      const card = document.getElementById(`fav-${favoriteId}`);
-      if (card) {
-        gsap.to(card, {
-          scale: 0.8,
-          opacity: 0,
-          duration: 0.3,
-          ease: "power2.in",
-          onComplete: () => {
-            setFavorites(prev => prev.filter(fav => fav.id !== favoriteId));
-          }
-        });
-      } else {
-        setFavorites(prev => prev.filter(fav => fav.id !== favoriteId));
-      }
+      setFavorites(prev => prev.filter(fav => fav.id !== favoriteId));
       toast.success('Removed from library');
     } catch (error) {
       console.error('Error removing favorite:', error);
@@ -150,7 +119,7 @@ const Favorites = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col" ref={containerRef}>
+    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col">
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-[15%] right-[5%] w-[40%] h-[40%] bg-red-900/10 rounded-full blur-[120px]" />
         <div className="absolute bottom-[20%] left-[5%] w-[35%] h-[35%] bg-purple-900/10 rounded-full blur-[120px]" />

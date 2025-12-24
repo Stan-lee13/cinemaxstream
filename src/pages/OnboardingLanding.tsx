@@ -1,7 +1,6 @@
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, Users, LogIn, User, Film, Sparkles, Play, Shield, Zap } from "lucide-react";
-import gsap from 'gsap';
 
 const features = [
   {
@@ -40,46 +39,9 @@ const features = [
 
 const OnboardingLanding: React.FC = () => {
   const navigate = useNavigate();
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      const tl = gsap.timeline();
-
-      tl.from(".hero-content > *", {
-        y: 20,
-        opacity: 0,
-        duration: 0.4,
-        stagger: 0.1,
-        ease: "power2.out"
-      });
-
-      gsap.from(".feature-card", {
-        scale: 0.95,
-        opacity: 0,
-        y: 15,
-        duration: 0.4,
-        stagger: 0.05,
-        ease: "power2.out",
-        delay: 0.3
-      });
-
-      // Floating animation for ambient blobs
-      gsap.to(".ambient-blob", {
-        x: 'random(-50, 50)',
-        y: 'random(-50, 50)',
-        duration: 'random(10, 20)',
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut"
-      });
-    }, containerRef);
-
-    return () => ctx.revert();
-  }, []);
 
   return (
-    <div className="relative min-h-screen bg-[#0a0a0a] overflow-hidden flex flex-col items-center justify-center font-sans" ref={containerRef}>
+    <div className="relative min-h-screen bg-[#050608] overflow-hidden flex flex-col items-center justify-center font-sans">
       {/* Premium Ambient Background */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="ambient-blob absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-blue-600/10 rounded-full blur-[120px]" />
@@ -89,27 +51,106 @@ const OnboardingLanding: React.FC = () => {
 
       <div className="relative z-10 w-full max-w-7xl mx-auto px-6 py-20 flex flex-col items-center">
         {/* Hero Section */}
-        <div className="hero-content flex flex-col items-center text-center space-y-8 mb-24">
-          <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-full backdrop-blur-xl">
-            <Sparkles size={16} className="text-blue-400" />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400">Next Generation Entertainment</span>
+        <div className="hero-content flex flex-col lg:flex-row items-center justify-between gap-16 mb-20 w-full">
+          <div className="flex-1 flex flex-col items-start text-left space-y-8">
+            <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-full backdrop-blur-xl">
+              <Sparkles size={16} className="text-blue-400" />
+              <span className="text-[10px] md:text-xs font-black uppercase tracking-[0.25em] text-blue-400">
+                Streaming engineered for performance
+              </span>
+            </div>
+
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black text-white tracking-tighter leading-[0.95]">
+              A premium streaming
+              <span className="text-blue-500"> platform without compromises.</span>
+            </h1>
+
+            <p className="text-gray-300 text-base md:text-lg max-w-xl font-medium leading-relaxed">
+              Cinemax Stream combines cinematic visuals, ultra-low latency playback, and intelligent personalization
+              to deliver a world-class experience on every device.
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+              <button
+                onClick={() => navigate('/auth')}
+                className="group inline-flex items-center justify-center gap-3 px-8 py-4 bg-white text-black hover:bg-blue-500 hover:text-white rounded-2xl font-semibold text-base md:text-lg tracking-tight transition-all hover:scale-105 active:scale-95 shadow-[0_18px_45px_rgba(15,23,42,0.8)]"
+              >
+                Start watching in minutes
+                <ArrowRight size={20} className="transition-transform group-hover:translate-x-1.5" />
+              </button>
+              <div className="flex flex-col text-sm text-gray-400">
+                <span className="font-semibold text-gray-200">No setup fees. Cancel anytime.</span>
+                <span>Optimized for low bandwidth and high-end home theaters alike.</span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-6 text-xs md:text-sm text-gray-400">
+              <div className="flex items-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Sub-2s average start time</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-6 w-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
+                  <Shield className="h-3 w-3 text-blue-400" />
+                </div>
+                <span>Encrypted, privacy-first infrastructure</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-6 w-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
+                  <Users className="h-3 w-3 text-emerald-400" />
+                </div>
+                <span>Designed for global audiences</span>
+              </div>
+            </div>
           </div>
 
-          <h1 className="text-5xl md:text-8xl font-black text-white tracking-tighter leading-none">
-            CINEMAX<span className="text-blue-500">STREAM</span>
-          </h1>
+          <div className="flex-1 w-full max-w-lg">
+            <div className="relative rounded-[32px] bg-gradient-to-br from-blue-600/20 via-indigo-600/10 to-black border border-white/10 px-8 py-10 shadow-[0_30px_80px_rgba(15,23,42,0.9)]">
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <p className="text-xs font-semibold text-blue-300 uppercase tracking-[0.3em]">
+                    Live session preview
+                  </p>
+                  <p className="mt-2 text-lg font-semibold text-white">
+                    Tonight&apos;s streaming profile
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-10 w-10 rounded-2xl bg-black/60 border border-white/10 flex items-center justify-center">
+                    <Film className="h-5 w-5 text-blue-400" />
+                  </div>
+                </div>
+              </div>
 
-          <p className="text-gray-400 text-lg md:text-2xl max-w-3xl font-medium leading-relaxed">
-            The hyper-modern streaming collective. Engineered for the future of cinematic digital consumption.
-          </p>
+              <div className="grid grid-cols-2 gap-4 mb-8 text-xs text-gray-300">
+                <div className="rounded-2xl bg-black/60 border border-white/5 p-4 flex flex-col gap-2">
+                  <span className="text-[10px] uppercase tracking-[0.2em] text-gray-500">Playback</span>
+                  <span className="text-base font-semibold text-white">Adaptive 4K HDR</span>
+                  <span>Intelligent bitrate tuned to your connection in real time.</span>
+                </div>
+                <div className="rounded-2xl bg-black/60 border border-white/5 p-4 flex flex-col gap-2">
+                  <span className="text-[10px] uppercase tracking-[0.2em] text-gray-500">Availability</span>
+                  <span className="text-base font-semibold text-white">99.9% uptime</span>
+                  <span>Global edge delivery with automatic fallback providers.</span>
+                </div>
+                <div className="rounded-2xl bg-black/60 border border-white/5 p-4 flex flex-col gap-2 col-span-2">
+                  <span className="text-[10px] uppercase tracking-[0.2em] text-gray-500">Personalization</span>
+                  <span className="text-base font-semibold text-white">Profile-aware recommendations</span>
+                  <span>Each session is tuned using your tastes, history, and watch intent.</span>
+                </div>
+              </div>
 
-          <button
-            onClick={() => navigate('/auth')}
-            className="group relative flex items-center gap-3 px-10 py-5 bg-white text-black hover:bg-blue-500 hover:text-white rounded-2xl font-black text-xl md:text-2xl uppercase tracking-tighter transition-all hover:scale-105 active:scale-95 shadow-3xl shadow-white/5"
-          >
-            Enter the Matrix
-            <ArrowRight size={24} className="transition-transform group-hover:translate-x-2" />
-          </button>
+              <div className="flex items-center justify-between text-xs text-gray-400">
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-emerald-400" />
+                  <span>Session health: Excellent</span>
+                </div>
+                <span className="text-[10px] uppercase tracking-[0.25em] text-gray-500">
+                  Pro streaming architecture
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Features Grid */}

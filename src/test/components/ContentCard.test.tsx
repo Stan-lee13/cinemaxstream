@@ -113,10 +113,20 @@ describe('ContentCard', () => {
     );
     
     const cardLink = screen.getByRole('link');
-    expect(cardLink).toHaveClass('focus:outline-none', 'focus:ring-2', 'focus:ring-primary');
+    expect(cardLink).toHaveClass(
+      'focus-visible:outline-none',
+      'focus-visible:ring-2',
+      'focus-visible:ring-ring',
+      'focus-visible:ring-offset-2'
+    );
     
     const playButton = screen.getByRole('button', { name: /play test movie/i });
-    expect(playButton).toHaveClass('focus:outline-none', 'focus:ring-2', 'focus:ring-primary');
+    expect(playButton).toHaveClass(
+      'focus-visible:outline-none',
+      'focus-visible:ring-2',
+      'focus-visible:ring-ring',
+      'focus-visible:ring-offset-2'
+    );
   });
 
   it('returns null for invalid content ID', () => {

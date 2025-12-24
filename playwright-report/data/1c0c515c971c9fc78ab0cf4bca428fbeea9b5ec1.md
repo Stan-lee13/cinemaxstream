@@ -1,0 +1,43 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - region "Notifications (F8)":
+    - list
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - img [ref=e7]
+          - generic [ref=e13]: Next Generation Entertainment
+        - heading "CINEMAXSTREAM" [level=1] [ref=e14]:
+          - text: CINEMAX
+          - generic [ref=e15]: STREAM
+        - paragraph [ref=e16]: The hyper-modern streaming collective. Engineered for the future of cinematic digital consumption.
+        - button "Enter the Matrix" [ref=e17] [cursor=pointer]:
+          - text: Enter the Matrix
+          - img [ref=e18] [cursor=pointer]
+      - generic [ref=e21]:
+        - generic [ref=e22]:
+          - img [ref=e24]
+          - heading "Global Sync" [level=3] [ref=e29]
+          - paragraph [ref=e30]: Access movies, series, anime & more—synchronized across every device.
+        - generic [ref=e31]:
+          - img [ref=e33]
+          - heading "Neural Playback" [level=3] [ref=e35]
+          - paragraph [ref=e36]: Instant streaming with zero buffer. The precision of high-end engineering.
+        - generic [ref=e37]:
+          - img [ref=e39]
+          - heading "Quantum Secure" [level=3] [ref=e41]
+          - paragraph [ref=e42]: Your library and activity are protected by industry-leading encryption.
+        - generic [ref=e43]:
+          - img [ref=e45]
+          - heading "8K Ready" [level=3] [ref=e47]
+          - paragraph [ref=e48]: Experience hyper-definition streaming with optimized data efficiency.
+    - contentinfo [ref=e49]:
+      - generic [ref=e52]: System Online
+      - paragraph [ref=e53]: © 2025 Cinemax Stream • Internal Build v4.2.0
+      - generic [ref=e54]:
+        - button "Terms" [ref=e55] [cursor=pointer]
+        - button "Privacy" [ref=e56] [cursor=pointer]
+```

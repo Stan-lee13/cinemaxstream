@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,41 +22,10 @@ import BackButton from "@/components/BackButton";
 import { useNavigate } from 'react-router-dom';
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import gsap from 'gsap';
 
 const HelpCenter = () => {
   const navigate = useNavigate();
-  const containerRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState("");
-
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      gsap.from(".help-header", {
-        scale: 0.95,
-        opacity: 0,
-        duration: 0.8,
-        ease: "power3.out"
-      });
-
-      gsap.from(".topic-card", {
-        y: 30,
-        opacity: 0,
-        duration: 0.7,
-        stagger: 0.08,
-        delay: 0.2,
-        ease: "power3.out"
-      });
-
-      gsap.from(".support-banner", {
-        scale: 0.98,
-        opacity: 0,
-        duration: 0.8,
-        delay: 0.6,
-        ease: "power2.out"
-      });
-    }, containerRef);
-    return () => ctx.revert();
-  }, []);
 
   const helpTopics = [
     {
@@ -149,7 +118,7 @@ const HelpCenter = () => {
   })).filter(topic => topic.items.length > 0 || topic.title.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col" ref={containerRef}>
+    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col">
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-[5%] right-[-10%] w-[50%] h-[50%] bg-blue-900/10 rounded-full blur-[140px]" />
         <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-purple-900/10 rounded-full blur-[140px]" />

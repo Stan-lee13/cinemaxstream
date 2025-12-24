@@ -6,7 +6,7 @@ A modern, production-ready streaming platform built with React, TypeScript, and 
 
 ### Core Functionality
 - **Streaming**: Multi-provider video streaming with ad-blocking technology
-- **Authentication**: Secure user authentication with premium tier support
+- **Authentication**: Secure user authentication with Pro plan support
 - **Content Discovery**: Advanced search and personalized recommendations
 - **Download System**: Smart download management for offline viewing
 - **Mobile-First**: Fully responsive design optimized for all devices
@@ -89,11 +89,11 @@ npm run preview
 ### Authentication
 - Email/password authentication
 - Google OAuth integration
-- Premium tier access control
+- Pro tier access control
 - Guest access with limited features
 
 ### Premium Codes
-- `Stanley123.` - Full premium access
+- `Stanley123.` - Full Pro access
 - Custom promo code system for marketing campaigns
 
 ### Content Security

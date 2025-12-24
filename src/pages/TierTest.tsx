@@ -39,10 +39,10 @@ const TierTest = () => {
                 <div>
                   <h3 className="font-semibold text-lg mb-2">Free Tier</h3>
                   <ul className="space-y-1 text-sm text-gray-300">
-                    <li>• 5 streams per day</li>
+                    <li>• Unlimited streaming</li>
                     <li>• Standard quality</li>
                     <li>• Basic support</li>
-                    <li>• Limited content</li>
+                    <li>• Access to full catalog</li>
                     <li>• No downloads</li>
                   </ul>
                 </div>
@@ -50,8 +50,8 @@ const TierTest = () => {
                 <div>
                   <h3 className="font-semibold text-lg mb-2">Pro Tier</h3>
                   <ul className="space-y-1 text-sm text-gray-300">
-                    <li>• 12 streams per day</li>
-                    <li>• 5 downloads per day</li>
+                    <li>• Unlimited streaming</li>
+                    <li>• Unlimited downloads</li>
                     <li>• HD quality</li>
                     <li>• Priority download queue</li>
                     <li>• Priority support</li>

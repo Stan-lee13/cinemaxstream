@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Clock, Trash2, Play, Film, ChevronRight, Bookmark, Sparkles, LayoutGrid, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,6 @@ import useAuth from '@/contexts/authHooks';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import LoadingState from '@/components/LoadingState';
-import gsap from 'gsap';
 import { tmdbApi } from '@/services/tmdbApiProduction';
 
 interface WatchListItem {
@@ -28,7 +27,6 @@ const WatchList = () => {
   const navigate = useNavigate();
   const [watchList, setWatchList] = useState<WatchListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isAuthenticated && !isLoading) {
@@ -99,30 +97,6 @@ const WatchList = () => {
     }
   }, [user, fetchWatchList]);
 
-  useEffect(() => {
-    if (!isLoading && watchList.length > 0) {
-      const ctx = gsap.context(() => {
-        gsap.from(".watchlist-header", {
-          y: 20,
-          opacity: 0,
-          duration: 0.4,
-          ease: "power2.out"
-        });
-
-        gsap.from(".watchlist-card", {
-          y: 20,
-          opacity: 0,
-          scale: 0.98,
-          duration: 0.4,
-          stagger: 0.04,
-          ease: "power2.out",
-          delay: 0.1
-        });
-      }, containerRef);
-      return () => ctx.revert();
-    }
-  }, [isLoading, watchList.length]);
-
   const removeFromWatchList = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
@@ -133,20 +107,7 @@ const WatchList = () => {
 
       if (error) throw error;
 
-      const el = document.getElementById(`watchlist-${id}`);
-      if (el) {
-        gsap.to(el, {
-          scale: 0.8,
-          opacity: 0,
-          duration: 0.4,
-          ease: "back.in(1.7)",
-          onComplete: () => {
-            setWatchList(watchList.filter(item => item.id !== id));
-          }
-        });
-      } else {
-        setWatchList(watchList.filter(item => item.id !== id));
-      }
+      setWatchList(prev => prev.filter(item => item.id !== id));
       toast.success('Removed from synchronized queue');
     } catch (error) {
       toast.error('Failed to terminate entry');
@@ -164,7 +125,7 @@ const WatchList = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col" ref={containerRef}>
+    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col">
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-[10%] left-[10%] w-[45%] h-[45%] bg-blue-900/10 rounded-full blur-[140px]" />
         <div className="absolute bottom-[10%] right-[10%] w-[35%] h-[35%] bg-indigo-900/10 rounded-full blur-[140px]" />

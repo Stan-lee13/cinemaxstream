@@ -1,37 +1,13 @@
-import React, { useRef, useEffect } from 'react';
+import React from 'react';
 import BackButton from "@/components/BackButton";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import gsap from 'gsap';
 import { Card } from '@/components/ui/card';
 import { Shield, Lock, Scale, Fingerprint, FileText, ChevronRight } from 'lucide-react';
 
 const Terms = () => {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      gsap.from(".terms-header", {
-        y: 30,
-        opacity: 0,
-        duration: 0.8,
-        ease: "power3.out"
-      });
-
-      gsap.from(".terms-section", {
-        y: 20,
-        opacity: 0,
-        duration: 0.6,
-        stagger: 0.1,
-        delay: 0.2,
-        ease: "power2.out"
-      });
-    }, containerRef);
-    return () => ctx.revert();
-  }, []);
-
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col" ref={containerRef}>
+    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col">
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-[10%] left-[20%] w-[40%] h-[40%] bg-blue-900/5 rounded-full blur-[120px]" />
         <div className="absolute bottom-[20%] right-[10%] w-[30%] h-[30%] bg-purple-900/5 rounded-full blur-[120px]" />

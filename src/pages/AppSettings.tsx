@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -16,11 +16,8 @@ import {
 import { useTheme } from '@/hooks/themeContext';
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import gsap from 'gsap';
 
 const AppSettings = () => {
-  const containerRef = useRef<HTMLDivElement>(null);
-
   // Load settings from localStorage or use defaults
   const [autoPlay, setAutoPlay] = useState(() => {
     const saved = localStorage.getItem('settings_autoPlay');
@@ -59,35 +56,6 @@ const AppSettings = () => {
   });
 
   const { theme, setTheme } = useTheme();
-
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      gsap.from(".settings-header", {
-        y: 30,
-        opacity: 0,
-        duration: 0.8,
-        ease: "power3.out"
-      });
-
-      gsap.from(".settings-group", {
-        y: 20,
-        opacity: 0,
-        duration: 0.6,
-        stagger: 0.1,
-        delay: 0.2,
-        ease: "power2.out"
-      });
-
-      gsap.from(".storage-card", {
-        scale: 0.95,
-        opacity: 0,
-        duration: 0.6,
-        delay: 0.6,
-        ease: "back.out(1.7)"
-      });
-    }, containerRef);
-    return () => ctx.revert();
-  }, []);
 
   // Save settings to localStorage whenever they change
   useEffect(() => {
@@ -301,7 +269,7 @@ const AppSettings = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white" ref={containerRef}>
+    <div className="min-h-screen bg-[#0a0a0a] text-white">
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-[20%] right-[20%] w-[30%] h-[30%] bg-purple-900/10 rounded-full blur-[100px]" />
         <div className="absolute bottom-[10%] left-[10%] w-[25%] h-[25%] bg-blue-900/10 rounded-full blur-[100px]" />

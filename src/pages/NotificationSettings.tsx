@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -8,7 +8,8 @@ import { toast } from 'sonner';
 import { Bell, Mail, Smartphone, Volume2, CheckCircle2, ShieldCheck, Zap, Sparkles, Send, Megaphone } from 'lucide-react';
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import gsap from 'gsap';
+import { motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 const NotificationSettings = () => {
   const [emailNotifications, setEmailNotifications] = useState(() => localStorage.getItem('notif_email') !== 'false');
@@ -18,28 +19,7 @@ const NotificationSettings = () => {
   const [promotionalEmails, setPromotionalEmails] = useState(() => localStorage.getItem('notif_promo') === 'true');
   const [weeklyDigest, setWeeklyDigest] = useState(() => localStorage.getItem('notif_weekly') !== 'false');
   const [isSaving, setIsSaving] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      gsap.from(".settings-header", {
-        y: 30,
-        opacity: 0,
-        duration: 0.8,
-        ease: "power3.out"
-      });
-
-      gsap.from(".settings-card", {
-        y: 30,
-        opacity: 0,
-        duration: 0.7,
-        stagger: 0.1,
-        delay: 0.2,
-        ease: "power3.out"
-      });
-    }, containerRef);
-    return () => ctx.revert();
-  }, []);
+  const prefersReducedMotion = useReducedMotion();
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -125,7 +105,7 @@ const NotificationSettings = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col" ref={containerRef}>
+    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col">
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-[10%] left-[-5%] w-[45%] h-[45%] bg-blue-900/10 rounded-full blur-[140px]" />
         <div className="absolute bottom-[-10%] right-[-5%] w-[40%] h-[40%] bg-purple-900/10 rounded-full blur-[140px]" />
@@ -139,7 +119,12 @@ const NotificationSettings = () => {
             <BackButton className="hover:bg-white/5 text-gray-400 hover:text-white border-white/10 rounded-xl" />
           </div>
 
-          <div className="settings-header mb-16 px-4">
+          <motion.div
+            className="settings-header mb-16 px-4"
+            initial={prefersReducedMotion ? undefined : { opacity: 0, y: 30 }}
+            animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+          >
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2.5 bg-blue-500/10 rounded-2xl border border-blue-500/20">
                 <Bell className="w-6 h-6 text-blue-500" />
@@ -152,11 +137,18 @@ const NotificationSettings = () => {
             <p className="text-gray-400 text-lg font-medium leading-relaxed max-w-2xl">
               Calibrate your connectivity. Control the frequency and medium of your intelligent updates.
             </p>
-          </div>
+          </motion.div>
 
           <div className="space-y-12">
             {notificationSections.map((section, sectionIndex) => (
-              <div key={sectionIndex} className="settings-card space-y-6">
+              <motion.div
+                key={sectionIndex}
+                className="settings-card space-y-6"
+                initial={prefersReducedMotion ? undefined : { opacity: 0, y: 30 }}
+                whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-100px' }}
+                transition={{ duration: 0.7, ease: 'easeOut', delay: sectionIndex * 0.1 }}
+              >
                 <div className="flex items-center justify-between px-6">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-white/5 border border-white/5 rounded-xl">
@@ -193,11 +185,17 @@ const NotificationSettings = () => {
                     ))}
                   </div>
                 </Card>
-              </div>
+              </motion.div>
             ))}
 
             {/* Browser Notification Permission */}
-            <div className="settings-card">
+            <motion.div
+              className="settings-card"
+              initial={prefersReducedMotion ? undefined : { opacity: 0, y: 30 }}
+              whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-100px' }}
+              transition={{ duration: 0.7, ease: 'easeOut', delay: 0.2 }}
+            >
               <div className="p-8 md:p-10 bg-gradient-to-br from-[#111] to-black border border-white/5 rounded-[40px] shadow-2xl relative overflow-hidden group">
                 <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:opacity-10 transition-opacity">
                   <Smartphone size={150} className="text-white" />
@@ -239,9 +237,15 @@ const NotificationSettings = () => {
                   </Button>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="flex justify-center pt-10 settings-card">
+            <motion.div
+              className="flex justify-center pt-10 settings-card"
+              initial={prefersReducedMotion ? undefined : { opacity: 0, y: 30 }}
+              whileInView={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-100px' }}
+              transition={{ duration: 0.7, ease: 'easeOut', delay: 0.3 }}
+            >
               <Button
                 onClick={handleSave}
                 disabled={isSaving}
@@ -256,7 +260,7 @@ const NotificationSettings = () => {
                   'Apply Preferences'
                 )}
               </Button>
-            </div>
+            </motion.div>
           </div>
         </div>
       </div>

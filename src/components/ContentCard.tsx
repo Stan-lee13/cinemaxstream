@@ -39,7 +39,7 @@ const ContentCard: React.FC<ContentCardProps> = ({ item, onCardClick }) => {
         to={`/content/${contentId}`}
         state={{ contentType: item.type || 'movie' }}
         onClick={() => onCardClick?.(item)}
-        className="block focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg"
+        className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-lg"
         aria-describedby={`content-meta-${contentId}`}
       >
         <div className="movie-card h-[260px] sm:h-[300px] relative">

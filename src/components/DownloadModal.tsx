@@ -123,8 +123,8 @@ const DownloadModal: React.FC<DownloadModalProps> = ({
                     <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto mb-3">
                       <AlertCircle className="h-6 w-6 text-amber-500" />
                     </div>
-                    <h3 className="font-bold text-white mb-2">Premium Feature</h3>
-                    <p className="text-sm text-gray-400 mb-4">Downloads are exclusively available for Pro and Premium members.</p>
+                    <h3 className="font-bold text-white mb-2">Pro Feature</h3>
+                    <p className="text-sm text-gray-400 mb-4">Downloads are exclusively available for Pro members.</p>
                     <Button
                       onClick={() => window.location.href = '/upgrade'}
                       className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-bold"
@@ -251,7 +251,7 @@ const DownloadModal: React.FC<DownloadModalProps> = ({
                     </Button>
 
                     <p className="text-center text-xs text-gray-500">
-                      {userProfile.role === 'premium'
+                      {userProfile.role === 'premium' || userProfile.role === 'pro'
                         ? 'Unlimited high-speed downloads active'
                         : `${getDownloadsRemaining()} remaining downloads today`
                       }

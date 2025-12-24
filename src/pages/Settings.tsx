@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -27,7 +27,6 @@ import {
   Settings as SettingsIcon,
   Sparkles
 } from 'lucide-react';
-import gsap from 'gsap';
 import { useNavigate } from 'react-router-dom';
 
 const Settings = () => {
@@ -38,29 +37,7 @@ const Settings = () => {
   const [highQuality, setHighQuality] = useState(false);
   const [downloadQuality, setDownloadQuality] = useState('1080p');
   const [language, setLanguage] = useState('en');
-  const containerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      gsap.from(".settings-header", {
-        y: 30,
-        opacity: 0,
-        duration: 0.8,
-        ease: "power3.out"
-      });
-
-      gsap.from(".settings-card", {
-        y: 40,
-        opacity: 0,
-        duration: 0.7,
-        stagger: 0.1,
-        delay: 0.2,
-        ease: "power3.out"
-      });
-    }, containerRef);
-    return () => ctx.revert();
-  }, []);
 
   const handleSaveSetting = (setting: string) => {
     toast.success(`${setting} configuration applied`);
@@ -188,7 +165,7 @@ const Settings = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col" ref={containerRef}>
+    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col">
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-[15%] right-[-5%] w-[45%] h-[45%] bg-blue-900/10 rounded-full blur-[140px]" />
         <div className="absolute bottom-[-10%] left-[-5%] w-[40%] h-[40%] bg-purple-900/10 rounded-full blur-[140px]" />

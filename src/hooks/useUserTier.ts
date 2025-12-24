@@ -14,34 +14,34 @@ export interface TierBenefits {
 export const useUserTier = (userId?: string) => {
   const [tier, setTier] = useState<UserTier>('free');
   const [benefits, setBenefits] = useState<TierBenefits>({
-    maxStreams: 5,
+    maxStreams: 1000000,
     maxDownloads: 0,
     unlimited: false,
-    features: ['5 streams per day', 'Standard quality'],
+    features: ['Unlimited streaming', 'Standard quality', 'Basic support', 'Access to full catalog'],
     priorityLevel: 3
   });
   const [isLoading, setIsLoading] = useState(true);
 
   const tierBenefits = useMemo(() => ({
     free: {
-      maxStreams: 5,
+      maxStreams: 1000000,
       maxDownloads: 0,
       unlimited: false,
-      features: ['5 streams per day', 'Standard quality'],
+      features: ['Unlimited streaming', 'Standard quality', 'Basic support', 'Access to full catalog'],
       priorityLevel: 3
     },
     pro: {
-      maxStreams: 12,
-      maxDownloads: 5,
-      unlimited: false,
-      features: ['12 streams per day', '5 downloads per day', 'HD quality', 'Priority download queue', 'Priority support', 'All content access'],
+      maxStreams: 1000000,
+      maxDownloads: 1000000,
+      unlimited: true,
+      features: ['Unlimited streaming', 'Unlimited downloads', 'HD quality', 'Priority download queue', 'Priority support'],
       priorityLevel: 2
     },
     premium: {
-      maxStreams: 0,
-      maxDownloads: 0,
+      maxStreams: 1000000,
+      maxDownloads: 1000000,
       unlimited: true,
-      features: ['Unlimited streams', 'Unlimited downloads', '4K streaming', 'Premium-only catalog', 'VIP support'],
+      features: ['Unlimited streaming', 'Unlimited downloads', 'HD quality', 'Priority download queue', 'Priority support'],
       priorityLevel: 1
     }
   }), []);

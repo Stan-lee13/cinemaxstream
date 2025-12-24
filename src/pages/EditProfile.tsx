@@ -11,7 +11,8 @@ import { User, Mail, Calendar, Upload, Camera, Loader2, ShieldCheck, CreditCard 
 import { useNavigate } from 'react-router-dom';
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import gsap from 'gsap';
+import { motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 const EditProfile = () => {
   const { user } = useAuth();
@@ -22,35 +23,13 @@ const EditProfile = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const navigate = useNavigate();
-  const containerRef = useRef<HTMLDivElement>(null);
+  const prefersReducedMotion = useReducedMotion();
 
   useEffect(() => {
     if (profileData) {
       setUsername(profileData.username || '');
     }
   }, [profileData]);
-
-  useEffect(() => {
-    if (!isLoading) {
-      const ctx = gsap.context(() => {
-        gsap.from(".profile-header", {
-          y: 30,
-          opacity: 0,
-          duration: 0.8,
-          ease: "power3.out"
-        });
-
-        gsap.from(".profile-card", {
-          y: 30,
-          opacity: 0,
-          duration: 0.8,
-          delay: 0.2,
-          ease: "power3.out"
-        });
-      }, containerRef);
-      return () => ctx.revert();
-    }
-  }, [isLoading]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -111,7 +90,7 @@ const EditProfile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white" ref={containerRef}>
+    <div className="min-h-screen bg-[#0a0a0a] text-white">
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-[-10%] left-[20%] w-[40%] h-[40%] bg-purple-900/10 rounded-full blur-[120px]" />
         <div className="absolute bottom-[10%] right-[10%] w-[30%] h-[30%] bg-blue-900/10 rounded-full blur-[120px]" />
@@ -125,14 +104,24 @@ const EditProfile = () => {
             <BackButton className="hover:bg-white/10 text-gray-400 hover:text-white border-white/10" />
           </div>
 
-          <div className="profile-header mb-8">
+          <motion.div
+            className="profile-header mb-8"
+            initial={prefersReducedMotion ? undefined : { opacity: 0, y: 30 }}
+            animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+          >
             <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400 mb-2">
               Edit Profile
             </h1>
             <p className="text-gray-400">Manage your personal information and public profile</p>
-          </div>
+          </motion.div>
 
-          <div className="profile-card bg-[#111] border border-white/5 rounded-3xl overflow-hidden shadow-2xl shadow-black/50">
+          <motion.div
+            className="profile-card bg-[#111] border border-white/5 rounded-3xl overflow-hidden shadow-2xl shadow-black/50"
+            initial={prefersReducedMotion ? undefined : { opacity: 0, y: 30 }}
+            animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: 'easeOut', delay: 0.1 }}
+          >
             {/* Banner/Header of Card */}
             <div className="h-32 bg-gradient-to-r from-cinemax-900/40 to-purple-900/40 relative">
               <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1574267432553-4b4628081c31?auto=format&fit=crop&q=80')] opacity-10 bg-cover bg-center" />
@@ -259,7 +248,7 @@ const EditProfile = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
       <Footer />

@@ -1,54 +1,14 @@
-import React, { useRef, useEffect } from 'react';
+import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { User, Settings, CreditCard, Download, Bell, Shield, FileText, Trash2, Mail, ChevronRight, LogOut, History, Bookmark, Sparkles, Calendar } from 'lucide-react';
 import BackButton from "@/components/BackButton";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useNavigate } from 'react-router-dom';
-import gsap from 'gsap';
 
 const Account = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const ctx = gsap.context(() => {
-      gsap.from(".account-header", {
-        scale: 0.98,
-        opacity: 0,
-        duration: 0.4,
-        ease: "power2.out"
-      });
-
-      gsap.from(".section-title", {
-        x: -10,
-        opacity: 0,
-        duration: 0.3,
-        stagger: 0.05,
-        delay: 0.1,
-        ease: "power2.out"
-      });
-
-      gsap.from(".settings-card", {
-        y: 15,
-        opacity: 0,
-        duration: 0.4,
-        stagger: 0.04,
-        delay: 0.15,
-        ease: "power2.out"
-      });
-
-      gsap.from(".danger-zone", {
-        opacity: 0,
-        y: 10,
-        duration: 0.5,
-        delay: 0.3,
-        ease: "power2.out"
-      });
-    }, containerRef);
-    return () => ctx.revert();
-  }, []);
 
   const accountSections = [
     {
@@ -172,7 +132,7 @@ const Account = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col" ref={containerRef}>
+    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col">
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-900/10 rounded-full blur-[140px]" />
         <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-purple-900/10 rounded-full blur-[140px]" />
