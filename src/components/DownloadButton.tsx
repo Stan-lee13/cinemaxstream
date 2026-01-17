@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, memo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
+import { Download, Crown } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserTier } from '@/hooks/useUserTier';
 import { useNavigate } from 'react-router-dom';
@@ -19,7 +19,15 @@ interface DownloadButtonProps {
   size?: 'sm' | 'lg' | 'default';
 }
 
-const DownloadButton: React.FC<DownloadButtonProps> = ({
+/**
+ * Download Button Component
+ * 
+ * Implements strict download access control:
+ * - Not logged in: Redirect to login
+ * - Free users: Show upgrade modal (canDownload = false)
+ * - Pro/Premium users: Open download modal (canDownload = true)
+ */
+const DownloadButton: React.FC<DownloadButtonProps> = memo(({
   contentId,
   contentTitle,
   contentType,
@@ -36,22 +44,26 @@ const DownloadButton: React.FC<DownloadButtonProps> = ({
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const navigate = useNavigate();
 
-  const handleDownload = () => {
-    // Check if user has download permissions
+  // Strict download access gate
+  const canDownload = isPro || isPremium;
+
+  const handleDownload = useCallback(() => {
+    // Check if user is logged in
     if (!user) {
       navigate('/login');
       return;
     }
 
-    if (!isPro) {
-      // Show upgrade modal for free users
+    // Check download permissions
+    if (!canDownload) {
+      // Free users see upgrade modal
       setShowUpgradeModal(true);
       return;
     }
 
-    // Open smart download modal
+    // Pro/Premium users can download
     setShowDownloadModal(true);
-  };
+  }, [user, canDownload, navigate]);
 
   return (
     <>
@@ -59,14 +71,17 @@ const DownloadButton: React.FC<DownloadButtonProps> = ({
         onClick={handleDownload}
         variant={variant}
         size={size}
-        className={`${className} ${variant === 'default' ? 'bg-green-600 hover:bg-green-700' : ''}`}
+        className={`${className} ${variant === 'default' ? 'bg-green-600 hover:bg-green-700' : ''} ${!canDownload && user ? 'relative' : ''}`}
         data-tour-id="download-button"
       >
         <Download className="h-4 w-4 mr-2" />
         Download
+        {!canDownload && user && (
+          <Crown className="h-3 w-3 ml-1 text-amber-400" />
+        )}
       </Button>
 
-      {/* Upgrade modal for free users trying to download */}
+      {/* Upgrade modal for free users */}
       <UpgradeModal
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
@@ -74,7 +89,7 @@ const DownloadButton: React.FC<DownloadButtonProps> = ({
         currentRole={tier}
       />
 
-      {/* Smart Download Modal */}
+      {/* Download Modal for Pro/Premium users */}
       <DownloadModal
         isOpen={showDownloadModal}
         onClose={() => setShowDownloadModal(false)}
@@ -83,10 +98,12 @@ const DownloadButton: React.FC<DownloadButtonProps> = ({
         seasonNumber={seasonNumber}
         episodeNumber={episodeNumber}
         year={year}
-        contentId={contentId} // Pass contentId
+        contentId={contentId}
       />
     </>
   );
-};
+});
+
+DownloadButton.displayName = 'DownloadButton';
 
 export default DownloadButton;
