@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, memo, useCallback } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Download, ExternalLink, AlertCircle, CheckCircle, Loader2, Play, FileVideo, HardDrive, Wifi, X, Sparkles } from 'lucide-react';
+import { Download, ExternalLink, AlertCircle, CheckCircle, Wifi, X, Sparkles, Crown, Lock } from 'lucide-react';
 import { useSmartDownload, DownloadResult } from '@/hooks/useSmartDownload';
 import { useCreditSystem } from '@/hooks/useCreditSystem';
+import { useUserTier } from '@/hooks/useUserTier';
+import { useAuth } from '@/contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
 interface DownloadModalProps {
   isOpen: boolean;
@@ -16,11 +18,17 @@ interface DownloadModalProps {
   episodeNumber?: number;
   year?: string;
   contentId?: string;
-  fallbackUrl?: string;
-  onLegacyDownload?: () => void;
 }
 
-const DownloadModal: React.FC<DownloadModalProps> = ({
+/**
+ * Download Modal Component
+ * 
+ * Download access rules:
+ * - Free users: canDownload = false (must upgrade to Pro/Premium)
+ * - Pro/Premium users: canDownload = true
+ * - Uses vidsrc.vip as the primary download source
+ */
+const DownloadModal: React.FC<DownloadModalProps> = memo(({
   isOpen,
   onClose,
   contentTitle,
@@ -28,47 +36,79 @@ const DownloadModal: React.FC<DownloadModalProps> = ({
   seasonNumber,
   episodeNumber,
   year,
-  contentId,
-  fallbackUrl,
-  onLegacyDownload
+  contentId
 }) => {
+  const { user } = useAuth();
   const { initiateDownload, isProcessing } = useSmartDownload();
-  const { userProfile, canDownload, getDownloadsRemaining } = useCreditSystem();
+  const { userProfile, deductDownloadCredit } = useCreditSystem();
+  const { tier, isPro, isPremium } = useUserTier(user?.id);
+  const navigate = useNavigate();
+  
   const [downloadResult, setDownloadResult] = useState<DownloadResult | null>(null);
-  const [currentStep, setCurrentStep] = useState<'initial' | 'searching' | 'scraping' | 'complete'>('initial');
+  const [currentStep, setCurrentStep] = useState<'initial' | 'searching' | 'complete'>('initial');
 
-  const handleDownload = async () => {
-    if (!canDownload()) return;
+  // Strict download access gate: Only Pro/Premium users can download
+  const canDownload = isPro || isPremium;
 
-    if (fallbackUrl && onLegacyDownload) {
-      onLegacyDownload();
+  const getVidsrcDownloadUrl = useCallback(() => {
+    if (!contentId) return null;
+    
+    if (contentType === 'movie') {
+      return `https://dl.vidsrc.vip/movie/${contentId}`;
+    } else if (contentType === 'tv' || contentType === 'series' || contentType === 'anime') {
+      const season = seasonNumber ?? 1;
+      const episode = episodeNumber ?? 1;
+      return `https://dl.vidsrc.vip/tv/${contentId}/${season}/${episode}`;
+    }
+    return null;
+  }, [contentId, contentType, seasonNumber, episodeNumber]);
+
+  const handleDownload = useCallback(async () => {
+    if (!canDownload || !contentId) return;
+
+    setCurrentStep('searching');
+
+    // Primary: Use vidsrc.vip directly for reliable downloads
+    const vidsrcUrl = getVidsrcDownloadUrl();
+    
+    if (vidsrcUrl) {
+      // Deduct credit for successful download initiation
+      await deductDownloadCredit();
+      
+      setDownloadResult({
+        success: true,
+        downloadLink: vidsrcUrl,
+        quality: 'HD',
+        fileSize: 'Varies'
+      });
+      setCurrentStep('complete');
       return;
     }
 
-    setCurrentStep('searching');
-    const result = await initiateDownload(contentTitle, contentType, seasonNumber, episodeNumber, year, contentId);
+    // Fallback: Try smart download system
+    const result = await initiateDownload(
+      contentTitle, 
+      contentType, 
+      seasonNumber, 
+      episodeNumber, 
+      year, 
+      contentId
+    );
 
     setCurrentStep('complete');
     setDownloadResult(result);
-  };
+  }, [canDownload, contentId, getVidsrcDownloadUrl, initiateDownload, contentTitle, contentType, seasonNumber, episodeNumber, year, deductDownloadCredit]);
 
-  const getStepProgress = () => {
-    switch (currentStep) {
-      case 'initial': return 0;
-      case 'searching': return 45;
-      case 'scraping': return 80;
-      case 'complete': return 100;
-      default: return 0;
-    }
-  };
-
-  const resetModal = () => {
+  const resetModal = useCallback(() => {
     setCurrentStep('initial');
     setDownloadResult(null);
     onClose();
-  };
+  }, [onClose]);
 
-  if (!userProfile) return null;
+  const handleUpgrade = useCallback(() => {
+    resetModal();
+    navigate('/upgrade');
+  }, [resetModal, navigate]);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && resetModal()}>
@@ -83,6 +123,7 @@ const DownloadModal: React.FC<DownloadModalProps> = ({
           <button
             onClick={resetModal}
             className="absolute top-4 right-4 z-50 p-2 rounded-full bg-black/20 hover:bg-white/10 text-gray-400 hover:text-white transition-colors backdrop-blur-sm"
+            aria-label="Close modal"
           >
             <X size={16} />
           </button>
@@ -111,43 +152,40 @@ const DownloadModal: React.FC<DownloadModalProps> = ({
 
             <div className="flex-1 flex flex-col justify-center">
               <AnimatePresence mode="wait">
-                {/* STATE 1: BLOCKED / UPGRADE NEEDED */}
-                {userProfile.role === 'free' ? (
+                {/* STATE: NO DOWNLOAD ACCESS - Free Users */}
+                {!canDownload ? (
                   <motion.div
                     key="upgrade"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="text-center p-4 border border-amber-500/20 bg-amber-500/5 rounded-xl"
+                    className="text-center p-6 border border-amber-500/20 bg-amber-500/5 rounded-xl"
                   >
-                    <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto mb-3">
-                      <AlertCircle className="h-6 w-6 text-amber-500" />
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center mx-auto mb-4">
+                      <Lock className="h-8 w-8 text-amber-500" />
                     </div>
-                    <h3 className="font-bold text-white mb-2">Pro Feature</h3>
-                    <p className="text-sm text-gray-400 mb-4">Downloads are exclusively available for Pro members.</p>
-                    <Button
-                      onClick={() => window.location.href = '/upgrade'}
-                      className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-bold"
-                    >
-                      Upgrade Plan
-                    </Button>
-                  </motion.div>
-                ) : !canDownload() ? (
-                  <motion.div
-                    key="limit"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="text-center p-4 border border-red-500/20 bg-red-500/5 rounded-xl"
-                  >
-                    <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-3">
-                      <AlertCircle className="h-6 w-6 text-red-500" />
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <Crown className="h-5 w-5 text-amber-500" />
+                      <h3 className="font-bold text-white text-lg">Pro Feature</h3>
                     </div>
-                    <h3 className="font-bold text-white mb-2">Daily Limit Reached</h3>
-                    <p className="text-sm text-gray-400">You've reached your download limit for today.</p>
+                    <p className="text-sm text-gray-400 mb-6">
+                      Downloads are exclusively available for Pro and Premium members. Upgrade now to unlock unlimited downloads!
+                    </p>
+                    <div className="space-y-3">
+                      <Button
+                        onClick={handleUpgrade}
+                        className="w-full h-12 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-bold shadow-lg shadow-amber-500/20"
+                      >
+                        <Crown className="h-4 w-4 mr-2" />
+                        Upgrade to Pro
+                      </Button>
+                      <p className="text-xs text-gray-500">
+                        Have a promo code? Enter it on the upgrade page!
+                      </p>
+                    </div>
                   </motion.div>
                 ) : isProcessing ? (
-                  /* STATE 2: PROCESSING */
+                  /* STATE: PROCESSING */
                   <motion.div
                     key="processing"
                     initial={{ opacity: 0 }}
@@ -159,18 +197,16 @@ const DownloadModal: React.FC<DownloadModalProps> = ({
                       <div className="absolute inset-0 rounded-full border-4 border-white/10" />
                       <div className="absolute inset-0 rounded-full border-4 border-t-blue-500 animate-spin" />
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-xl font-bold text-blue-400">{getStepProgress()}%</span>
+                        <Download className="h-8 w-8 text-blue-400 animate-pulse" />
                       </div>
                     </div>
                     <div>
-                      <h3 className="text-white font-medium mb-1">
-                        {currentStep === 'searching' ? 'Searching Servers...' : 'Generating Secure Link...'}
-                      </h3>
-                      <p className="text-xs text-gray-500">Please wait while we prepare your file</p>
+                      <h3 className="text-white font-medium mb-1">Preparing Download...</h3>
+                      <p className="text-xs text-gray-500">Finding the best quality link</p>
                     </div>
                   </motion.div>
                 ) : downloadResult ? (
-                  /* STATE 3: RESULT */
+                  /* STATE: RESULT */
                   <motion.div
                     key="result"
                     initial={{ opacity: 0, scale: 0.95 }}
@@ -179,40 +215,30 @@ const DownloadModal: React.FC<DownloadModalProps> = ({
                   >
                     {downloadResult.success ? (
                       <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-6 text-center">
-                        <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-3">
-                          <CheckCircle className="h-6 w-6 text-emerald-500" />
+                        <div className="w-14 h-14 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-4">
+                          <CheckCircle className="h-7 w-7 text-emerald-500" />
                         </div>
-                        <h3 className="font-bold text-white mb-1">Ready to Download</h3>
-                        <div className="flex justify-center gap-4 text-xs text-emerald-400/80 mb-6">
-                          {downloadResult.quality && <span className="flex items-center gap-1"><FileVideo size={12} /> {downloadResult.quality}</span>}
-                          {downloadResult.fileSize && <span className="flex items-center gap-1"><HardDrive size={12} /> {downloadResult.fileSize}</span>}
-                        </div>
+                        <h3 className="font-bold text-white text-lg mb-1">Download Ready</h3>
+                        <p className="text-sm text-gray-400 mb-6">Your file is ready to download</p>
 
-                        {downloadResult.downloadLink && downloadResult.downloadLink !== downloadResult.nkiriUrl ? (
-                          <Button
-                            className="w-full h-12 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 shadow-lg shadow-emerald-900/20 font-bold"
-                            onClick={() => downloadResult.downloadLink && window.open(downloadResult.downloadLink, '_blank')}
-                          >
-                            <Download className="h-4 w-4 mr-2" />
-                            Download Now
-                          </Button>
-                        ) : (
-                          <Button
-                            className="w-full h-12 bg-blue-600 hover:bg-blue-500 font-bold"
-                            onClick={() => downloadResult.nkiriUrl && window.open(downloadResult.nkiriUrl, '_blank')}
-                          >
-                            <ExternalLink className="h-4 w-4 mr-2" />
-                            Open External Link
-                          </Button>
-                        )}
+                        <Button
+                          className="w-full h-12 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 shadow-lg shadow-emerald-900/20 font-bold"
+                          onClick={() => {
+                            const url = downloadResult.downloadLink || downloadResult.nkiriUrl;
+                            if (url) window.open(url, '_blank');
+                          }}
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          Download Now
+                        </Button>
                       </div>
                     ) : (
                       <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-6 text-center">
-                        <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-3">
-                          <Wifi className="h-6 w-6 text-red-500" />
+                        <div className="w-14 h-14 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
+                          <AlertCircle className="h-7 w-7 text-red-500" />
                         </div>
-                        <h3 className="font-bold text-white mb-2">Download Unavailable</h3>
-                        <p className="text-sm text-gray-400 mb-4">{downloadResult.error || 'Connection timed out'}</p>
+                        <h3 className="font-bold text-white text-lg mb-2">Download Unavailable</h3>
+                        <p className="text-sm text-gray-400 mb-4">{downloadResult.error || 'Unable to generate download link'}</p>
                         <Button variant="outline" onClick={resetModal} className="border-white/10 hover:bg-white/5 text-white">
                           Try Again
                         </Button>
@@ -220,7 +246,7 @@ const DownloadModal: React.FC<DownloadModalProps> = ({
                     )}
                   </motion.div>
                 ) : (
-                  /* STATE 0: INITIAL ACTION */
+                  /* STATE: INITIAL - Ready to Download */
                   <motion.div
                     key="action"
                     initial={{ opacity: 0 }}
@@ -240,21 +266,15 @@ const DownloadModal: React.FC<DownloadModalProps> = ({
 
                     <Button
                       onClick={handleDownload}
-                      disabled={!canDownload()}
+                      disabled={!contentId}
                       className="w-full h-14 text-lg bg-white text-black hover:bg-gray-200 font-bold shadow-lg shadow-white/10 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
                     >
-                      {fallbackUrl ? (
-                        <span className="flex items-center gap-2"><Download size={20} /> Direct Download</span>
-                      ) : (
-                        <span className="flex items-center gap-2"><Sparkles size={20} className="text-amber-500" /> Smart Download</span>
-                      )}
+                      <Sparkles size={20} className="mr-2 text-amber-500" />
+                      Download HD
                     </Button>
 
                     <p className="text-center text-xs text-gray-500">
-                      {userProfile.role === 'premium' || userProfile.role === 'pro'
-                        ? 'Unlimited high-speed downloads active'
-                        : `${getDownloadsRemaining()} remaining downloads today`
-                      }
+                      {isPremium ? 'Premium: Unlimited HD downloads' : 'Pro: Unlimited downloads active'}
                     </p>
                   </motion.div>
                 )}
@@ -265,6 +285,8 @@ const DownloadModal: React.FC<DownloadModalProps> = ({
       </DialogContent>
     </Dialog>
   );
-};
+});
+
+DownloadModal.displayName = 'DownloadModal';
 
 export default DownloadModal;
