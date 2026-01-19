@@ -14,6 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_action_logs: {
+        Row: {
+          action_description: string | null
+          action_type: string
+          admin_id: string | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          target_user_id: string | null
+        }
+        Insert: {
+          action_description?: string | null
+          action_type: string
+          admin_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          target_user_id?: string | null
+        }
+        Update: {
+          action_description?: string | null
+          action_type?: string
+          admin_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
+      blocked_content: {
+        Row: {
+          blocked_at: string
+          blocked_by: string | null
+          content_id: string
+          id: string
+          reason: string | null
+        }
+        Insert: {
+          blocked_at?: string
+          blocked_by?: string | null
+          content_id: string
+          id?: string
+          reason?: string | null
+        }
+        Update: {
+          blocked_at?: string
+          blocked_by?: string | null
+          content_id?: string
+          id?: string
+          reason?: string | null
+        }
+        Relationships: []
+      }
+      blocked_users: {
+        Row: {
+          blocked_at: string
+          blocked_by: string | null
+          id: string
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          blocked_at?: string
+          blocked_by?: string | null
+          id?: string
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          blocked_at?: string
+          blocked_by?: string | null
+          id?: string
+          reason?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       contact_submissions: {
         Row: {
           created_at: string
@@ -265,6 +343,10 @@ export type Database = {
           id: string
           is_active: boolean | null
           max_uses: number | null
+          months_granted: number | null
+          notes: string | null
+          per_user_limit: number | null
+          tier: string | null
         }
         Insert: {
           code: string
@@ -277,6 +359,10 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           max_uses?: number | null
+          months_granted?: number | null
+          notes?: string | null
+          per_user_limit?: number | null
+          tier?: string | null
         }
         Update: {
           code?: string
@@ -289,8 +375,41 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           max_uses?: number | null
+          months_granted?: number | null
+          notes?: string | null
+          per_user_limit?: number | null
+          tier?: string | null
         }
         Relationships: []
+      }
+      promo_code_redemptions: {
+        Row: {
+          code_id: string
+          id: string
+          redeemed_at: string
+          user_id: string
+        }
+        Insert: {
+          code_id: string
+          id?: string
+          redeemed_at?: string
+          user_id: string
+        }
+        Update: {
+          code_id?: string
+          id?: string
+          redeemed_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promo_code_redemptions_code_id_fkey"
+            columns: ["code_id"]
+            isOneToOne: false
+            referencedRelation: "premium_codes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_favorites: {
         Row: {
