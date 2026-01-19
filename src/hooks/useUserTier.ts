@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-export type UserTier = 'free' | 'pro' | 'premium';
+export type UserTier = 'free' | 'premium';
 
 export interface TierBenefits {
   maxStreams: number;
@@ -30,18 +30,11 @@ export const useUserTier = (userId?: string) => {
       features: ['Unlimited streaming', 'Standard quality', 'Basic support', 'Access to full catalog'],
       priorityLevel: 3
     },
-    pro: {
-      maxStreams: 1000000,
-      maxDownloads: 1000000,
-      unlimited: true,
-      features: ['Unlimited streaming', 'Unlimited downloads', 'HD quality', 'Priority download queue', 'Priority support'],
-      priorityLevel: 2
-    },
     premium: {
       maxStreams: 1000000,
       maxDownloads: 1000000,
       unlimited: true,
-      features: ['Unlimited streaming', 'Unlimited downloads', 'HD quality', 'Priority download queue', 'Priority support'],
+      features: ['Unlimited streaming', 'Unlimited downloads', '4K quality', 'Priority support', 'Early access'],
       priorityLevel: 1
     }
   }), []);
@@ -57,41 +50,48 @@ export const useUserTier = (userId?: string) => {
     try {
       setIsLoading(true);
       
-      // Check user role in user_profiles table
-      const { data: profile, error } = await supabase
+      // Check user_roles table first
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .in('role', ['premium', 'admin'])
+        .maybeSingle();
+
+      // Also check user_profiles
+      const { data: profile, error: profileError } = await supabase
         .from('user_profiles')
-        .select('role, subscription_expires_at')
+        .select('role, subscription_tier, subscription_expires_at')
         .eq('id', userId)
         .maybeSingle();
 
-      if (error) {
-        console.error('Error fetching user profile:', error);
+      if (profileError) {
         setTier('free');
         setBenefits(tierBenefits.free);
+        setIsLoading(false);
         return;
       }
 
-      if (!profile) {
-        setTier('free');
-        setBenefits(tierBenefits.free);
-        return;
-      }
-
-      // Check if premium subscription is still valid
-      let userTier: UserTier = (profile.role as UserTier) || 'free';
+      let userTier: UserTier = 'free';
       
-      if (userTier === 'premium' && profile.subscription_expires_at) {
+      // Check user_roles table (admin also gets premium benefits)
+      if (roleData?.role === 'admin' || roleData?.role === 'premium') {
+        userTier = 'premium';
+      }
+      // Check profile subscription_tier
+      else if (profile?.subscription_tier === 'premium' || profile?.subscription_tier === 'pro' ||
+               profile?.role === 'premium' || profile?.role === 'pro') {
+        userTier = 'premium';
+      }
+
+      // Check if subscription has expired
+      if (userTier === 'premium' && profile?.subscription_expires_at) {
         const expiryDate = new Date(profile.subscription_expires_at);
-        const now = new Date();
-        
-        if (expiryDate < now) {
-          // Premium expired, revert to free
+        if (expiryDate < new Date()) {
           userTier = 'free';
-          
-          // Update database to reflect expired subscription
           await supabase
             .from('user_profiles')
-            .update({ role: 'free' })
+            .update({ role: 'free', subscription_tier: 'free', subscription_expires_at: null })
             .eq('id', userId);
         }
       }
@@ -99,7 +99,6 @@ export const useUserTier = (userId?: string) => {
       setTier(userTier);
       setBenefits(tierBenefits[userTier]);
     } catch (error) {
-      console.error('Error in fetchUserTier:', error);
       setTier('free');
       setBenefits(tierBenefits.free);
     } finally {
@@ -111,27 +110,11 @@ export const useUserTier = (userId?: string) => {
     fetchUserTier();
   }, [fetchUserTier]);
 
-  const canStream = useCallback((currentStreams: number = 0) => {
-    if (benefits.unlimited) return true;
-    return currentStreams < benefits.maxStreams;
-  }, [benefits]);
-
-  const canDownload = useCallback((currentDownloads: number = 0) => {
-    if (benefits.unlimited) return true;
-    return currentDownloads < benefits.maxDownloads;
-  }, [benefits]);
+  const canStream = useCallback(() => true, []);
+  const canDownload = useCallback(() => tier === 'premium', [tier]);
 
   const isPremium = tier === 'premium';
-  const isPro = tier === 'pro' || tier === 'premium';
+  const isPro = tier === 'premium'; // Pro = Premium in this system
 
-  return {
-    tier,
-    benefits,
-    isLoading,
-    canStream,
-    canDownload,
-    isPremium,
-    isPro,
-    refreshTier: fetchUserTier
-  };
+  return { tier, benefits, isLoading, canStream, canDownload, isPremium, isPro, refreshTier: fetchUserTier };
 };

@@ -39,6 +39,7 @@ const Cookies = lazy(() => import("@/pages/Cookies"));
 const Legal = lazy(() => import("@/pages/Legal"));
 const Admin = lazy(() => import("@/pages/Admin"));
 const AppSettings = lazy(() => import("@/pages/AppSettings"));
+const Upgrade = lazy(() => import("@/pages/Upgrade"));
 const TierTest = lazy(() => import("@/pages/TierTest")); // Add TierTest route
 
 const AppRoutes = () => {
@@ -84,8 +85,12 @@ const AppRoutes = () => {
         <Route path="/delete-account" element={<DeleteAccount />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/app-settings" element={<AppSettings />} />
-        <Route path="/tier-test" element={<TierTest />} /> {/* Add TierTest route */}
+        <Route path="/tier-test" element={<TierTest />} />
+        <Route path="/upgrade" element={<Upgrade />} />
         <Route path="/similar/:category" element={<Category />} />
+        <Route path="/trending" element={<Category />} />
+        <Route path="/featured" element={<Category />} />
+        <Route path="/login" element={<OnboardingAuth />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Suspense>
