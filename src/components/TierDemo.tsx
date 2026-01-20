@@ -25,7 +25,7 @@ const TierDemo = () => {
             <h3 className="text-lg font-semibold">Current Tier</h3>
             <p className="text-muted-foreground">Your subscription level</p>
           </div>
-          <Badge variant={tier === 'premium' ? 'default' : tier === 'pro' ? 'secondary' : 'outline'} className="text-lg">
+          <Badge variant={tier === 'premium' ? 'default' : 'outline'} className="text-lg">
             {tier.charAt(0).toUpperCase() + tier.slice(1)}
           </Badge>
         </div>

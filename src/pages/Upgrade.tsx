@@ -75,40 +75,24 @@ const UpgradePage = () => {
       buttonDisabled: true
     },
     {
-      name: 'Pro',
-      price: '$4.99',
-      period: 'month',
-      description: 'For serious streamers',
-      features: [
-        'Everything in Free',
-        'Unlimited downloads',
-        'HD quality streaming',
-        'Priority support',
-        'Download for offline viewing'
-      ],
-      current: tier === 'pro',
-      badge: 'Popular',
-      buttonText: isPro ? 'Current Plan' : 'Upgrade to Pro',
-      buttonDisabled: isPro,
-      highlight: true
-    },
-    {
       name: 'Premium',
       price: '$9.99',
       period: 'month',
-      description: 'The ultimate experience',
+      description: 'The ultimate streaming experience',
       features: [
-        'Everything in Pro',
-        '4K quality streaming',
-        'VIP support',
+        'Everything in Free',
+        'Unlimited downloads',
+        'HD & 4K quality streaming',
+        'Priority VIP support',
         'Early access to new content',
-        'Exclusive content',
+        'Download for offline viewing',
         'No ads anywhere'
       ],
       current: tier === 'premium',
-      badge: 'Best Value',
+      badge: 'Most Popular',
       buttonText: isPremium ? 'Current Plan' : 'Upgrade to Premium',
-      buttonDisabled: isPremium
+      buttonDisabled: isPremium,
+      highlight: true
     }
   ];
 
