@@ -54,7 +54,7 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
     if (!contentId) return null;
     
     if (contentType === 'movie') {
-      return `https://dl.vidsrc.vip/movie/${contentId}`;
+      return `https://dl.vidsrc.vip/movies/${contentId}`;
     } else if (contentType === 'tv' || contentType === 'series' || contentType === 'anime') {
       const season = seasonNumber ?? 1;
       const episode = episodeNumber ?? 1;

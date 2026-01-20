@@ -44,6 +44,8 @@ interface UserData {
   role?: string;
   subscription_tier?: string | null;
   username?: string | null;
+  last_sign_in_at?: string;
+  is_blocked?: boolean;
 }
 
 interface AnalyticsData {
@@ -176,8 +178,33 @@ const Admin = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
+      // Fetch users from edge function (gets all auth.users with emails)
+      const { data: { session } } = await supabase.auth.getSession();
+      let usersFromEdge: UserData[] = [];
+      
+      if (session?.access_token) {
+        try {
+          const response = await fetch(
+            `https://otelzbaiqeqlktawuuyv.supabase.co/functions/v1/admin-get-users`,
+            {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${session.access_token}`,
+                'Content-Type': 'application/json',
+              },
+            }
+          );
+          
+          if (response.ok) {
+            const data = await response.json();
+            usersFromEdge = data.users || [];
+          }
+        } catch (edgeError) {
+          console.error('Edge function error:', edgeError);
+        }
+      }
+
       const [
-        { data: profiles },
         { data: roles },
         { data: sessions },
         { data: contentData },
@@ -185,7 +212,6 @@ const Admin = () => {
         { data: promoData },
         { data: logsData }
       ] = await Promise.all([
-        supabase.from('user_profiles').select('*').order('created_at', { ascending: false }),
         supabase.from('user_roles').select('*'),
         supabase.from('watch_sessions').select('id, created_at').gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()),
         supabase.from('content').select('*').order('created_at', { ascending: false }),
@@ -194,12 +220,13 @@ const Admin = () => {
         (supabase as any).from('admin_action_logs').select('*').order('created_at', { ascending: false }).limit(100)
       ]);
 
-      const premiumCount = roles?.filter(r => r.role === 'premium').length || 0;
+      const premiumCount = usersFromEdge.filter(u => u.role === 'premium' || u.subscription_tier === 'premium').length || 
+                           roles?.filter(r => r.role === 'premium').length || 0;
       const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-      const newUsersCount = profiles?.filter(p => new Date(p.created_at) > weekAgo).length || 0;
+      const newUsersCount = usersFromEdge.filter(u => new Date(u.created_at) > weekAgo).length || 0;
 
       setAnalytics({
-        totalUsers: profiles?.length || 0,
+        totalUsers: usersFromEdge.length || 0,
         premiumUsers: premiumCount,
         activeToday: sessions?.length || 0,
         newUsersThisWeek: newUsersCount,
@@ -207,13 +234,17 @@ const Admin = () => {
         totalContent: contentData?.length || 0
       });
 
-      setUsers(profiles?.map(p => ({
-        id: p.id,
-        email: p.username || 'Unknown',
-        created_at: p.created_at,
-        role: roles?.find(r => r.user_id === p.id)?.role || 'free',
-        username: p.username
-      })) || []);
+      // Use edge function data which includes real emails
+      setUsers(usersFromEdge.map(u => ({
+        id: u.id,
+        email: u.email || 'Unknown',
+        created_at: u.created_at,
+        role: u.role || 'free',
+        subscription_tier: u.subscription_tier,
+        username: u.username || u.email?.split('@')[0] || 'Unknown',
+        last_sign_in_at: u.last_sign_in_at,
+        is_blocked: u.is_blocked
+      })));
 
       setContent((contentData || []).map(c => ({
         id: c.id,
@@ -229,6 +260,7 @@ const Admin = () => {
       setPromoCodes((promoData || []) as unknown as PromoCode[]);
       setAdminLogs((logsData || []) as AdminActionLog[]);
     } catch (error) {
+      console.error('Fetch error:', error);
       toast.error("Nexus Link Failure");
     } finally {
       setIsLoading(false);
@@ -355,7 +387,11 @@ const Admin = () => {
     }
   };
 
-  const filteredUsers = users.filter(u => u.username?.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredUsers = users.filter(u => 
+    u.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    u.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    u.id.toLowerCase().includes(searchQuery.toLowerCase())
+  );
   const filteredContent = content.filter(c => c.title.toLowerCase().includes(contentSearch.toLowerCase()));
   const filteredPromoCodes = promoCodes.filter(code =>
     code.code.toLowerCase().includes(promoSearch.toLowerCase()) ||
@@ -681,22 +717,27 @@ const Admin = () => {
 
                 <div className="space-y-4">
                   {filteredUsers.map(u => (
-                    <div key={u.id} className="p-8 rounded-[40px] bg-white/[0.03] border border-white/5 flex flex-wrap items-center justify-between gap-6 hover:bg-white/[0.06] transition-all">
+                    <div key={u.id} className={`p-8 rounded-[40px] bg-white/[0.03] border ${u.is_blocked ? 'border-red-500/30' : 'border-white/5'} flex flex-wrap items-center justify-between gap-6 hover:bg-white/[0.06] transition-all`}>
                       <div className="flex items-center gap-6">
-                        <div className="w-16 h-16 rounded-3xl bg-blue-500/10 flex items-center justify-center text-blue-500 font-black text-2xl border border-blue-500/20 shadow-inner">
-                          {u.username?.charAt(0).toUpperCase() || 'U'}
+                        <div className={`w-16 h-16 rounded-3xl ${u.is_blocked ? 'bg-red-500/10' : 'bg-blue-500/10'} flex items-center justify-center ${u.is_blocked ? 'text-red-500' : 'text-blue-500'} font-black text-2xl border ${u.is_blocked ? 'border-red-500/20' : 'border-blue-500/20'} shadow-inner`}>
+                          {u.email?.charAt(0).toUpperCase() || u.username?.charAt(0).toUpperCase() || 'U'}
                         </div>
                         <div>
-                          <div className="flex items-center gap-3 mb-1">
-                            <span className="font-black text-2xl uppercase tracking-tighter text-white">{u.username || 'Anonymous'}</span>
-                            <Badge className={u.role === 'premium' ? 'bg-amber-500 text-black font-black' : 'bg-gray-800 text-gray-400'}>{u.role}</Badge>
+                          <div className="flex flex-wrap items-center gap-3 mb-1">
+                            <span className="font-black text-xl md:text-2xl tracking-tighter text-white break-all">{u.email || 'Unknown'}</span>
+                            <Badge className={u.role === 'premium' ? 'bg-amber-500 text-black font-black' : u.role === 'admin' ? 'bg-purple-500 text-white font-black' : 'bg-gray-800 text-gray-400'}>{u.role}</Badge>
+                            {u.is_blocked && <Badge className="bg-red-500 text-white font-black">BLOCKED</Badge>}
                           </div>
-                          <div className="text-[10px] text-gray-600 font-bold uppercase tracking-widest">ID: {u.id}</div>
+                          <div className="text-[10px] text-gray-600 font-bold uppercase tracking-widest">
+                            {u.username && u.username !== u.email?.split('@')[0] && <span className="mr-4">@{u.username}</span>}
+                            <span>Joined: {new Date(u.created_at).toLocaleDateString()}</span>
+                            {u.last_sign_in_at && <span className="ml-4">Last login: {new Date(u.last_sign_in_at).toLocaleDateString()}</span>}
+                          </div>
                         </div>
                       </div>
                       <div className="flex gap-4">
-                        <Button onClick={() => handleUpgradeUser(u.id)} className="px-8 bg-white text-black hover:bg-blue-600 hover:text-white rounded-2xl h-12 font-black uppercase text-[10px] tracking-widest transition-all">
-                          Recalibrate Node
+                        <Button onClick={() => handleUpgradeUser(u.id)} className="px-6 md:px-8 bg-white text-black hover:bg-blue-600 hover:text-white rounded-2xl h-12 font-black uppercase text-[10px] tracking-widest transition-all">
+                          {u.role === 'premium' ? 'Downgrade' : 'Upgrade'}
                         </Button>
                         <Button onClick={() => handleBanUser(u.id)} variant="destructive" className="w-12 h-12 rounded-2xl p-0 hover:bg-red-600 transition-all">
                           <Ban size={20} />
