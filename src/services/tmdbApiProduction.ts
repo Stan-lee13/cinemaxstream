@@ -352,18 +352,42 @@ const getSports = async (page: number = 1): Promise<ContentItem[]> => {
 
 const getContentByCategory = async (category: string, page: number = 1): Promise<ContentItem[]> => {
   try {
+    // Shuffle helper to randomize content order
+    const shuffleArray = <T>(array: T[]): T[] => {
+      const shuffled = [...array];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    };
+
     switch (category) {
       case 'movies':
-      case 'featured':
-        return await getPopularMovies(page);
+        // Popular movies with slight randomization
+        const movies = await getPopularMovies(page);
+        return shuffleArray(movies.slice(0, 15)).concat(movies.slice(15));
+      case 'featured': {
+        // Featured = mix of top rated and popular, shuffled
+        const [featured1, featured2] = await Promise.all([
+          getPopularMovies(page),
+          getTrendingMovies(page)
+        ]);
+        const mixed = [...featured1.slice(0, 10), ...featured2.slice(5, 15)];
+        return shuffleArray(mixed);
+      }
       case 'series':
         return await getPopularTvShows(page);
       case 'anime':
         return await getAnime(page);
       case 'trending': {
-        const trendingMovies = await getTrendingMovies(page);
-        const trendingTvShows = await getTrendingTvShows(page);
-        return [...trendingMovies.slice(0, 10), ...trendingTvShows.slice(0, 10)];
+        // Trending = weighted mix with randomization
+        const [trendingMovies, trendingTvShows] = await Promise.all([
+          getTrendingMovies(page),
+          getTrendingTvShows(page)
+        ]);
+        const combined = [...trendingMovies.slice(0, 12), ...trendingTvShows.slice(0, 8)];
+        return shuffleArray(combined);
       }
       case 'documentary':
       case 'documentaries':
@@ -371,7 +395,7 @@ const getContentByCategory = async (category: string, page: number = 1): Promise
       case 'sports':
         return await getSports(page);
       default: {
-        // Fallback to trending
+        // Fallback to trending with randomization
         const fallbackUrl = `${TMDB_BASE_URL}/trending/all/week?api_key=${API_KEY}&page=${page}`;
         const response = await fetch(fallbackUrl);
         if (!response.ok) {
@@ -379,11 +403,12 @@ const getContentByCategory = async (category: string, page: number = 1): Promise
         }
         const data = await response.json();
         const results = ensureArray(data.results) as TMDbItem[];
-        return results.map((item) => {
+        const formatted = results.map((item) => {
           const itemType = item.media_type || 'movie';
           const contentType = normalizeContentType(itemType === 'tv' ? 'series' : itemType);
           return formatContentItem(item, contentType);
         });
+        return shuffleArray(formatted);
       }
     }
   } catch (error) {

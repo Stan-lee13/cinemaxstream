@@ -53,9 +53,12 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
   const getVidsrcDownloadUrl = useCallback(() => {
     if (!contentId) return null;
     
+    // STRICT DOWNLOAD URL FORMAT - MUST BE EXACTLY AS DOCUMENTED
     if (contentType === 'movie') {
-      return `https://dl.vidsrc.vip/movies/${contentId}`;
+      // Movies: https://dl.vidsrc.vip/movie/{movie_id}
+      return `https://dl.vidsrc.vip/movie/${contentId}`;
     } else if (contentType === 'tv' || contentType === 'series' || contentType === 'anime') {
+      // TV/Series: https://dl.vidsrc.vip/tv/{tv_id}/{season_number}/{episode_number}
       const season = seasonNumber ?? 1;
       const episode = episodeNumber ?? 1;
       return `https://dl.vidsrc.vip/tv/${contentId}/${season}/${episode}`;

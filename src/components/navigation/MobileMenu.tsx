@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -19,13 +18,18 @@ import {
   Settings,
   Home,
   Clock,
-  ArrowLeft
+  ArrowLeft,
+  Crown,
+  Sparkles
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserTier } from "@/hooks/useUserTier";
+import { Badge } from "@/components/ui/badge";
 
 const MobileMenu: React.FC = () => {
   const navigate = useNavigate();
-  const { signOut, isAuthenticated } = useAuth();
+  const { user, signOut, isAuthenticated } = useAuth();
+  const { tier, isPro, isPremium } = useUserTier(user?.id);
   
   const handleSignOut = async () => {
     await signOut();
@@ -34,6 +38,19 @@ const MobileMenu: React.FC = () => {
 
   const handleSignIn = () => {
     navigate('/auth');
+  };
+
+  // Display tier label
+  const getTierLabel = () => {
+    if (isPremium || isPro) return 'Pro';
+    return 'Free';
+  };
+
+  const getTierBadgeClass = () => {
+    if (isPremium || isPro) {
+      return 'bg-gradient-to-r from-amber-500 to-orange-600 text-white border-0';
+    }
+    return 'bg-muted text-muted-foreground border-border';
   };
 
   return (
@@ -60,6 +77,48 @@ const MobileMenu: React.FC = () => {
           </Button>
           <span className="text-white font-medium">Menu</span>
         </div>
+
+        {/* User Status Section */}
+        {isAuthenticated && user && (
+          <div className="mb-6 p-4 rounded-xl bg-white/5 border border-white/10">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
+                <User size={18} className="text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-white font-medium truncate text-sm">
+                  {user.email?.split('@')[0] || 'User'}
+                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge className={`text-xs px-2 py-0.5 ${getTierBadgeClass()}`}>
+                    {isPremium || isPro ? (
+                      <>
+                        <Crown size={10} className="mr-1" />
+                        {getTierLabel()}
+                      </>
+                    ) : (
+                      getTierLabel()
+                    )}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+            
+            {/* Upgrade prompt for free users */}
+            {!isPro && !isPremium && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full mt-3 border-amber-500/50 text-amber-500 hover:bg-amber-500/10"
+                onClick={() => navigate('/upgrade')}
+              >
+                <Sparkles size={14} className="mr-2" />
+                Upgrade to Pro
+              </Button>
+            )}
+          </div>
+        )}
+
         <nav className="flex flex-col gap-4">
           <Link 
             to="/" 
@@ -113,6 +172,9 @@ const MobileMenu: React.FC = () => {
               >
                 <Download size={20} />
                 <span className="text-base font-medium">Downloads</span>
+                {(isPro || isPremium) && (
+                  <Badge className="ml-auto bg-emerald-500/20 text-emerald-400 text-xs">Unlocked</Badge>
+                )}
               </Link>
               <Link 
                 to="/profile" 
