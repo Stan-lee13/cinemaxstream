@@ -129,30 +129,31 @@ export const useSmartDownload = () => {
         }
       }
 
-      // Use Legacy vidsrc.vip Fallback if contentId is available
+      // PRIMARY: Use dl.vidsrc.vip directly - STRICT URL FORMAT
       if (contentId) {
-        let legacyUrl = '';
+        let downloadUrl = '';
 
         if (contentType === 'movie') {
-          legacyUrl = `https://dl.vidsrc.vip/movie/${contentId}`;
+          // Movies: https://dl.vidsrc.vip/movie/{movie_id}
+          downloadUrl = `https://dl.vidsrc.vip/movie/${contentId}`;
         } else if (contentType === 'tv' || contentType === 'series' || contentType === 'anime') {
-          if (seasonNumber !== undefined && episodeNumber !== undefined) {
-            legacyUrl = `https://dl.vidsrc.vip/tv/${contentId}/${seasonNumber}/${episodeNumber}`;
-          } else {
-            legacyUrl = `https://dl.vidsrc.vip/tv/${contentId}/1/1`; // Default logic
-          }
+          // TV/Series: https://dl.vidsrc.vip/tv/{tv_id}/{season_number}/{episode_number}
+          const season = seasonNumber ?? 1;
+          const episode = episodeNumber ?? 1;
+          downloadUrl = `https://dl.vidsrc.vip/tv/${contentId}/${season}/${episode}`;
         }
 
-        if (legacyUrl) {
-          // Deduct credit since we represent this as a successful download
+        if (downloadUrl) {
+          // Deduct credit for successful download
           await deductDownloadCredit();
           await updateRequestStatus(requestData.id, 'completed');
+          toast.success('Download link ready!');
 
           return {
             success: true,
-            downloadLink: legacyUrl,
-            quality: 'HD', // Assumed
-            fileSize: 'Unknown'
+            downloadLink: downloadUrl,
+            quality: 'HD',
+            fileSize: 'Varies'
           };
         }
       }
