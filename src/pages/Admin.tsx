@@ -324,15 +324,37 @@ const Admin = () => {
       return;
     }
     try {
-      await supabase.from('user_roles').upsert({ user_id: userId, role: 'free' as const });
-      await supabase.from('user_profiles').update({
-        subscription_tier: 'free',
-        subscription_expires_at: null
-      }).eq('id', userId);
-      toast.success("Node Restricted");
-      await recordAdminAction('restrict_user', userId);
+      // Check if user is already blocked
+      const targetUser = users.find(u => u.id === userId);
+      const isCurrentlyBlocked = targetUser?.is_blocked;
+
+      if (isCurrentlyBlocked) {
+        // Unblock: Remove from blocked_users table
+        await (supabase as any).from('blocked_users').delete().eq('user_id', userId);
+        toast.success("User Unblocked");
+        await recordAdminAction('unblock_user', userId);
+      } else {
+        // Block: Add to blocked_users table AND downgrade
+        await (supabase as any).from('blocked_users').insert({
+          user_id: userId,
+          blocked_by: user?.id,
+          reason: 'Blocked by admin'
+        });
+        
+        // Also remove premium status
+        await supabase.from('user_roles').delete().eq('user_id', userId).eq('role', 'premium');
+        await supabase.from('user_profiles').update({
+          subscription_tier: 'free',
+          subscription_expires_at: null
+        }).eq('id', userId);
+        
+        toast.success("User Blocked");
+        await recordAdminAction('block_user', userId);
+      }
+      
       fetchData();
     } catch (error) {
+      console.error('Ban/Unban error:', error);
       toast.error("Operation Failed");
     }
   };
@@ -999,7 +1021,6 @@ const Admin = () => {
                               onChange={(e) => setNewPromo({ ...newPromo, tier: e.target.value })}
                               className="w-full bg-white/5 border-white/10 border rounded-2xl h-11 px-4 text-xs font-bold uppercase"
                             >
-                              <option value="pro">PRO</option>
                               <option value="premium">PREMIUM</option>
                             </select>
                           </div>

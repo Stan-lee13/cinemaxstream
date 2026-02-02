@@ -1,20 +1,24 @@
 
 import { useState, useEffect } from 'react';
+import { ArrowLeft, Crown } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import useAuth from '@/contexts/authHooks';
 import { toast } from 'sonner';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useUserTier } from '@/hooks/useUserTier';
 import { useNavigate } from 'react-router-dom';
 
 const UserProfile = () => {
   const navigate = useNavigate();
   const { user, signOut, isAuthenticated } = useAuth();
   const { profileData, isLoading, updateProfile } = useUserProfile();
+  const { tier, isPremium, isPro } = useUserTier(user?.id);
   const [username, setUsername] = useState('');
   const [isEditing, setIsEditing] = useState(false);
 
@@ -38,6 +42,10 @@ const UserProfile = () => {
     setIsEditing(false);
   };
 
+  // Real-time tier status from useUserTier hook
+  const isPremiumUser = isPremium || isPro;
+  const tierDisplay = isPremiumUser ? 'Premium' : 'Free';
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -59,6 +67,16 @@ const UserProfile = () => {
       <Navbar />
       <div className="container mx-auto px-4 pt-24 pb-12">
         <div className="max-w-3xl mx-auto">
+          {/* Back Button */}
+          <Button
+            variant="ghost"
+            onClick={() => navigate(-1)}
+            className="mb-6 flex items-center gap-2 text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+
           <div className="glass-card p-8 rounded-xl">
             <div className="flex flex-col md:flex-row gap-8 items-start">
               <div className="flex flex-col items-center">
@@ -112,14 +130,25 @@ const UserProfile = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="subscription">Subscription</Label>
-                    <p className="text-gray-300 capitalize">{profileData?.subscription_tier || 'Free'}</p>
-                    {profileData?.subscription_tier === 'free' && (
+                    <Label htmlFor="subscription">Subscription Status</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      {isPremiumUser ? (
+                        <Badge className="bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold flex items-center gap-1">
+                          <Crown className="h-3 w-3" />
+                          {tierDisplay}
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-muted-foreground">
+                          {tierDisplay}
+                        </Badge>
+                      )}
+                    </div>
+                    {!isPremiumUser && (
                       <Button 
                         variant="outline" 
                         size="sm" 
                         className="mt-2 text-cinemax-400 border-cinemax-400 hover:bg-cinemax-500/20"
-                        onClick={() => navigate('/manage-billing')}
+                        onClick={() => navigate('/upgrade')}
                       >
                         Upgrade to Premium
                       </Button>

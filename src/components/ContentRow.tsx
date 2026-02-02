@@ -20,10 +20,12 @@ const getFetchFnForCategory = (category: string) => {
     case "trending":
       return () => tmdbApi.getContentByCategory("trending");
     case "movies":
+      return () => tmdbApi.getContentByCategory("movies");
     case "featured":
-      return () => tmdbApi.getContentByCategory("movies");
+      // Featured uses a distinct mix to avoid duplication with movies
+      return () => tmdbApi.getContentByCategory("featured");
     case "recommended":
-      return () => tmdbApi.getContentByCategory("movies");
+      return () => tmdbApi.getContentByCategory("trending");
     case "anime":
       return () => tmdbApi.getContentByCategory("anime");
     case "sports":
