@@ -179,6 +179,11 @@ const CategoryPage = () => {
           title: "Documentaries",
           description: "Explore real stories and fascinating documentaries from around the world."
         };
+      case 'featured':
+        return { 
+          title: "Featured Content",
+          description: "Hand-picked selection of top movies and shows just for you."
+        };
       case 'trending':
         return { 
           title: "Trending Now",
