@@ -1,12 +1,12 @@
 /**
- * Source Selector Component
- * Displays sources as "Source 1-5" without revealing provider names
- * Includes visual indicators for current selection and loading states
+ * Modern Source Selector Component
+ * Clean pill-style buttons with smooth transitions
+ * Displays sources as "Server 1-5" for better UX
  */
 
 import React, { memo } from 'react';
 import { Button } from './ui/button';
-import { Check, RefreshCw, Crown } from 'lucide-react';
+import { Check, Loader2, Crown, Server } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getAvailableSources, isVidRockSource } from '@/utils/providers/providerUtils';
 
@@ -28,36 +28,45 @@ const SourceSelector: React.FC<SourceSelectorProps> = memo(({
   const sources = getAvailableSources();
 
   return (
-    <div className="flex flex-wrap items-center gap-2 p-2 bg-secondary/30 rounded-lg" data-tour-id="source-selector">
-      <span className="text-sm text-muted-foreground whitespace-nowrap mr-1">Source:</span>
-      {sources.map((sourceNum) => {
-        const isActive = activeSource === sourceNum;
-        const isVidRock = isVidRockSource(sourceNum);
-        
-        return (
-          <Button
-            key={sourceNum}
-            variant={isActive ? "default" : "outline"}
-            size="sm"
-            onClick={() => onSourceChange(sourceNum)}
-            disabled={disabled || (isLoading && !isActive)}
-            className={cn(
-              "h-7 px-3 text-xs transition-all relative",
-              isActive && "ring-2 ring-primary ring-offset-1 ring-offset-background",
-              isVidRock && isPremium && !isActive && "border-amber-500/50"
-            )}
-          >
-            {isActive && <Check className="h-3 w-3 mr-1" />}
-            Source {sourceNum}
-            {isVidRock && isPremium && (
-              <Crown className="h-3 w-3 ml-1 text-amber-500" />
-            )}
-          </Button>
-        );
-      })}
-      {isLoading && (
-        <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground ml-2" />
-      )}
+    <div className="flex flex-wrap items-center gap-2" data-tour-id="source-selector">
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mr-2">
+        <Server className="h-3.5 w-3.5" />
+        <span className="font-medium">Server:</span>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {sources.map((sourceNum) => {
+          const isActive = activeSource === sourceNum;
+          const isVidRock = isVidRockSource(sourceNum);
+          const isLoadingThis = isLoading && isActive;
+          
+          return (
+            <button
+              key={sourceNum}
+              onClick={() => onSourceChange(sourceNum)}
+              disabled={disabled || (isLoading && !isActive)}
+              className={cn(
+                "relative h-8 px-3 text-xs font-medium rounded-full transition-all duration-200",
+                "flex items-center gap-1.5",
+                "disabled:opacity-50 disabled:cursor-not-allowed",
+                isActive 
+                  ? "bg-primary text-primary-foreground shadow-md shadow-primary/25" 
+                  : "bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground",
+                isVidRock && isPremium && !isActive && "ring-1 ring-amber-500/30"
+              )}
+            >
+              {isLoadingThis ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : isActive ? (
+                <Check className="h-3 w-3" />
+              ) : null}
+              <span>{sourceNum}</span>
+              {isVidRock && isPremium && (
+                <Crown className="h-3 w-3 text-amber-500" />
+              )}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 });
