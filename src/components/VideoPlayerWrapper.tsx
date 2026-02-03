@@ -1,20 +1,21 @@
 /**
- * Video Player Wrapper Component
- * Uses obfuscated source labels (Source 1-5)
- * Includes VidRock progress listener and ad-free playback
+ * Modern Video Player Wrapper Component
+ * Clean, minimal UI with smooth transitions
+ * Uses obfuscated source labels for provider protection
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useCreditSystem } from "@/hooks/useCreditSystem";
-import { useUserTier } from "@/hooks/useUserTier"; // Add our new hook
+import { useUserTier } from "@/hooks/useUserTier";
 import { useWatchTracking } from "@/hooks/useWatchTracking";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useVideoProgress } from "@/hooks/useVideoProgress";
 import { toast } from "sonner";
 import UpgradeModal from "./UpgradeModal";
 import SourceSelector from "./SourceSelector";
-import { AlertCircle, RefreshCw } from "lucide-react";
+import { AlertCircle, RefreshCw, Play, Maximize2, Volume2 } from "lucide-react";
 import { Button } from "./ui/button";
+import { cn } from "@/lib/utils";
 import {
   getStreamingUrlForSource,
   getAvailableSources,
@@ -222,15 +223,17 @@ const VideoPlayerWrapper = ({
   const iframeKey = `${contentId}-${seasonNumber ?? 1}-${episodeNumber ?? 1}-${activeSource}`;
 
   return (
-    <div className="space-y-3">
-      {/* Source Selector - Obfuscated labels */}
-      <SourceSelector
-        activeSource={activeSource}
-        onSourceChange={handleSourceChange}
-        isLoading={isLoading}
-        isPremium={isPremium}
-        disabled={loadError}
-      />
+    <div className="space-y-4">
+      {/* Source Selector - Modern Card Style */}
+      <div className="bg-card/50 backdrop-blur-sm rounded-xl border border-border p-3">
+        <SourceSelector
+          activeSource={activeSource}
+          onSourceChange={handleSourceChange}
+          isLoading={isLoading}
+          isPremium={isPremium}
+          disabled={loadError}
+        />
+      </div>
 
       {/* Upgrade modal if user can't stream */}
       {userProfile && userUsage && !canStream() && (
@@ -242,36 +245,49 @@ const VideoPlayerWrapper = ({
         />
       )}
 
-      {/* Video player */}
+      {/* Video player - Modern Container */}
       {(!userProfile || canStream()) && (
-        <div className="relative w-full bg-black rounded-lg overflow-hidden" style={{ aspectRatio: '16/9' }}>
+        <div className="relative w-full bg-black rounded-xl overflow-hidden shadow-2xl shadow-black/50 ring-1 ring-white/10" style={{ aspectRatio: '16/9' }}>
+          {/* Loading Overlay */}
           {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-10">
-              <div className="flex flex-col items-center gap-2">
-                <RefreshCw className="h-8 w-8 animate-spin text-primary" />
-                <span className="text-sm text-muted-foreground">Loading video...</span>
+            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-black via-black/95 to-black z-10">
+              <div className="flex flex-col items-center gap-4">
+                <div className="relative">
+                  <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl animate-pulse" />
+                  <div className="relative w-16 h-16 rounded-full border-4 border-primary/30 border-t-primary animate-spin" />
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-medium text-foreground">Loading video...</p>
+                  <p className="text-xs text-muted-foreground mt-1">Source {activeSource}</p>
+                </div>
               </div>
             </div>
           )}
 
+          {/* Error State */}
           {loadError ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 z-10 gap-4 p-6 text-center">
-              <AlertCircle className="h-12 w-12 text-destructive" />
-              <p className="text-lg font-semibold">Source unavailable</p>
-              <p className="text-sm text-muted-foreground">
-                Source {activeSource} is not loading. We're switching automatically.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm">
-                <Button onClick={handleRetry} className="flex-1 gap-2">
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-black via-black/95 to-black z-10 gap-6 p-6 text-center">
+              <div className="w-20 h-20 rounded-full bg-destructive/10 flex items-center justify-center">
+                <AlertCircle className="h-10 w-10 text-destructive" />
+              </div>
+              <div>
+                <p className="text-lg font-semibold text-foreground mb-2">Source Unavailable</p>
+                <p className="text-sm text-muted-foreground max-w-xs">
+                  Source {activeSource} isn't responding. Switching automatically...
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
+                <Button onClick={handleRetry} className="flex-1 gap-2 h-11">
                   <RefreshCw className="h-4 w-4" />
-                  Try Next Source
+                  Next Source
                 </Button>
-                <Button variant="outline" onClick={resetSources} className="flex-1">
-                  Reset
+                <Button variant="outline" onClick={resetSources} className="flex-1 h-11">
+                  Reset All
                 </Button>
               </div>
             </div>
           ) : (
+            /* Video Iframe */
             <iframe
               ref={iframeRef}
               key={iframeKey}
@@ -279,7 +295,7 @@ const VideoPlayerWrapper = ({
               className="absolute inset-0 w-full h-full border-0"
               referrerPolicy="origin"
               allowFullScreen
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
               title={title || "Video Player"}
               onLoad={handleIframeLoad}
               onError={handleIframeError}
