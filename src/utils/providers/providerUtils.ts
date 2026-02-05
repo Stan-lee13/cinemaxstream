@@ -1,6 +1,11 @@
 /**
  * Provider utilities with source obfuscation
- * Users see "Source 1-5" only - never actual provider names/URLs
+ * Users see "Source 1-3" only - never actual provider names/URLs
+ * 
+ * RESTRUCTURED: Exactly 3 sources as required
+ * - Source 1: AutoEmbed (primary)
+ * - Source 2: VidSrc (previously Source 3)
+ * - Source 3: VidRock (previously Source 5)
  * 
  * SECURITY: Provider domains are never exposed to the client UI
  */
@@ -13,28 +18,22 @@ export type ProviderOptions = {
 };
 
 // Internal source mapping - NEVER expose provider names to UI
-// Source 1-5 map to these internal providers
+// Source 1-3 map to these internal providers
 const INTERNAL_SOURCES: Record<number, string> = {
-  1: 'vidsrc_me',
-  2: 'vidsrcme_ru',
-  3: 'vidsrc_embed_ru',
-  4: 'vidsrc_embed_su',
-  5: 'vidrock_net'
+  1: 'autoembed',    // Primary - AutoEmbed
+  2: 'vidsrc_vip',   // VidSrc VIP (previously Source 3)
+  3: 'vidrock_net'   // VidRock (previously Source 5)
 };
 
 // Provider domain mapping - INTERNAL ONLY
 const PROVIDER_DOMAINS: Record<string, string> = {
-  vidsrc_me: 'vidsrc.me',
-  vidsrcme_ru: 'vidsrcme.ru',
-  vidsrc_embed_ru: 'vidsrc.vip', // Updated to working domain
-  vidsrc_embed_su: 'vidsrc.cc',  // Updated to working domain
+  autoembed: 'player.autoembed.cc',
+  vidsrc_vip: 'vidsrc.vip',
   vidrock_net: 'vidrock.net'
 };
 
 const DEFAULT_SOURCE = 1;
-const PREMIUM_DEFAULT_SOURCE = 5; // VidRock for premium users
-
-// ... existing helper functions like getSourceNumber ...
+const PREMIUM_DEFAULT_SOURCE = 3; // VidRock for premium users
 
 /**
  * Get source number from provider ID (for display)
@@ -53,9 +52,10 @@ export const getProviderFromSource = (sourceNumber: number): string => {
 
 /**
  * Get all available sources (for UI display)
+ * EXACTLY 3 sources as required
  */
 export const getAvailableSources = (): number[] => {
-  return Object.keys(INTERNAL_SOURCES).map(Number).sort();
+  return [1, 2, 3]; // Only 3 sources
 };
 
 /**
@@ -85,11 +85,27 @@ const clampEpisodeInfo = (value?: number | null, fallback = 1) => {
  */
 const buildEmbedUrl = (providerId: string, tmdbId: string, opts: ProviderOptions): string => {
   const domain = PROVIDER_DOMAINS[providerId];
-  if (!domain) return ''; // Should not happen with correct mappings
+  if (!domain) return '';
 
   const season = clampEpisodeInfo(opts.season, 1);
   const episode = clampEpisodeInfo(opts.episodeNum, 1);
   const isMovie = isMovieContent(opts.contentType);
+
+  // AutoEmbed - Primary source
+  if (providerId === 'autoembed') {
+    if (isMovie) {
+      return `https://${domain}/embed/movie/${tmdbId}`;
+    }
+    return `https://${domain}/embed/tv/${tmdbId}/${season}/${episode}`;
+  }
+
+  // VidSrc VIP
+  if (providerId === 'vidsrc_vip') {
+    if (isMovie) {
+      return `https://${domain}/embed/movie/${tmdbId}`;
+    }
+    return `https://${domain}/embed/tv/${tmdbId}/${season}/${episode}`;
+  }
 
   // VidRock has a unique structure for movies
   if (providerId === 'vidrock_net') {
@@ -99,8 +115,7 @@ const buildEmbedUrl = (providerId: string, tmdbId: string, opts: ProviderOptions
     return `https://${domain}/embed/tv/${tmdbId}/${season}/${episode}`;
   }
 
-  // Standard vidsrc structure (vidsrc.me, vidsrcme.ru, vidsrc-embed.ru, vidsrc-embed.su)
-  // All follow /embed/movie/{id} or /embed/tv/{id}/{s}/{e}
+  // Fallback standard vidsrc structure
   if (isMovie) {
     return `https://${domain}/embed/movie/${tmdbId}`;
   }
@@ -110,7 +125,7 @@ const buildEmbedUrl = (providerId: string, tmdbId: string, opts: ProviderOptions
 /**
  * Get streaming URL for a specific source number
  * @param contentId - TMDB content ID
- * @param sourceNumber - Source number (1-5)
+ * @param sourceNumber - Source number (1-3)
  * @param options - Provider options
  */
 export const getStreamingUrlForSource = (
@@ -128,7 +143,7 @@ export const getStreamingUrlForSource = (
  */
 export const getStreamingUrlForProvider = (
   contentId: string,
-  provider: string = 'vidsrc_embed_ru',
+  provider: string = 'autoembed',
   options: ProviderOptions = {}
 ): string => {
   const sourceNumber = getSourceNumber(provider);
@@ -139,7 +154,7 @@ export const getStreamingUrlForProvider = (
  * Check if provider is VidRock (for special features)
  */
 export const isVidRockSource = (sourceNumber: number): boolean => {
-  return sourceNumber === 5;
+  return sourceNumber === 3;
 };
 
 /**
@@ -148,4 +163,11 @@ export const isVidRockSource = (sourceNumber: number): boolean => {
 export const isIframeSourceImpl = (): boolean => {
   // All our providers use iframe embedding
   return true;
+};
+
+/**
+ * Get source label for display
+ */
+export const getSourceLabel = (sourceNumber: number): string => {
+  return `Source ${sourceNumber}`;
 };

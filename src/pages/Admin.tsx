@@ -43,6 +43,8 @@ interface UserData {
   email?: string;
   created_at: string;
   role?: string;
+  email_confirmed?: boolean;
+  email_confirmed_at?: string;
   subscription_tier?: string | null;
   username?: string | null;
   last_sign_in_at?: string;
@@ -190,7 +192,9 @@ const Admin = () => {
         subscription_tier: u.subscription_tier,
         username: u.username || u.email?.split('@')[0] || 'Unknown',
         last_sign_in_at: u.last_sign_in_at,
-        is_blocked: u.is_blocked
+        is_blocked: u.is_blocked,
+        email_confirmed: u.email_confirmed,
+        email_confirmed_at: u.email_confirmed_at
       })));
 
       setPromoCodes((promoData || []) as PromoCode[]);
@@ -266,6 +270,44 @@ const Admin = () => {
     } catch (error) {
       console.error('Ban error:', error);
       toast.error("Operation failed");
+    }
+  };
+
+  const handleConfirmUser = async (userId: string) => {
+    if (!isAuthorized) {
+      toast.error("Admin access required");
+      return;
+    }
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast.error("Session expired");
+        return;
+      }
+
+      const response = await fetch(
+        `https://otelzbaiqeqlktawuuyv.supabase.co/functions/v1/admin-confirm-user`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId })
+        }
+      );
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to confirm user');
+      }
+
+      toast.success("User email confirmed");
+      fetchData();
+    } catch (error) {
+      console.error('Confirm error:', error);
+      toast.error("Failed to confirm user email");
     }
   };
 
@@ -517,6 +559,17 @@ const Admin = () => {
                               {u.role || 'free'}
                             </Badge>
                             {u.is_blocked && <Badge variant="destructive">Blocked</Badge>}
+                            {u.email_confirmed ? (
+                              <Badge variant="outline" className="text-green-600 border-green-600/30 bg-green-500/10">
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                Verified
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-amber-600 border-amber-600/30 bg-amber-500/10">
+                                <Mail className="h-3 w-3 mr-1" />
+                                Unverified
+                              </Badge>
+                            )}
                           </div>
                           <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
                             <span className="flex items-center gap-1">
@@ -533,6 +586,17 @@ const Admin = () => {
                         </div>
                       </div>
                       <div className="flex items-center gap-2 ml-auto sm:ml-0">
+                        {!u.email_confirmed && (
+                          <Button
+                            onClick={() => handleConfirmUser(u.id)}
+                            variant="outline"
+                            size="sm"
+                            className="gap-1 text-green-600 border-green-600/30 hover:bg-green-500/10"
+                          >
+                            <CheckCircle className="h-4 w-4" />
+                            <span className="hidden sm:inline">Confirm</span>
+                          </Button>
+                        )}
                         <Button
                           onClick={() => handleUpgradeUser(u.id)}
                           variant={u.role === 'premium' ? 'outline' : 'default'}

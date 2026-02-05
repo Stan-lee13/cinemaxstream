@@ -1,11 +1,11 @@
 /**
  * Modern Source Selector Component
  * Clean pill-style buttons with smooth transitions
- * Displays sources as "Server 1-5" for better UX
+ * Displays sources as "Source 1-3" for better UX
+ * RESTRUCTURED: Exactly 3 sources
  */
 
 import React, { memo } from 'react';
-import { Button } from './ui/button';
 import { Check, Loader2, Crown, Server } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getAvailableSources, isVidRockSource } from '@/utils/providers/providerUtils';
@@ -25,7 +25,7 @@ const SourceSelector: React.FC<SourceSelectorProps> = memo(({
   isPremium = false,
   disabled = false
 }) => {
-  const sources = getAvailableSources();
+  const sources = getAvailableSources(); // Returns [1, 2, 3]
 
   return (
     <div className="flex flex-wrap items-center gap-2" data-tour-id="source-selector">
@@ -59,7 +59,7 @@ const SourceSelector: React.FC<SourceSelectorProps> = memo(({
               ) : isActive ? (
                 <Check className="h-3 w-3" />
               ) : null}
-              <span>{sourceNum}</span>
+              <span>Source {sourceNum}</span>
               {isVidRock && isPremium && (
                 <Crown className="h-3 w-3 text-amber-500" />
               )}
