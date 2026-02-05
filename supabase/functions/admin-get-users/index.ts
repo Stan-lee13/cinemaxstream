@@ -95,6 +95,9 @@ serve(async (req) => {
       const userRole = roles?.find((r) => r.user_id === authUser.id);
       const isBlocked = blockedUserIds.has(authUser.id);
 
+      // Email confirmation status
+      const emailConfirmed = !!authUser.email_confirmed_at;
+
       return {
         id: authUser.id,
         email: authUser.email,
@@ -106,6 +109,8 @@ serve(async (req) => {
         subscription_expires_at: profile?.subscription_expires_at,
         avatar_url: profile?.avatar_url,
         is_blocked: isBlocked,
+        email_confirmed: emailConfirmed,
+        email_confirmed_at: authUser.email_confirmed_at,
       };
     });
 
