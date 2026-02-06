@@ -215,25 +215,31 @@ const Admin = () => {
       const targetUser = users.find(u => u.id === userId);
       const isPremium = targetUser?.role === 'premium' || targetUser?.subscription_tier === 'premium';
 
-      if (isPremium) {
-        await supabase.from('user_roles').delete().eq('user_id', userId).eq('role', 'premium');
-        await supabase.from('user_profiles').update({
-          subscription_tier: 'free',
-          role: 'free',
-          subscription_expires_at: null
-        }).eq('id', userId);
-        toast.success("User downgraded to Free");
-      } else {
-        await supabase.from('user_roles').upsert({ user_id: userId, role: 'premium' as const }, { onConflict: 'user_id,role' });
-        const expiryDate = new Date();
-        expiryDate.setFullYear(expiryDate.getFullYear() + 1);
-        await supabase.from('user_profiles').update({
-          subscription_tier: 'premium',
-          role: 'premium',
-          subscription_expires_at: expiryDate.toISOString()
-        }).eq('id', userId);
-        toast.success("User upgraded to Premium");
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast.error("Session expired");
+        return;
       }
+
+      const newTier = isPremium ? 'free' : 'premium';
+      const expiryDate = new Date();
+      if (newTier === 'premium') {
+        expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+      }
+
+      const response = await supabase.functions.invoke('upgrade-user-subscription', {
+        body: {
+          userId,
+          tier: newTier,
+          expiresAt: newTier === 'premium' ? expiryDate.toISOString() : null
+        }
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Upgrade failed');
+      }
+
+      toast.success(isPremium ? "User downgraded to Free" : "User upgraded to Premium");
       fetchData();
     } catch (error) {
       console.error('Upgrade error:', error);

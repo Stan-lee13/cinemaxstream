@@ -45,7 +45,7 @@ const CategoryPage = () => {
     enabled: !!user?.id && category === 'recommendations',
   });
   
-  // Fetch data based on category with pagination
+  // Fetch data based on category with real TMDB pagination
   const { data, isLoading, error } = useQuery({
     queryKey: ['category', category, page, categoryId],
     queryFn: async () => {
@@ -57,34 +57,22 @@ const CategoryPage = () => {
       
       // Handle similar content route
       if (isSimilarRoute && categoryId) {
-        // Get similar content for the specified content ID
-        result = await tmdbApi.getSimilarContent(categoryId, 'movie'); // We'll determine the type dynamically
+        result = await tmdbApi.getSimilarContent(categoryId, 'movie');
       } else if (category === 'movies') {
-        result = await tmdbApi.getPopularMovies();
+        result = await tmdbApi.getPopularMovies(page);
       } else if (category === 'series') {
-        // Get both popular TV shows and mix in some animated series
-        const tvShows = await tmdbApi.getPopularTvShows();
-        const animeShows = await tmdbApi.getAnime();
-        // Mix them for "best of both worlds" - 70% regular series, 30% anime
-        const mixedSeries = [
-          ...tvShows.slice(0, 14),
-          ...animeShows.slice(0, 6)
-        ].sort(() => Math.random() - 0.5); // Shuffle for variety
-        result = mixedSeries;
+        const tvShows = await tmdbApi.getPopularTvShows(page);
+        result = tvShows;
       } else if (category === 'anime') {
-        result = await tmdbApi.getAnime();
+        result = await tmdbApi.getAnime(page);
       } else {
-        result = await tmdbApi.getContentByCategory(category || 'trending');
+        result = await tmdbApi.getContentByCategory(category || 'trending', page);
       }
       
-      // Limit to 20 items per page
-      const startIndex = (page - 1) * 20;
-      const paginatedResult = result.slice(startIndex, startIndex + 20);
+      // TMDB returns 20 per page; if we got results, there's likely more
+      setHasMoreContent(result.length >= 20);
       
-      // Check if there's more content
-      setHasMoreContent(result.length > page * 20);
-      
-      return paginatedResult;
+      return result;
     },
     enabled: category !== 'recommendations' || !user?.id,
   });
@@ -205,16 +193,20 @@ const CategoryPage = () => {
   const { title, description } = getCategoryInfo();
   
   // Render content card
-  const renderContentCard = (item: ContentItem) => (
+  const renderContentCard = (item: ContentItem) => {
+    // Use image directly if it's already a full URL, otherwise construct TMDB URL
+    const imageUrl = item.image?.startsWith('http') ? item.image : (item.image ? `https://image.tmdb.org/t/p/w500${item.image}` : null);
+    
+    return (
     <div 
       key={item.id} 
       className="group relative cursor-pointer"
       onClick={() => navigate(`/content/${item.id}`, { state: { contentType: item.category } })}
     >
       <div className="aspect-[2/3] bg-gray-800 rounded-lg overflow-hidden relative movie-card">
-        {item.image ? (
+        {imageUrl ? (
           <img 
-            src={`https://image.tmdb.org/t/p/w500${item.image}`} 
+            src={imageUrl} 
             alt={item.title}
             className="w-full h-full object-cover"
             loading="lazy"
@@ -257,7 +249,8 @@ const CategoryPage = () => {
         </div>
       </div>
     </div>
-  );
+    );
+  };
   
   // Render skeleton loading
   const renderSkeleton = (count: number = 20) => (

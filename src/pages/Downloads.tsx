@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/authHooks';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import BackButton from '@/components/BackButton';
 import { Button } from '@/components/ui/button';
 import { Download, ExternalLink, Clock, CheckCircle, XCircle, Loader2, FileVideo, HardDrive, Wifi, Tv, ArrowRight, Trash2 } from 'lucide-react';
 import LoadingState from '@/components/LoadingState';
@@ -146,6 +147,9 @@ const Downloads = () => {
 
       <div className="flex-1 container mx-auto px-4 pt-24 pb-12 relative z-10">
         <div className="max-w-6xl mx-auto">
+          <div className="mb-6">
+            <BackButton className="hover:bg-white/5 text-gray-400 hover:text-white border-white/10 rounded-xl" />
+          </div>
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
             <div>
               <div className="flex items-center gap-3 mb-4">

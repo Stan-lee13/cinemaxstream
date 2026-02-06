@@ -65,7 +65,7 @@ const MobileMenu: React.FC = () => {
           <Menu size={24} className="text-white" />
         </Button>
       </SheetTrigger>
-      <SheetContent className="bg-background border-gray-800 w-[280px] p-6">
+      <SheetContent className="bg-background border-gray-800 w-[280px] p-6 overflow-y-auto max-h-screen">
         <div className="flex items-center gap-3 mb-6 pt-2">
           <Button 
             variant="ghost" 
