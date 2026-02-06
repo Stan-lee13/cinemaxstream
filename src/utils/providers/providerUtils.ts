@@ -32,6 +32,9 @@ const PROVIDER_DOMAINS: Record<string, string> = {
   vidrock_net: 'vidrock.net'
 };
 
+// AutoEmbed alternate domain for fallback
+const AUTOEMBED_DOMAIN = 'player.autoembed.cc';
+
 const DEFAULT_SOURCE = 1;
 const PREMIUM_DEFAULT_SOURCE = 3; // VidRock for premium users
 

@@ -29,6 +29,13 @@ const ThemeSwitcher = () => {
           {theme === "default" && <Check className="h-4 w-4 ml-2" />}
         </DropdownMenuItem>
         <DropdownMenuItem 
+          onClick={() => setTheme("light")}
+          className="flex items-center justify-between"
+        >
+          Light Mode
+          {theme === "light" && <Check className="h-4 w-4 ml-2" />}
+        </DropdownMenuItem>
+        <DropdownMenuItem 
           onClick={() => setTheme("midnight")}
           className="flex items-center justify-between"
         >
