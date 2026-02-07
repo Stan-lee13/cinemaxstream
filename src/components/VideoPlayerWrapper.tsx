@@ -13,7 +13,8 @@ import { useVideoProgress } from "@/hooks/useVideoProgress";
 import { toast } from "sonner";
 import UpgradeModal from "./UpgradeModal";
 import SourceSelector from "./SourceSelector";
-import { AlertCircle, RefreshCw, Play, Maximize2, Volume2 } from "lucide-react";
+import CastButton from "./CastButton";
+import { AlertCircle, RefreshCw, PictureInPicture2 } from "lucide-react";
 import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -224,15 +225,18 @@ const VideoPlayerWrapper = ({
 
   return (
     <div className="space-y-4">
-      {/* Source Selector - Modern Card Style */}
-      <div className="bg-card/50 backdrop-blur-sm rounded-xl border border-border p-3">
-        <SourceSelector
-          activeSource={activeSource}
-          onSourceChange={handleSourceChange}
-          isLoading={isLoading}
-          isPremium={isPremium}
-          disabled={loadError}
-        />
+      {/* Source Selector + Cast */}
+      <div className="bg-card/50 backdrop-blur-sm rounded-xl border border-border p-3 flex items-center gap-3">
+        <div className="flex-1">
+          <SourceSelector
+            activeSource={activeSource}
+            onSourceChange={handleSourceChange}
+            isLoading={isLoading}
+            isPremium={isPremium}
+            disabled={loadError}
+          />
+        </div>
+        <CastButton videoUrl={videoSrc} title={title} />
       </div>
 
       {/* Upgrade modal if user can't stream */}

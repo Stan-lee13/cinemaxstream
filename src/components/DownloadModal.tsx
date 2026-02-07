@@ -1,13 +1,14 @@
 import React, { useState, memo, useCallback } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Download, ExternalLink, AlertCircle, CheckCircle, Wifi, X, Sparkles, Crown, Lock } from 'lucide-react';
-import { useSmartDownload, DownloadResult } from '@/hooks/useSmartDownload';
+import { Download, AlertCircle, CheckCircle, Wifi, X, Sparkles, Crown, Lock } from 'lucide-react';
 import { useCreditSystem } from '@/hooks/useCreditSystem';
 import { useUserTier } from '@/hooks/useUserTier';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 interface DownloadModalProps {
   isOpen: boolean;
@@ -20,13 +21,15 @@ interface DownloadModalProps {
   contentId?: string;
 }
 
+interface DownloadResult {
+  success: boolean;
+  downloadLink?: string;
+  error?: string;
+}
+
 /**
- * Download Modal Component
- * 
- * Download access rules:
- * - Free users: canDownload = false (must upgrade to Pro/Premium)
- * - Pro/Premium users: canDownload = true
- * - Uses vidsrc.vip as the primary download source
+ * Download Modal — uses dl.vidsrc.vip directly and tracks every download in DB.
+ * Free users are blocked. Pro/Premium users get direct download + DB record.
  */
 const DownloadModal: React.FC<DownloadModalProps> = memo(({
   isOpen,
@@ -39,26 +42,21 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
   contentId
 }) => {
   const { user } = useAuth();
-  const { initiateDownload, isProcessing } = useSmartDownload();
-  const { userProfile, deductDownloadCredit } = useCreditSystem();
+  const { deductDownloadCredit } = useCreditSystem();
   const { tier, isPro, isPremium } = useUserTier(user?.id);
   const navigate = useNavigate();
   
   const [downloadResult, setDownloadResult] = useState<DownloadResult | null>(null);
-  const [currentStep, setCurrentStep] = useState<'initial' | 'searching' | 'complete'>('initial');
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  // Strict download access gate: Only Pro/Premium users can download
   const canDownload = isPro || isPremium;
 
-  const getVidsrcDownloadUrl = useCallback(() => {
+  const getDownloadUrl = useCallback(() => {
     if (!contentId) return null;
-    
-    // STRICT DOWNLOAD URL FORMAT - MUST BE EXACTLY AS DOCUMENTED
     if (contentType === 'movie') {
-      // Movies: https://dl.vidsrc.vip/movie/{movie_id}
       return `https://dl.vidsrc.vip/movie/${contentId}`;
-    } else if (contentType === 'tv' || contentType === 'series' || contentType === 'anime') {
-      // TV/Series: https://dl.vidsrc.vip/tv/{tv_id}/{season_number}/{episode_number}
+    }
+    if (contentType === 'tv' || contentType === 'series' || contentType === 'anime') {
       const season = seasonNumber ?? 1;
       const episode = episodeNumber ?? 1;
       return `https://dl.vidsrc.vip/tv/${contentId}/${season}/${episode}`;
@@ -67,44 +65,60 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
   }, [contentId, contentType, seasonNumber, episodeNumber]);
 
   const handleDownload = useCallback(async () => {
-    if (!canDownload || !contentId) return;
+    if (!canDownload || !contentId || !user) return;
 
-    setCurrentStep('searching');
+    setIsProcessing(true);
+    const downloadUrl = getDownloadUrl();
 
-    // Primary: Use vidsrc.vip directly for reliable downloads
-    const vidsrcUrl = getVidsrcDownloadUrl();
-    
-    if (vidsrcUrl) {
-      // Deduct credit for successful download initiation
-      await deductDownloadCredit();
-      
-      setDownloadResult({
-        success: true,
-        downloadLink: vidsrcUrl,
-        quality: 'HD',
-        fileSize: 'Varies'
-      });
-      setCurrentStep('complete');
+    if (!downloadUrl) {
+      setDownloadResult({ success: false, error: 'Could not generate download URL' });
+      setIsProcessing(false);
       return;
     }
 
-    // Fallback: Try smart download system
-    const result = await initiateDownload(
-      contentTitle, 
-      contentType, 
-      seasonNumber, 
-      episodeNumber, 
-      year, 
-      contentId
-    );
+    try {
+      // 1. Record download in database FIRST
+      const { error: dbError } = await supabase
+        .from('download_requests')
+        .insert({
+          user_id: user.id,
+          content_title: contentTitle,
+          content_type: contentType,
+          season_number: seasonNumber ?? null,
+          episode_number: episodeNumber ?? null,
+          year: year ?? null,
+          download_url: downloadUrl,
+          quality: 'HD',
+          status: 'completed',
+          completed_at: new Date().toISOString()
+        });
 
-    setCurrentStep('complete');
-    setDownloadResult(result);
-  }, [canDownload, contentId, getVidsrcDownloadUrl, initiateDownload, contentTitle, contentType, seasonNumber, episodeNumber, year, deductDownloadCredit]);
+      if (dbError) {
+        console.error('Download tracking error:', dbError);
+        // Still allow download even if tracking fails
+      } else {
+        console.log('Download tracked successfully for user:', user.id);
+      }
+
+      // 2. Deduct credit
+      await deductDownloadCredit();
+
+      // 3. Open download in new tab
+      window.open(downloadUrl, '_blank');
+
+      setDownloadResult({ success: true, downloadLink: downloadUrl });
+      toast.success('Download started!');
+    } catch (error) {
+      console.error('Download error:', error);
+      setDownloadResult({ success: false, error: 'Download failed. Please try again.' });
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [canDownload, contentId, user, getDownloadUrl, contentTitle, contentType, seasonNumber, episodeNumber, year, deductDownloadCredit]);
 
   const resetModal = useCallback(() => {
-    setCurrentStep('initial');
     setDownloadResult(null);
+    setIsProcessing(false);
     onClose();
   }, [onClose]);
 
@@ -117,7 +131,6 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
     <Dialog open={isOpen} onOpenChange={(open) => !open && resetModal()}>
       <DialogContent className="w-[95vw] sm:max-w-[500px] p-0 border-0 bg-transparent shadow-none overflow-hidden">
         <div className="relative overflow-hidden rounded-2xl bg-[#0a0a0a] border border-white/10 shadow-2xl min-h-[400px]">
-          {/* Ambient Background Effects */}
           <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
             <div className="absolute top-[-50%] right-[-20%] w-[80%] h-[80%] bg-blue-600/10 rounded-full blur-[80px]" />
             <div className="absolute bottom-[-50%] left-[-20%] w-[80%] h-[80%] bg-emerald-500/10 rounded-full blur-[80px]" />
@@ -132,7 +145,6 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
           </button>
 
           <div className="relative z-10 p-6 flex flex-col h-full">
-            {/* Header */}
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-emerald-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
                 <Download className="h-5 w-5 text-white" />
@@ -143,7 +155,6 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
               </div>
             </div>
 
-            {/* Content Info Card */}
             <div className="bg-white/5 border border-white/5 rounded-xl p-4 mb-6 backdrop-blur-sm">
               <h3 className="font-semibold text-white mb-1 line-clamp-1">{contentTitle}</h3>
               <div className="flex items-center gap-2 text-xs text-gray-400">
@@ -155,7 +166,6 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
 
             <div className="flex-1 flex flex-col justify-center">
               <AnimatePresence mode="wait">
-                {/* STATE: NO DOWNLOAD ACCESS - Free Users */}
                 {!canDownload ? (
                   <motion.div
                     key="upgrade"
@@ -172,23 +182,17 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
                       <h3 className="font-bold text-white text-lg">Pro Feature</h3>
                     </div>
                     <p className="text-sm text-gray-400 mb-6">
-                      Downloads are exclusively available for Pro and Premium members. Upgrade now to unlock unlimited downloads!
+                      Downloads are exclusively available for Pro and Premium members.
                     </p>
-                    <div className="space-y-3">
-                      <Button
-                        onClick={handleUpgrade}
-                        className="w-full h-12 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-bold shadow-lg shadow-amber-500/20"
-                      >
-                        <Crown className="h-4 w-4 mr-2" />
-                        Upgrade to Pro
-                      </Button>
-                      <p className="text-xs text-gray-500">
-                        Have a promo code? Enter it on the upgrade page!
-                      </p>
-                    </div>
+                    <Button
+                      onClick={handleUpgrade}
+                      className="w-full h-12 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-bold shadow-lg shadow-amber-500/20"
+                    >
+                      <Crown className="h-4 w-4 mr-2" />
+                      Upgrade to Pro
+                    </Button>
                   </motion.div>
                 ) : isProcessing ? (
-                  /* STATE: PROCESSING */
                   <motion.div
                     key="processing"
                     initial={{ opacity: 0 }}
@@ -204,12 +208,11 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
                       </div>
                     </div>
                     <div>
-                      <h3 className="text-white font-medium mb-1">Preparing Download...</h3>
-                      <p className="text-xs text-gray-500">Finding the best quality link</p>
+                      <h3 className="text-white font-medium mb-1">Starting Download...</h3>
+                      <p className="text-xs text-gray-500">Recording to your library</p>
                     </div>
                   </motion.div>
                 ) : downloadResult ? (
-                  /* STATE: RESULT */
                   <motion.div
                     key="result"
                     initial={{ opacity: 0, scale: 0.95 }}
@@ -221,18 +224,14 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
                         <div className="w-14 h-14 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-4">
                           <CheckCircle className="h-7 w-7 text-emerald-500" />
                         </div>
-                        <h3 className="font-bold text-white text-lg mb-1">Download Ready</h3>
-                        <p className="text-sm text-gray-400 mb-6">Your file is ready to download</p>
-
+                        <h3 className="font-bold text-white text-lg mb-1">Download Started</h3>
+                        <p className="text-sm text-gray-400 mb-4">Check your Downloads page for history</p>
                         <Button
-                          className="w-full h-12 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 shadow-lg shadow-emerald-900/20 font-bold"
-                          onClick={() => {
-                            const url = downloadResult.downloadLink || downloadResult.nkiriUrl;
-                            if (url) window.open(url, '_blank');
-                          }}
+                          variant="outline"
+                          onClick={() => { resetModal(); navigate('/downloads'); }}
+                          className="border-white/10 hover:bg-white/5 text-white"
                         >
-                          <Download className="h-4 w-4 mr-2" />
-                          Download Now
+                          View Downloads
                         </Button>
                       </div>
                     ) : (
@@ -240,16 +239,15 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
                         <div className="w-14 h-14 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
                           <AlertCircle className="h-7 w-7 text-red-500" />
                         </div>
-                        <h3 className="font-bold text-white text-lg mb-2">Download Unavailable</h3>
-                        <p className="text-sm text-gray-400 mb-4">{downloadResult.error || 'Unable to generate download link'}</p>
-                        <Button variant="outline" onClick={resetModal} className="border-white/10 hover:bg-white/5 text-white">
+                        <h3 className="font-bold text-white text-lg mb-2">Download Failed</h3>
+                        <p className="text-sm text-gray-400 mb-4">{downloadResult.error}</p>
+                        <Button variant="outline" onClick={() => setDownloadResult(null)} className="border-white/10 hover:bg-white/5 text-white">
                           Try Again
                         </Button>
                       </div>
                     )}
                   </motion.div>
                 ) : (
-                  /* STATE: INITIAL - Ready to Download */
                   <motion.div
                     key="action"
                     initial={{ opacity: 0 }}
@@ -263,7 +261,7 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
                       </div>
                       <div className="bg-white/5 p-3 rounded-lg flex flex-col items-center gap-2">
                         <CheckCircle className="h-4 w-4 text-emerald-400" />
-                        <span>Secure</span>
+                        <span>Tracked</span>
                       </div>
                     </div>
 
@@ -277,7 +275,7 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
                     </Button>
 
                     <p className="text-center text-xs text-gray-500">
-                      {isPremium ? 'Premium: Unlimited HD downloads' : 'Pro: Unlimited downloads active'}
+                      {isPremium ? 'Premium: Unlimited HD downloads' : 'Pro: Downloads tracked in your library'}
                     </p>
                   </motion.div>
                 )}
