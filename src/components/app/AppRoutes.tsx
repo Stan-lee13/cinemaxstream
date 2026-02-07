@@ -40,7 +40,8 @@ const Legal = lazy(() => import("@/pages/Legal"));
 const Admin = lazy(() => import("@/pages/Admin"));
 const AppSettings = lazy(() => import("@/pages/AppSettings"));
 const Upgrade = lazy(() => import("@/pages/Upgrade"));
-const TierTest = lazy(() => import("@/pages/TierTest")); // Add TierTest route
+const TierTest = lazy(() => import("@/pages/TierTest"));
+const Wrap = lazy(() => import("@/pages/Wrap"));
 
 const AppRoutes = () => {
   return (
@@ -87,6 +88,7 @@ const AppRoutes = () => {
         <Route path="/app-settings" element={<AppSettings />} />
         <Route path="/tier-test" element={<TierTest />} />
         <Route path="/upgrade" element={<Upgrade />} />
+        <Route path="/wrap" element={<Wrap />} />
         <Route path="/similar/:category" element={<Category />} />
         <Route path="/trending" element={<Category />} />
         <Route path="/featured" element={<Category />} />
