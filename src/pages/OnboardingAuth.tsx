@@ -75,17 +75,17 @@ const OnboardingAuth: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-zinc-950 via-cinemax-900 to-zinc-800 relative py-8">
-      {/* 3D/colored blobs */}
-      <div className="absolute top-[-80px] left-[-80px] w-[220px] h-[220px] bg-gradient-to-tr from-cinemax-400 via-cinemax-700/60 to-transparent rounded-full blur-3xl opacity-30 z-0" />
-      <div className="absolute bottom-[-60px] right-[-60px] w-[180px] h-[180px] bg-cinemax-700/40 rounded-full blur-2xl opacity-25 z-0" />
-      <div className="absolute left-1/2 top-1/3 w-[130px] h-[80px] rounded-[2.5rem] bg-white/5 dark:bg-zinc-700/10 opacity-15 blur-2xl z-0 -translate-x-[70%]" />
+    <div className="min-h-screen w-full flex items-center justify-center bg-background relative py-8">
+      {/* Ambient glow effects matching brand */}
+      <div className="absolute top-[-80px] left-[-80px] w-[220px] h-[220px] bg-gradient-to-tr from-primary/40 via-primary/20 to-transparent rounded-full blur-3xl opacity-30 z-0" />
+      <div className="absolute bottom-[-60px] right-[-60px] w-[180px] h-[180px] bg-primary/20 rounded-full blur-2xl opacity-25 z-0" />
+      <div className="absolute left-1/2 top-1/3 w-[130px] h-[80px] rounded-[2.5rem] bg-muted/10 opacity-15 blur-2xl z-0 -translate-x-[70%]" />
       
-      <div className={`relative z-10 w-[95vw] max-w-sm mx-auto px-2 py-8 sm:py-10 ${glassClass}`}>
+      <div className={`relative z-10 w-[95vw] max-w-sm mx-auto px-2 py-8 sm:py-10 backdrop-blur-lg bg-card/80 rounded-2xl shadow-2xl border border-border`}>
         {/* App Branding */}
         <div className="flex flex-col items-center gap-0 mb-6">
-          <span className="text-3xl font-extrabold bg-gradient-to-r from-cinemax-400 via-cinemax-600 to-cinemax-900 bg-clip-text text-transparent drop-shadow-sm">CinemaxStream</span>
-          <span className="text-base text-center text-cinemax-300/80 font-medium select-none mb-1">
+          <span className="text-3xl font-extrabold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent drop-shadow-sm">CinemaxStream</span>
+          <span className="text-base text-center text-muted-foreground font-medium select-none mb-1">
             {tab === "signin"
               ? "Welcome back! Sign in to watch and stream your favorite content."
               : "Create a free account in seconds to unlock all features."}
@@ -95,14 +95,14 @@ const OnboardingAuth: React.FC = () => {
         {/* Tab Switcher */}
         <div className="w-full flex items-center justify-center mb-6">
           <button
-            className={`flex-1 px-5 py-2 text-sm font-semibold rounded-l-xl focus:outline-none transition-all ${tab === "signin" ? "bg-cinemax-600 text-white shadow" : "bg-white/10 text-cinemax-300 border-r border-white/10"}`}
+            className={`flex-1 px-5 py-2 text-sm font-semibold rounded-l-xl focus:outline-none transition-all ${tab === "signin" ? "bg-primary text-primary-foreground shadow" : "bg-muted text-muted-foreground border-r border-border"}`}
             onClick={() => { setTab("signin"); setShowResendOption(false); }}
             disabled={isLoading}
           >
             <LogIn className="inline-block mr-1 -mt-1 h-4 w-4" /> Sign In
           </button>
           <button
-            className={`flex-1 px-5 py-2 text-sm font-semibold rounded-r-xl focus:outline-none transition-all ${tab === "signup" ? "bg-cinemax-600 text-white shadow" : "bg-white/10 text-cinemax-300 border-l border-white/10"}`}
+            className={`flex-1 px-5 py-2 text-sm font-semibold rounded-r-xl focus:outline-none transition-all ${tab === "signup" ? "bg-primary text-primary-foreground shadow" : "bg-muted text-muted-foreground border-l border-border"}`}
             onClick={() => { setTab("signup"); setShowResendOption(false); }}
             disabled={isLoading}
           >
@@ -148,11 +148,11 @@ const OnboardingAuth: React.FC = () => {
 
         <form className="space-y-5" onSubmit={handleSubmit} autoComplete="on">
           <div>
-            <label htmlFor="email-auth" className="block text-left mb-1 font-medium text-cinemax-400">
+            <label htmlFor="email-auth" className="block text-left mb-1 font-medium text-foreground/70">
               Email
             </label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-cinemax-400 h-4 w-4" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 id="email-auth"
                 name="email"
@@ -161,7 +161,7 @@ const OnboardingAuth: React.FC = () => {
                 placeholder="Your email"
                 value={formVals.email}
                 onChange={handleChange}
-                className="pl-10 bg-white/80 dark:bg-zinc-900/40 border-none text-white"
+                className="pl-10 bg-muted/50 border-border text-foreground"
                 required
                 disabled={isLoading}
               />
@@ -169,13 +169,13 @@ const OnboardingAuth: React.FC = () => {
           </div>
           <div>
             <div className="flex items-center justify-between">
-              <label htmlFor="password-auth" className="block text-left mb-1 font-medium text-cinemax-400">
+              <label htmlFor="password-auth" className="block text-left mb-1 font-medium text-foreground/70">
                 Password
               </label>
               {tab === "signin" && (
                 <button
                   type="button"
-                  className="text-xs text-cinemax-400 hover:text-cinemax-300 transition"
+                  className="text-xs text-muted-foreground hover:text-foreground transition"
                   onClick={() => navigate('/reset-password')}
                   tabIndex={0}
                   disabled={isLoading}
@@ -185,7 +185,7 @@ const OnboardingAuth: React.FC = () => {
               )}
             </div>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-cinemax-400 h-4 w-4" />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 id="password-auth"
                 name="password"
@@ -194,25 +194,25 @@ const OnboardingAuth: React.FC = () => {
                 placeholder={tab === "signin" ? "Your password" : "Create a password"}
                 value={formVals.password}
                 onChange={handleChange}
-                className="pl-10 bg-white/80 dark:bg-zinc-900/40 border-none text-white"
+                className="pl-10 bg-muted/50 border-border text-foreground"
                 required
                 minLength={6}
                 disabled={isLoading}
               />
               <button
                 type="button"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-cinemax-400"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
                 onClick={() => setShowPassword((s) => !s)}
                 tabIndex={-1}
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
-            <p className="text-xs text-cinemax-400 mt-1">{tab === "signup" ? "Password must be at least 6 characters" : null}</p>
+            <p className="text-xs text-muted-foreground mt-1">{tab === "signup" ? "Password must be at least 6 characters" : null}</p>
           </div>
           <Button
             type="submit"
-            className="w-full bg-cinemax-500 hover:bg-cinemax-600 transition-all shadow-lg"
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground transition-all shadow-lg"
             size="lg"
             disabled={isLoading}
           >
@@ -221,7 +221,7 @@ const OnboardingAuth: React.FC = () => {
           <div className="flex justify-center pt-1">
             <button
               type="button"
-              className="text-xs text-cinemax-200/90 hover:text-cinemax-400"
+              className="text-xs text-muted-foreground hover:text-foreground"
               onClick={() => { setTab(tab === "signin" ? "signup" : "signin"); setShowResendOption(false); }}
               tabIndex={-1}
             >
@@ -238,7 +238,7 @@ const OnboardingAuth: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowResendOption(true)}
-              className="text-xs text-cinemax-400/70 hover:text-cinemax-400 underline"
+              className="text-xs text-muted-foreground hover:text-foreground underline"
             >
               Need to resend confirmation email?
             </button>

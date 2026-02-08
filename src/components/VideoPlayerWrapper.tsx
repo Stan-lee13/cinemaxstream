@@ -2,6 +2,7 @@
  * Modern Video Player Wrapper Component
  * Clean, minimal UI with smooth transitions
  * Uses obfuscated source labels for provider protection
+ * Includes: mobile fullscreen landscape, PiP support, cast
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
@@ -14,9 +15,10 @@ import { toast } from "sonner";
 import UpgradeModal from "./UpgradeModal";
 import SourceSelector from "./SourceSelector";
 import CastButton from "./CastButton";
-import { AlertCircle, RefreshCw, PictureInPicture2 } from "lucide-react";
+import { AlertCircle, RefreshCw, PictureInPicture2, Maximize } from "lucide-react";
 import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
+import { requestFullscreenLandscape, exitFullscreenAndUnlock, isPipSupported, isMobileDevice } from "@/utils/playerUtils";
 import {
   getStreamingUrlForSource,
   getAvailableSources,
@@ -225,7 +227,7 @@ const VideoPlayerWrapper = ({
 
   return (
     <div className="space-y-4">
-      {/* Source Selector + Cast */}
+      {/* Source Selector + Cast + Fullscreen */}
       <div className="bg-card/50 backdrop-blur-sm rounded-xl border border-border p-3 flex items-center gap-3">
         <div className="flex-1">
           <SourceSelector
@@ -237,6 +239,20 @@ const VideoPlayerWrapper = ({
           />
         </div>
         <CastButton videoUrl={videoSrc} title={title} />
+        {isMobileDevice() && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1 text-muted-foreground hover:text-foreground"
+            onClick={() => {
+              const container = document.querySelector('[style*="aspect-ratio"]');
+              if (container) requestFullscreenLandscape(container as HTMLElement);
+            }}
+            title="Fullscreen"
+          >
+            <Maximize className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       {/* Upgrade modal if user can't stream */}
