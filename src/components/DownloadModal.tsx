@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { useEventNotifications } from '@/hooks/useEventNotifications';
 
 interface DownloadModalProps {
   isOpen: boolean;
@@ -45,6 +46,7 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
   const { deductDownloadCredit } = useCreditSystem();
   const { tier, isPro, isPremium } = useUserTier(user?.id);
   const navigate = useNavigate();
+  const { notifyDownloadComplete } = useEventNotifications();
   
   const [downloadResult, setDownloadResult] = useState<DownloadResult | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -108,6 +110,7 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
 
       setDownloadResult({ success: true, downloadLink: downloadUrl });
       toast.success('Download started!');
+      notifyDownloadComplete(contentTitle);
     } catch (error) {
       console.error('Download error:', error);
       setDownloadResult({ success: false, error: 'Download failed. Please try again.' });

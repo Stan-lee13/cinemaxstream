@@ -1,30 +1,49 @@
-
-import { Bell, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Bell, X, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import NotificationCard from './NotificationCard';
-import { useNotifications, Notification } from '@/hooks/useNotifications';
+import { useEventNotifications, AppNotification } from '@/hooks/useEventNotifications';
 
 const NotificationBar = () => {
   const {
     notifications,
-    setShowNotifications,
-    showNotifications,
-    notificationCount,
-    permissionGranted,
-    requestNotificationPermission,
+    unreadCount,
     markAsRead,
     markAllAsRead,
-  } = useNotifications();
+    checkWrapTriggers,
+  } = useEventNotifications();
 
   const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
 
-  const handleNotificationClick = (notification: Notification) => {
-    markAsRead(notification.id);
-    if (notification.contentId) {
-      navigate(`/content/${notification.contentId}`);
+  // Check for time-based wrap triggers on mount and periodically
+  useEffect(() => {
+    checkWrapTriggers();
+    const interval = setInterval(checkWrapTriggers, 60 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [checkWrapTriggers]);
+
+  // Update page title with unread count
+  useEffect(() => {
+    document.title = unreadCount > 0 ? `(${unreadCount}) CinemaxStream` : 'CinemaxStream';
+  }, [unreadCount]);
+
+  const handleClick = (notif: AppNotification) => {
+    markAsRead(notif.id);
+    if (notif.route) {
+      navigate(notif.route);
     }
-    setShowNotifications(false);
+    setOpen(false);
+  };
+
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diff = now.getTime() - d.getTime();
+    if (diff < 60000) return 'Just now';
+    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+    return d.toLocaleDateString();
   };
 
   return (
@@ -33,69 +52,72 @@ const NotificationBar = () => {
         variant="ghost"
         size="sm"
         className="relative p-2"
-        onClick={() => setShowNotifications(!showNotifications)}
+        onClick={() => setOpen(!open)}
         aria-label="Notifications"
       >
         <Bell size={18} className="text-white" />
-        {notificationCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-cinemax-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-            {notificationCount}
+        {unreadCount > 0 && (
+          <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
+            {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </Button>
 
-      {showNotifications && (
-        <div className="absolute right-0 mt-2 w-72 md:w-80 bg-gray-900 border border-gray-800 rounded-md shadow-lg z-50 max-h-[80vh] overflow-hidden">
-          <div className="p-3 border-b border-gray-800 flex items-center justify-between">
-            <h3 className="font-semibold text-sm">Notifications</h3>
+      {open && (
+        <div className="absolute right-0 mt-2 w-80 md:w-96 bg-card border border-border rounded-xl shadow-2xl z-50 max-h-[80vh] overflow-hidden">
+          <div className="p-3 border-b border-border flex items-center justify-between">
+            <h3 className="font-semibold text-sm text-foreground">Notifications</h3>
             <div className="flex gap-1">
-              {!permissionGranted && (
+              {unreadCount > 0 && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={requestNotificationPermission}
-                  className="text-xs px-2 py-1 h-auto"
+                  onClick={markAllAsRead}
+                  className="text-xs px-2 py-1 h-auto text-muted-foreground hover:text-foreground"
                 >
-                  Enable
+                  <Check size={12} className="mr-1" />
+                  Read all
                 </Button>
               )}
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowNotifications(false)}
-                className="p-1 h-auto"
+                onClick={() => setOpen(false)}
+                className="p-1 h-auto text-muted-foreground hover:text-foreground"
               >
                 <X size={14} />
               </Button>
             </div>
           </div>
 
-          <div className="max-h-[300px] overflow-y-auto">
+          <div className="max-h-[400px] overflow-y-auto">
             {notifications.length > 0 ? (
-              <>
-                {notifications.map(notification => (
-                  <NotificationCard
-                    key={notification.id}
-                    notification={notification}
-                    onClick={handleNotificationClick}
-                  />
-                ))}
-                {notificationCount > 0 && (
-                  <div className="p-2 border-t border-gray-800">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full text-xs py-2"
-                      onClick={markAllAsRead}
-                    >
-                      Mark all as read
-                    </Button>
+              notifications.map(notif => (
+                <div
+                  key={notif.id}
+                  onClick={() => handleClick(notif)}
+                  className={`p-3 border-b border-border/50 cursor-pointer transition-colors hover:bg-accent/50 ${
+                    !notif.isRead ? 'bg-accent/20' : ''
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    {!notif.isRead && (
+                      <div className="w-2 h-2 rounded-full bg-primary mt-2 shrink-0" />
+                    )}
+                    <div className={`flex-1 ${notif.isRead ? 'ml-5' : ''}`}>
+                      <p className={`text-sm font-medium ${notif.isRead ? 'text-muted-foreground' : 'text-foreground'}`}>
+                        {notif.title}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{notif.message}</p>
+                      <p className="text-[10px] text-muted-foreground/60 mt-1">{formatDate(notif.date)}</p>
+                    </div>
                   </div>
-                )}
-              </>
+                </div>
+              ))
             ) : (
-              <div className="p-4 text-center text-gray-400 text-sm">
-                No new notifications
+              <div className="p-8 text-center text-muted-foreground text-sm">
+                <Bell size={24} className="mx-auto mb-2 opacity-30" />
+                No notifications yet
               </div>
             )}
           </div>
