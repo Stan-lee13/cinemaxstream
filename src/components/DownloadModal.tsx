@@ -6,6 +6,7 @@ import { useCreditSystem } from '@/hooks/useCreditSystem';
 import { useUserTier } from '@/hooks/useUserTier';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useDownloadManager } from '@/hooks/useDownloadManager';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -26,6 +27,7 @@ interface DownloadResult {
   success: boolean;
   downloadLink?: string;
   error?: string;
+  fileSize?: string;
 }
 
 /**
@@ -47,6 +49,7 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
   const { tier, isPro, isPremium } = useUserTier(user?.id);
   const navigate = useNavigate();
   const { notifyDownloadComplete } = useEventNotifications();
+  const { startDownload } = useDownloadManager();
   
   const [downloadResult, setDownloadResult] = useState<DownloadResult | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -91,33 +94,60 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
           year: year ?? null,
           download_url: downloadUrl,
           quality: 'HD',
-          status: 'completed',
-          completed_at: new Date().toISOString()
+          status: 'pending'
         });
 
       if (dbError) {
         console.error('Download tracking error:', dbError);
         // Still allow download even if tracking fails
-      } else {
-        console.log('Download tracked successfully for user:', user.id);
       }
 
-      // 2. Deduct credit
+      // 2. Download into offline cache (internal download manager)
+      const completed = await startDownload({
+        title: contentTitle,
+        sourceUrl: downloadUrl,
+        sourceProvider: 'vidsrc',
+        contentType,
+        seasonNumber,
+        episodeNumber,
+      });
+
+      // 3. Mark DB record completed with actual size metadata
+      await supabase
+        .from('download_requests')
+        .update({
+          status: 'completed',
+          file_size: completed.fileSizeLabel,
+          completed_at: new Date().toISOString()
+        })
+        .eq('user_id', user.id)
+        .eq('content_title', contentTitle)
+        .eq('content_type', contentType)
+        .is('completed_at', null);
+
+      // 4. Deduct credit only after successful persistence
       await deductDownloadCredit();
 
-      // 3. Open download in new tab
-      window.open(downloadUrl, '_blank');
-
-      setDownloadResult({ success: true, downloadLink: downloadUrl });
-      toast.success('Download started!');
+      setDownloadResult({ success: true, downloadLink: completed.cacheKey, fileSize: completed.fileSizeLabel });
+      toast.success('Downloaded for offline playback');
       notifyDownloadComplete(contentTitle);
     } catch (error) {
       console.error('Download error:', error);
-      setDownloadResult({ success: false, error: 'Download failed. Please try again.' });
+      const message = error instanceof Error ? error.message : 'Download failed. Please try again.';
+
+      await supabase
+        .from('download_requests')
+        .update({ status: 'failed', error_message: message })
+        .eq('user_id', user.id)
+        .eq('content_title', contentTitle)
+        .eq('content_type', contentType)
+        .is('completed_at', null);
+
+      setDownloadResult({ success: false, error: message });
     } finally {
       setIsProcessing(false);
     }
-  }, [canDownload, contentId, user, getDownloadUrl, contentTitle, contentType, seasonNumber, episodeNumber, year, deductDownloadCredit, notifyDownloadComplete]);
+  }, [canDownload, contentId, user, getDownloadUrl, contentTitle, contentType, seasonNumber, episodeNumber, year, deductDownloadCredit, notifyDownloadComplete, startDownload]);
 
   const resetModal = useCallback(() => {
     setDownloadResult(null);
@@ -227,8 +257,8 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
                         <div className="w-14 h-14 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-4">
                           <CheckCircle className="h-7 w-7 text-emerald-500" />
                         </div>
-                        <h3 className="font-bold text-white text-lg mb-1">Download Started</h3>
-                        <p className="text-sm text-gray-400 mb-4">Check your Downloads page for history</p>
+                        <h3 className="font-bold text-white text-lg mb-1">Download Completed</h3>
+                        <p className="text-sm text-gray-400 mb-4">Saved to offline library{downloadResult.fileSize ? ` • ${downloadResult.fileSize}` : ''}</p>
                         <Button
                           variant="outline"
                           onClick={() => { resetModal(); navigate('/downloads'); }}

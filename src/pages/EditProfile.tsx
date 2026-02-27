@@ -13,6 +13,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { motion } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { useEventNotifications } from '@/hooks/useEventNotifications';
 
 const EditProfile = () => {
   const { user } = useAuth();
@@ -23,6 +24,7 @@ const EditProfile = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const navigate = useNavigate();
+  const { notifyAccountChange } = useEventNotifications();
   const prefersReducedMotion = useReducedMotion();
 
   useEffect(() => {
