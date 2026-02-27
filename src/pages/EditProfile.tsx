@@ -65,7 +65,6 @@ const EditProfile = () => {
         setAvatarPreview(result.avatar_url);
       }
       toast.success('Profile photo updated successfully');
-      notifyAccountChange('Your profile photo was updated.');
     } finally {
       setIsUploading(false);
     }
@@ -81,7 +80,6 @@ const EditProfile = () => {
       }
 
       toast.success('Profile updated successfully');
-      notifyAccountChange('Your profile information was updated.');
     } finally {
       setIsSaving(false);
     }
