@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/authHooks';
-import { toast } from 'sonner';
+import { getErrorMessage } from '@/utils/errorHelpers';
 
 interface UserProfile {
   id: string;
@@ -17,6 +17,14 @@ interface UserProfile {
   timezone?: string;
   priority_level?: number;
 }
+
+interface UpdateProfileResult {
+  ok: boolean;
+  avatar_url?: string;
+  error?: string;
+}
+
+const AVATAR_UPLOAD_RETRIES = 3;
 
 export const useUserProfile = () => {
   const [profileData, setProfileData] = useState<UserProfile | null>(null);
@@ -35,30 +43,25 @@ export const useUserProfile = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const { data, error: fetchError } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('id', user.id)
         .maybeSingle();
 
-      if (fetchError) {
-        console.error('Error fetching profile:', fetchError);
-        // Don't show error toast for missing profile, we'll create it
-        if (!fetchError.message.includes('No rows')) {
-          setError('Failed to load profile data');
-          return;
-        }
+      if (fetchError && !fetchError.message.includes('No rows')) {
+        setError('Failed to load profile data');
+        return;
       }
 
-      // If profile doesn't exist yet, create it
-      if (!data && user) {
+      if (!data) {
         const newProfile = {
           id: user.id,
           username: user.email?.split('@')[0] || 'User',
           avatar_url: null,
           subscription_tier: 'free',
-          role: 'free' as const
+          role: 'free' as const,
         };
 
         const { data: createdProfile, error: createError } = await supabase
@@ -68,116 +71,90 @@ export const useUserProfile = () => {
           .single();
 
         if (createError) {
-          console.error('Error creating profile:', createError);
           setError('Failed to create profile');
           return;
         }
 
         setProfileData(createdProfile as UserProfile);
-      } else if (data) {
+      } else {
         setProfileData(data as UserProfile);
       }
-    } catch (error) {
-      console.error('Unexpected error:', error);
-      setError('An unexpected error occurred');
+    } catch {
+      setError('An unexpected error occurred while loading profile');
     } finally {
       setIsLoading(false);
     }
   }, [user]);
 
-  const uploadAvatar = useCallback(async (file: File) => {
+  const uploadAvatar = useCallback(async (file: File): Promise<{ avatar_url: string }> => {
     if (!user) {
       throw new Error('User not authenticated');
     }
 
-    try {
-      // Upload file to Supabase storage
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-      
+    const fileExt = file.name.split('.').pop() || 'jpg';
+    const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+
+    let lastError: unknown;
+
+    for (let attempt = 1; attempt <= AVATAR_UPLOAD_RETRIES; attempt += 1) {
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(fileName, file, {
           cacheControl: '3600',
-          upsert: true
+          upsert: true,
         });
 
-      if (uploadError) {
-        throw uploadError;
+      if (!uploadError) {
+        const { data: publicData } = supabase.storage.from('avatars').getPublicUrl(fileName);
+        const publicUrl = publicData.publicUrl;
+
+        const { error: updateError } = await supabase
+          .from('user_profiles')
+          .update({ avatar_url: publicUrl })
+          .eq('id', user.id);
+
+        if (updateError) {
+          throw updateError;
+        }
+
+        setProfileData((prev) => (prev ? { ...prev, avatar_url: publicUrl } : null));
+        return { avatar_url: publicUrl };
       }
 
-      // Get public URL for the uploaded file
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(fileName);
+      lastError = uploadError;
+      await new Promise((resolve) => setTimeout(resolve, 250 * attempt));
+    }
 
-      // Update profile with new avatar URL
+    throw lastError instanceof Error ? lastError : new Error('Avatar upload failed');
+  }, [user]);
+
+  const updateProfile = useCallback(async (updates: Partial<UserProfile> & { avatar?: File }): Promise<UpdateProfileResult> => {
+    if (!user) return { ok: false, error: 'User not authenticated' };
+
+    try {
+      let avatarUrl: string | undefined;
+      const dbUpdates: Partial<UserProfile> = { ...updates };
+
+      if (updates.avatar) {
+        const result = await uploadAvatar(updates.avatar);
+        avatarUrl = result.avatar_url;
+        delete (dbUpdates as { avatar?: File }).avatar;
+        dbUpdates.avatar_url = avatarUrl;
+      }
+
       const { error: updateError } = await supabase
         .from('user_profiles')
-        .update({ avatar_url: publicUrl })
+        .update(dbUpdates)
         .eq('id', user.id);
 
       if (updateError) {
-        throw updateError;
+        return { ok: false, error: updateError.message };
       }
 
-      // Update local state
-      setProfileData(prev => prev ? { ...prev, avatar_url: publicUrl } : null);
-      
-      return { avatar_url: publicUrl };
-    } catch (error) {
-      console.error('Error uploading avatar:', error);
-      throw error;
-    }
-  }, [user]);
-
-  const updateProfile = useCallback(async (updates: Partial<UserProfile> & { avatar?: File }) => {
-    if (!user) return;
-
-    try {
-      // Handle avatar upload separately
-      if (updates.avatar) {
-        const result = await uploadAvatar(updates.avatar);
-        // Remove avatar from updates since it's not a database field
-        const { avatar, ...dbUpdates } = updates;
-        // Add the avatar_url to dbUpdates
-        (dbUpdates as Partial<UserProfile>).avatar_url = result.avatar_url;
-        
-        const { error } = await supabase
-          .from('user_profiles')
-          .update(dbUpdates)
-          .eq('id', user.id);
-
-        if (error) {
-          toast.error('Failed to update profile');
-          console.error('Error updating profile:', error);
-          return;
-        }
-
-        // Update local state
-        setProfileData(prev => prev ? { ...prev, ...dbUpdates } : null);
-        toast.success('Profile updated successfully');
-        return result;
-      } else {
-        // Regular profile update without avatar
-        const { error } = await supabase
-          .from('user_profiles')
-          .update(updates)
-          .eq('id', user.id);
-
-        if (error) {
-          toast.error('Failed to update profile');
-          console.error('Error updating profile:', error);
-          return;
-        }
-
-        // Update local state
-        setProfileData(prev => prev ? { ...prev, ...updates } : null);
-        toast.success('Profile updated successfully');
-      }
-    } catch (error) {
-      console.error('Unexpected error:', error);
-      toast.error('An unexpected error occurred');
+      setProfileData((prev) => (prev ? { ...prev, ...dbUpdates } : null));
+      return { ok: true, avatar_url: avatarUrl };
+    } catch (err) {
+      return { ok: false, error: getErrorMessage(err) };
     }
   }, [user, uploadAvatar]);
 

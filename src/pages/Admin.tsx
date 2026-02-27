@@ -35,6 +35,7 @@ import {
   Eye
 } from "lucide-react";
 import LoadingState from "@/components/LoadingState";
+import { getErrorMessage } from "@/utils/errorHelpers";
 
 const ADMIN_EMAIL = "stanleyvic13@gmail.com";
 
@@ -335,25 +336,32 @@ const Admin = () => {
 
     setIsSavingPromo(true);
     try {
-      const { error } = await supabase.from('premium_codes').insert({
-        code: rawCode,
-        description: newPromo.description || null,
-        tier: 'premium',
-        months_granted: months,
-        max_uses: maxUses,
-        expires_at: expiresAt,
-        is_active: true,
-        created_by: user?.id
-      });
+      const { data: insertedPromo, error } = await supabase
+        .from('premium_codes')
+        .insert({
+          code: rawCode,
+          description: newPromo.description || null,
+          tier: 'premium',
+          months_granted: months,
+          max_uses: maxUses,
+          expires_at: expiresAt,
+          is_active: true,
+          created_by: user?.id
+        })
+        .select('*')
+        .single();
 
       if (error) throw error;
 
+      if (insertedPromo) {
+        setPromoCodes((prev) => [insertedPromo as PromoCode, ...prev]);
+      }
+
       toast.success("Promo code created");
       setNewPromo({ code: "", description: "", tier: "premium", months: "12", maxUses: "", expiresAt: "" });
-      fetchData();
     } catch (error) {
       console.error('Create promo error:', error);
-      toast.error("Failed to create promo code");
+      toast.error(`Failed to create promo code: ${getErrorMessage(error)}`);
     } finally {
       setIsSavingPromo(false);
     }
