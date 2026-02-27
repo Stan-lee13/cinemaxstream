@@ -73,13 +73,12 @@ export const isAdmin = async (): Promise<boolean> => {
  */
 export const validatePremiumCode = async (code: string): Promise<boolean> => {
   try {
-    if (!code?.trim() || code.trim().length < 3) return false;
+    if (!code?.trim() || code.trim().length < 4) return false;
 
     const normalizedCode = code.trim().toUpperCase();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return false;
 
-    console.log('Validating promo code:', normalizedCode, 'for user:', user.id);
 
     // Fetch the promo code - RLS allows reading active codes
     const { data: codeData, error } = await supabase
@@ -99,7 +98,6 @@ export const validatePremiumCode = async (code: string): Promise<boolean> => {
       return false;
     }
 
-    console.log('Found promo code:', codeData);
     
     // Check expiration
     if (codeData.expires_at && new Date(codeData.expires_at) < new Date()) {
@@ -136,7 +134,6 @@ export const validatePremiumCode = async (code: string): Promise<boolean> => {
       expiryDate.setDate(expiryDate.getDate() + days);
     }
 
-    console.log('Subscription will expire:', expiryDate.toISOString());
 
     // STEP 1: Record redemption first (user can insert their own redemptions)
     const { error: redemptionError } = await supabase
@@ -152,12 +149,18 @@ export const validatePremiumCode = async (code: string): Promise<boolean> => {
     }
 
     // STEP 2: Check if user already has premium role
-    const { data: existingRole } = await supabase
-      .from('user_roles')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('role', 'premium')
-      .maybeSingle();
+    let existingRole: { id: string } | null = null;
+    try {
+      const { data } = await supabase
+        .from('user_roles')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('role', 'premium')
+        .maybeSingle();
+      existingRole = data;
+    } catch (roleLookupError) {
+      console.warn('Unable to verify existing user role before insert:', roleLookupError);
+    }
     
     // STEP 3: Insert premium role if not exists (admin policy required)
     // This might fail due to RLS, so we'll rely on user_profiles as source of truth
@@ -206,7 +209,6 @@ export const validatePremiumCode = async (code: string): Promise<boolean> => {
         }
 
         if (data?.success) {
-          console.log('User upgraded via edge function');
           return true;
         }
       } catch (fnErr) {
@@ -215,7 +217,6 @@ export const validatePremiumCode = async (code: string): Promise<boolean> => {
       }
     }
 
-    console.log('Promo code validated successfully. User upgraded to premium until:', expiryDate.toISOString());
     return true;
   } catch (error) {
     console.error('Error validating premium code:', error);

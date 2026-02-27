@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/authHooks";
 import { validatePremiumCode } from "@/utils/authUtils";
+import { useEventNotifications } from '@/hooks/useEventNotifications';
 
 interface PremiumCodeInputProps {
   onSuccess?: () => void;
@@ -17,6 +18,7 @@ const PremiumCodeInput = ({ onSuccess }: PremiumCodeInputProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasPremium, setHasPremium] = useState(false);
   const { user } = useAuth();
+  const { notifyPromoSuccess } = useEventNotifications();
   
   useEffect(() => {
     const checkPremiumStatus = async () => {
@@ -78,6 +80,7 @@ const PremiumCodeInput = ({ onSuccess }: PremiumCodeInputProps) => {
         toast.success("Premium code activated successfully!");
         // Refresh user premium status
         setHasPremium(true);
+        notifyPromoSuccess(code.trim().toUpperCase());
         if (onSuccess) onSuccess();
       } else {
         toast.error("Invalid or expired premium code. Please try again.");

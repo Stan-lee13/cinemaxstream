@@ -7,12 +7,13 @@ import useAuth from '@/contexts/authHooks';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import BackButton from "@/components/BackButton";
 import { toast } from 'sonner';
-import { User, Mail, Calendar, Upload, Camera, Loader2, ShieldCheck, CreditCard } from 'lucide-react';
+import { User, Mail, Calendar, Camera, Loader2, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { motion } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { useEventNotifications } from '@/hooks/useEventNotifications';
 
 const EditProfile = () => {
   const { user } = useAuth();
@@ -23,6 +24,7 @@ const EditProfile = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const navigate = useNavigate();
+  const { notifyAccountChange } = useEventNotifications();
   const prefersReducedMotion = useReducedMotion();
 
   useEffect(() => {
@@ -54,12 +56,16 @@ const EditProfile = () => {
     setIsUploading(true);
     try {
       const result = await updateProfile({ avatar: file });
-      if (result?.avatar_url) {
-        setAvatarPreview(result.avatar_url);
-        toast.success('Profile photo updated successfully');
+      if (!result.ok) {
+        toast.error(result.error || 'Failed to upload profile photo');
+        return;
       }
-    } catch (error) {
-      toast.error('Failed to upload profile photo');
+
+      if (result.avatar_url) {
+        setAvatarPreview(result.avatar_url);
+      }
+      toast.success('Profile photo updated successfully');
+      notifyAccountChange('Your profile photo was updated.');
     } finally {
       setIsUploading(false);
     }
@@ -68,10 +74,14 @@ const EditProfile = () => {
   const handleSaveProfile = async () => {
     setIsSaving(true);
     try {
-      await updateProfile({ username });
+      const result = await updateProfile({ username: username.trim() });
+      if (!result.ok) {
+        toast.error(result.error || 'Failed to update profile');
+        return;
+      }
+
       toast.success('Profile updated successfully');
-    } catch (error) {
-      toast.error('Failed to update profile');
+      notifyAccountChange('Your profile information was updated.');
     } finally {
       setIsSaving(false);
     }
