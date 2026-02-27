@@ -41,9 +41,9 @@ const OnboardingAuth: React.FC = () => {
         setTab("signin");
         setFormVals({ email: "", password: "" });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Check if it's an email confirmation issue
-      const errorMsg = err?.message?.toLowerCase() || '';
+      const errorMsg = err instanceof Error ? err.message.toLowerCase() : '';
       if (errorMsg.includes('email not confirmed') || errorMsg.includes('confirm')) {
         setResendEmail(formVals.email);
         setShowResendOption(true);

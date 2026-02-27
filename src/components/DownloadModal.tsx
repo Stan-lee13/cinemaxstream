@@ -117,7 +117,7 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
     } finally {
       setIsProcessing(false);
     }
-  }, [canDownload, contentId, user, getDownloadUrl, contentTitle, contentType, seasonNumber, episodeNumber, year, deductDownloadCredit]);
+  }, [canDownload, contentId, user, getDownloadUrl, contentTitle, contentType, seasonNumber, episodeNumber, year, deductDownloadCredit, notifyDownloadComplete]);
 
   const resetModal = useCallback(() => {
     setDownloadResult(null);

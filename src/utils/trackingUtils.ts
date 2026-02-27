@@ -11,11 +11,6 @@ export const trackStreamingActivity = (
   currentTime: number,
   episodeId?: string
 ): void => {
-  // In a real implementation, this would send data to a backend
-  // Production tracking - silent operation
-  if (import.meta.env.DEV) {
-    console.log(`Tracking activity: Content ID ${contentId}, User ID ${userId}, Time ${currentTime}, Episode ID ${episodeId || 'N/A'}`);
-  }
   
   // Store locally for history
   try {
@@ -69,11 +64,6 @@ export const markContentAsComplete = (
   userId: string,
   episodeId?: string
 ): void => {
-  // In a real implementation, this would send data to a backend
-  // Production tracking - silent operation
-  if (import.meta.env.DEV) {
-    console.log(`Marking complete: Content ID ${contentId}, User ID ${userId}, Episode ID ${episodeId || 'N/A'}`);
-  }
   
   // Store completion status locally
   try {

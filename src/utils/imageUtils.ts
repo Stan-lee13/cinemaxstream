@@ -49,7 +49,7 @@ export const getImageUrlSafe = (content: { image?: string; image_url?: string | 
  * @param content The content object that may have either image or image_url property
  * @returns The image URL string or empty string if neither property exists
  */
-export const getImageUrlFlexible = (content: any): string => {
+export const getImageUrlFlexible = (content: { image?: string; image_url?: string | null } | null | undefined): string => {
   if (!content) return '';
   
   // Handle case where content might have image property (from TMDB)

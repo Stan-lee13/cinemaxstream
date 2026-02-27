@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { useLocation, Link } from "react-router-dom";
+import React from 'react';
+import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -8,13 +8,8 @@ import { motion } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 const NotFound = () => {
-  const location = useLocation();
   const prefersReducedMotion = useReducedMotion();
 
-  useEffect(() => {
-    // Silently handle 404 errors in production
-    console.log("404 Error: Page not found - ", location.pathname);
-  }, [location.pathname]);
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col">

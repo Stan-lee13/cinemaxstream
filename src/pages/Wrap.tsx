@@ -50,9 +50,10 @@ const Wrap = () => {
   useEffect(() => {
     if (!user) return;
     fetchWrapData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  const fetchWrapData = async () => {
+  async function fetchWrapData() {
     if (!user) return;
     setIsLoading(true);
 
