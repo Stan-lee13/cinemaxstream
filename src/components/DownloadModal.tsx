@@ -94,8 +94,7 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
           year: year ?? null,
           download_url: downloadUrl,
           quality: 'HD',
-          status: 'completed',
-          completed_at: new Date().toISOString()
+          status: 'pending'
         });
 
       if (dbError) {
@@ -113,7 +112,20 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
         episodeNumber,
       });
 
-      // 3. Deduct credit only after successful persistence
+      // 3. Mark DB record completed with actual size metadata
+      await supabase
+        .from('download_requests')
+        .update({
+          status: 'completed',
+          file_size: completed.fileSizeLabel,
+          completed_at: new Date().toISOString()
+        })
+        .eq('user_id', user.id)
+        .eq('content_title', contentTitle)
+        .eq('content_type', contentType)
+        .is('completed_at', null);
+
+      // 4. Deduct credit only after successful persistence
       await deductDownloadCredit();
 
       setDownloadResult({ success: true, downloadLink: completed.cacheKey, fileSize: completed.fileSizeLabel });
@@ -121,7 +133,17 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
       notifyDownloadComplete(contentTitle);
     } catch (error) {
       console.error('Download error:', error);
-      setDownloadResult({ success: false, error: 'Download failed. Please try again.' });
+      const message = error instanceof Error ? error.message : 'Download failed. Please try again.';
+
+      await supabase
+        .from('download_requests')
+        .update({ status: 'failed', error_message: message })
+        .eq('user_id', user.id)
+        .eq('content_title', contentTitle)
+        .eq('content_type', contentType)
+        .is('completed_at', null);
+
+      setDownloadResult({ success: false, error: message });
     } finally {
       setIsProcessing(false);
     }
