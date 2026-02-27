@@ -4,21 +4,39 @@
  * - PiP detection and control
  */
 
+type WebkitFullscreenElement = HTMLElement & {
+  webkitRequestFullscreen?: () => Promise<void> | void;
+};
+
+type OrientationLockType = 'landscape' | 'portrait' | 'any' | 'natural' | 'landscape-primary' | 'landscape-secondary' | 'portrait-primary' | 'portrait-secondary';
+
+type ScreenOrientationWithControls = ScreenOrientation & {
+  lock?: (orientation: OrientationLockType) => Promise<void>;
+  unlock?: () => void;
+};
+
+type PictureInPictureDocument = Document & {
+  pictureInPictureEnabled?: boolean;
+};
+
 /**
  * Request fullscreen with landscape orientation lock on mobile
  */
 export const requestFullscreenLandscape = async (element: HTMLElement) => {
   try {
-    if (element.requestFullscreen) {
-      await element.requestFullscreen();
-    } else if ((element as any).webkitRequestFullscreen) {
-      await (element as any).webkitRequestFullscreen();
+    const fullscreenElement = element as WebkitFullscreenElement;
+
+    if (fullscreenElement.requestFullscreen) {
+      await fullscreenElement.requestFullscreen();
+    } else if (fullscreenElement.webkitRequestFullscreen) {
+      await fullscreenElement.webkitRequestFullscreen();
     }
 
     // Lock orientation to landscape if supported
-    if (screen.orientation && 'lock' in screen.orientation) {
+    const orientation = screen.orientation as ScreenOrientationWithControls;
+    if (orientation?.lock) {
       try {
-        await (screen.orientation as any).lock('landscape');
+        await orientation.lock('landscape');
       } catch {
         // Orientation lock not supported or denied
       }
@@ -36,9 +54,11 @@ export const exitFullscreenAndUnlock = async () => {
     if (document.fullscreenElement) {
       await document.exitFullscreen();
     }
-    if (screen.orientation && 'unlock' in screen.orientation) {
+
+    const orientation = screen.orientation as ScreenOrientationWithControls;
+    if (orientation?.unlock) {
       try {
-        (screen.orientation as any).unlock();
+        orientation.unlock();
       } catch {
         // Ignore
       }
@@ -52,7 +72,7 @@ export const exitFullscreenAndUnlock = async () => {
  * Check if PiP is supported
  */
 export const isPipSupported = (): boolean => {
-  return 'pictureInPictureEnabled' in document && (document as any).pictureInPictureEnabled;
+  return 'pictureInPictureEnabled' in document && !!(document as PictureInPictureDocument).pictureInPictureEnabled;
 };
 
 /**

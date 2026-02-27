@@ -363,10 +363,11 @@ const getContentByCategory = async (category: string, page: number = 1): Promise
     };
 
     switch (category) {
-      case 'movies':
+      case 'movies': {
         // Popular movies with slight randomization
         const movies = await getPopularMovies(page);
         return shuffleArray(movies.slice(0, 15)).concat(movies.slice(15));
+      }
       case 'featured': {
         // Featured = mix of top rated and popular, shuffled
         const [featured1, featured2] = await Promise.all([
