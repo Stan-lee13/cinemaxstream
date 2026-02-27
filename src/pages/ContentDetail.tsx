@@ -86,7 +86,7 @@ const ContentDetail = () => {
     }
 
     originalStartWatching();
-  }, [userProfile, canStream, isPremiumContent, canAccessPremium, originalStartWatching, setShowPremiumModal, content, user]);
+  }, [userProfile, canStream, isPremiumContent, canAccessPremium, originalStartWatching, setShowPremiumModal]);
 
   // Handle trailer watching
   const handleShowTrailer = useCallback(() => {

@@ -128,6 +128,8 @@ const Admin = () => {
     };
 
     verifyAccess();
+  // fetchData is intentionally stable for this access-check flow
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, authLoading, navigate]);
 
   const fetchData = useCallback(async () => {
@@ -256,10 +258,10 @@ const Admin = () => {
       const targetUser = users.find(u => u.id === userId);
       
       if (targetUser?.is_blocked) {
-        await (supabase as any).from('blocked_users').delete().eq('user_id', userId);
+        await supabase.from('blocked_users').delete().eq('user_id', userId);
         toast.success("User unblocked");
       } else {
-        await (supabase as any).from('blocked_users').insert({
+        await supabase.from('blocked_users').insert({
           user_id: userId,
           blocked_by: user?.id,
           reason: 'Blocked by admin'

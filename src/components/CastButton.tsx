@@ -15,6 +15,17 @@ interface CastButtonProps {
   className?: string;
 }
 
+type PresentationRequestLike = new (urls: string[]) => {
+  start: () => Promise<{ addEventListener: (event: 'close', cb: () => void) => void }>;
+};
+
+type ChromeCastWindow = Window & {
+  chrome?: {
+    cast?: unknown;
+  };
+  PresentationRequest?: PresentationRequestLike;
+};
+
 const CastButton = ({ videoUrl, title, className }: CastButtonProps) => {
   const [isCasting, setIsCasting] = useState(false);
   const [castAvailable, setCastAvailable] = useState(false);
@@ -23,13 +34,15 @@ const CastButton = ({ videoUrl, title, className }: CastButtonProps) => {
 
   // Check for Cast availability
   useEffect(() => {
+    const browserWindow = window as ChromeCastWindow;
+
     // Check for AirPlay support (Safari)
     if ('WebKitPlaybackTargetAvailabilityEvent' in window) {
       setCastAvailable(true);
     }
 
     // Check for Chrome Cast API
-    if (typeof window !== 'undefined' && (window as any).chrome?.cast) {
+    if (browserWindow.chrome?.cast) {
       setCastAvailable(true);
     }
 
@@ -67,17 +80,17 @@ const CastButton = ({ videoUrl, title, className }: CastButtonProps) => {
               toast.info('Cast disconnected');
             });
             return;
-          } catch (e) {
+          } catch {
             // User cancelled or no devices
           }
         }
       }
 
       // Fallback: Try Presentation API
-      if ('PresentationRequest' in window && typeof (window as any).PresentationRequest === 'function') {
+      const browserWindow = window as ChromeCastWindow;
+      if (typeof browserWindow.PresentationRequest === 'function') {
         try {
-          const PresentationRequestCtor = (window as any).PresentationRequest;
-          const request = new PresentationRequestCtor([videoUrl]);
+          const request = new browserWindow.PresentationRequest([videoUrl]);
           const connection = await request.start();
           setIsCasting(true);
           setDeviceName('Presentation Display');
@@ -88,7 +101,7 @@ const CastButton = ({ videoUrl, title, className }: CastButtonProps) => {
             setDeviceName('');
           });
           return;
-        } catch (e) {
+        } catch {
           // User cancelled
         }
       }
@@ -101,8 +114,10 @@ const CastButton = ({ videoUrl, title, className }: CastButtonProps) => {
     }
   }, [isCasting, videoUrl]);
 
+  const browserWindow = window as ChromeCastWindow;
+
   // Don't show button if casting is not available at all
-  if (!castAvailable && !(typeof (window as any).PresentationRequest === 'function') && !('RemotePlayback' in window)) {
+  if (!castAvailable && typeof browserWindow.PresentationRequest !== 'function' && !('RemotePlayback' in window)) {
     return null;
   }
 
@@ -113,7 +128,7 @@ const CastButton = ({ videoUrl, title, className }: CastButtonProps) => {
         size="sm"
         onClick={handleCast}
         className={`gap-2 ${isCasting ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-        title={isCasting ? `Casting to ${deviceName}` : 'Cast to TV'}
+        title={isCasting ? `Casting to ${deviceName}` : (title ?? 'Cast to TV')}
       >
         {isCasting ? (
           <>

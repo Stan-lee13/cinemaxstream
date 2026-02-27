@@ -72,10 +72,8 @@ describe('validatePremiumCode', () => {
       if (table === 'promo_code_redemptions') {
         return {
           select: () => ({
-            select: () => ({
-              eq: () => ({
-                eq: async () => ({ count: 0 })
-              })
+            eq: () => ({
+              eq: async () => ({ count: 0 })
             })
           }),
           insert: async () => ({ data: null, error: null })
@@ -84,6 +82,13 @@ describe('validatePremiumCode', () => {
 
       if (table === 'user_roles') {
         return {
+          select: () => ({
+            eq: () => ({
+              eq: () => ({
+                maybeSingle: async () => ({ data: null, error: null })
+              })
+            })
+          }),
           insert: async () => ({ data: null, error: null })
         };
       }
