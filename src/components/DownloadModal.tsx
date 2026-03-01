@@ -6,7 +6,6 @@ import { useCreditSystem } from '@/hooks/useCreditSystem';
 import { useUserTier } from '@/hooks/useUserTier';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useDownloadManager } from '@/hooks/useDownloadManager';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -23,16 +22,9 @@ interface DownloadModalProps {
   contentId?: string;
 }
 
-interface DownloadResult {
-  success: boolean;
-  downloadLink?: string;
-  error?: string;
-  fileSize?: string;
-}
-
 /**
- * Download Modal — uses dl.vidsrc.vip directly and tracks every download in DB.
- * Free users are blocked. Pro/Premium users get direct download + DB record.
+ * Download Modal — opens dl.vidsrc.vip in a new tab (CORS prevents fetch).
+ * Records every download in DB for tracking.
  */
 const DownloadModal: React.FC<DownloadModalProps> = memo(({
   isOpen,
@@ -49,9 +41,8 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
   const { tier, isPro, isPremium } = useUserTier(user?.id);
   const navigate = useNavigate();
   const { notifyDownloadComplete } = useEventNotifications();
-  const { startDownload } = useDownloadManager();
   
-  const [downloadResult, setDownloadResult] = useState<DownloadResult | null>(null);
+  const [downloadResult, setDownloadResult] = useState<{ success: boolean; error?: string } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const canDownload = isPro || isPremium;
@@ -81,9 +72,8 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
       return;
     }
 
-    let trackingRowId: string | null = null;
     try {
-      // 1. Record download in database FIRST and capture the row id
+      // 1. Record download in database
       const { data: insertedRow, error: dbError } = await supabase
         .from('download_requests')
         .insert({
@@ -95,61 +85,39 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
           year: year ?? null,
           download_url: downloadUrl,
           quality: 'HD',
-          status: 'pending'
+          status: 'completed',
+          completed_at: new Date().toISOString()
         })
         .select('id')
         .single();
 
       if (dbError) {
         console.error('Download tracking error:', dbError);
-      } else {
-        trackingRowId = insertedRow?.id ?? null;
       }
 
-      // 2. Download into offline cache (internal download manager)
-      const completed = await startDownload({
-        title: contentTitle,
-        sourceUrl: downloadUrl,
-        sourceProvider: 'vidsrc',
-        contentType,
-        seasonNumber,
-        episodeNumber,
-      });
+      // 2. Open download URL directly in new tab (CORS prevents in-app fetch)
+      const anchor = document.createElement('a');
+      anchor.href = downloadUrl;
+      anchor.target = '_blank';
+      anchor.rel = 'noopener noreferrer';
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
 
-      // 3. Mark DB record completed with actual size metadata
-      if (trackingRowId) {
-        await supabase
-          .from('download_requests')
-          .update({
-            status: 'completed',
-            file_size: completed.fileSizeLabel,
-            completed_at: new Date().toISOString()
-          })
-          .eq('id', trackingRowId);
-      }
-
-      // 4. Deduct credit only after successful persistence
+      // 3. Deduct credit
       await deductDownloadCredit();
 
-      setDownloadResult({ success: true, downloadLink: completed.cacheKey, fileSize: completed.fileSizeLabel });
-      toast.success('Downloaded for offline playback');
+      setDownloadResult({ success: true });
+      toast.success('Download started in new tab');
       notifyDownloadComplete(contentTitle);
     } catch (error) {
       console.error('Download error:', error);
       const message = error instanceof Error ? error.message : 'Download failed. Please try again.';
-
-      if (trackingRowId) {
-        await supabase
-          .from('download_requests')
-          .update({ status: 'failed', error_message: message })
-          .eq('id', trackingRowId);
-      }
-
       setDownloadResult({ success: false, error: message });
     } finally {
       setIsProcessing(false);
     }
-  }, [canDownload, contentId, user, getDownloadUrl, contentTitle, contentType, seasonNumber, episodeNumber, year, deductDownloadCredit, notifyDownloadComplete, startDownload]);
+  }, [canDownload, contentId, user, getDownloadUrl, contentTitle, contentType, seasonNumber, episodeNumber, year, deductDownloadCredit, notifyDownloadComplete]);
 
   const resetModal = useCallback(() => {
     setDownloadResult(null);
@@ -186,7 +154,7 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
               </div>
               <div>
                 <h2 className="text-lg font-bold text-white leading-tight">Download Content</h2>
-                <p className="text-xs text-gray-400">Save for offline viewing</p>
+                <p className="text-xs text-gray-400">Opens in a new tab</p>
               </div>
             </div>
 
@@ -259,14 +227,14 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
                         <div className="w-14 h-14 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-4">
                           <CheckCircle className="h-7 w-7 text-emerald-500" />
                         </div>
-                        <h3 className="font-bold text-white text-lg mb-1">Download Completed</h3>
-                        <p className="text-sm text-gray-400 mb-4">Saved to offline library{downloadResult.fileSize ? ` • ${downloadResult.fileSize}` : ''}</p>
+                        <h3 className="font-bold text-white text-lg mb-1">Download Started</h3>
+                        <p className="text-sm text-gray-400 mb-4">The download has been opened in a new tab. Check your browser's downloads.</p>
                         <Button
                           variant="outline"
                           onClick={() => { resetModal(); navigate('/downloads'); }}
                           className="border-white/10 hover:bg-white/5 text-white"
                         >
-                          View Downloads
+                          View Download History
                         </Button>
                       </div>
                     ) : (

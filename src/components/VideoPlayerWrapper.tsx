@@ -17,7 +17,6 @@ import SourceSelector from "./SourceSelector";
 import CastButton from "./CastButton";
 import { AlertCircle, RefreshCw, PictureInPicture2, Maximize } from "lucide-react";
 import { Button } from "./ui/button";
-import { cn } from "@/lib/utils";
 import { requestFullscreenLandscape, exitFullscreenAndUnlock, isPipSupported, isMobileDevice } from "@/utils/playerUtils";
 import {
   getStreamingUrlForSource,
@@ -51,11 +50,9 @@ const VideoPlayerWrapper = ({
   poster,
   title
 }: VideoPlayerWrapperProps) => {
-  // Credit system and User tier
   const { userProfile, canStream, userUsage } = useCreditSystem();
-  const { tier, isPremium } = useUserTier(userId); // Use our new hook
+  const { tier, isPremium } = useUserTier(userId);
   
-  // Source state with persistence
   const [savedSource, setSavedSource] = useLocalStorage<number>(
     'preferred-source',
     getDefaultSource(isPremium)
@@ -67,14 +64,14 @@ const VideoPlayerWrapper = ({
   const [showUpgradeModal, setShowUpgradeModal] = useState<boolean>(false);
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const hasStartedSession = useRef<boolean>(false);
   const vidRockListenerRef = useRef<boolean>(false);
+  const hasAutoFullscreened = useRef<boolean>(false);
 
-  // Hooks
   const { startWatchSession } = useWatchTracking();
   const { saveProgress } = useVideoProgress();
 
-  // Build video source URL using obfuscated source system
   const videoSrc = useMemo(() => {
     return getStreamingUrlForSource(contentId, activeSource, {
       contentType,
@@ -84,59 +81,63 @@ const VideoPlayerWrapper = ({
     });
   }, [contentId, contentType, activeSource, seasonNumber, episodeNumber, autoPlay]);
 
-  // VidRock message listener for enhanced progress tracking
+  // Auto fullscreen landscape on mobile when player loads
+  useEffect(() => {
+    if (isMobileDevice() && !hasAutoFullscreened.current && containerRef.current && !isLoading) {
+      hasAutoFullscreened.current = true;
+      requestFullscreenLandscape(containerRef.current);
+    }
+  }, [isLoading]);
+
+  // Release orientation lock when unmounted
+  useEffect(() => {
+    return () => {
+      if (hasAutoFullscreened.current) {
+        exitFullscreenAndUnlock();
+      }
+    };
+  }, []);
+
+  // VidRock message listener
   useEffect(() => {
     if (!isVidRockSource(activeSource)) return;
     if (vidRockListenerRef.current) return;
     vidRockListenerRef.current = true;
 
     const handleMessage = (event: MessageEvent) => {
-      // Security: only accept messages from vidrock
       if (!event.origin.includes('vidrock.net')) return;
-
       try {
         const data = event.data;
         if (data?.type === 'MEDIA_DATA' && data.data) {
-          // Store VidRock progress
           localStorage.setItem('vidRockProgress', JSON.stringify(data.data));
-          
-          // Also save to our progress system
           if (data.data.currentTime && data.data.duration) {
             saveProgress({
-              contentId,
-              contentType,
-              season: seasonNumber,
-              episode: episodeNumber,
-              position: data.data.currentTime,
-              duration: data.data.duration,
-              timestamp: Date.now(),
-              source: activeSource,
-              title,
-              poster
+              contentId, contentType, season: seasonNumber, episode: episodeNumber,
+              position: data.data.currentTime, duration: data.data.duration,
+              timestamp: Date.now(), source: activeSource, title, poster
             });
           }
         }
-      } catch (error) {
-        // Ignore parsing errors
+      } catch {
+        // Ignore
       }
     };
 
     window.addEventListener('message', handleMessage);
-
     return () => {
       window.removeEventListener('message', handleMessage);
       vidRockListenerRef.current = false;
     };
   }, [activeSource, contentId, contentType, seasonNumber, episodeNumber, title, poster, saveProgress]);
 
-  // Check streaming permission using both credit system and user tier
+  // Check streaming permission
   useEffect(() => {
     if (userProfile && userUsage && !canStream()) {
       setShowUpgradeModal(true);
     }
   }, [userProfile, userUsage, canStream]);
 
-  // Start watch session only once
+  // Start watch session once
   useEffect(() => {
     if (!hasStartedSession.current && canStream() && userProfile && userId) {
       hasStartedSession.current = true;
@@ -144,35 +145,27 @@ const VideoPlayerWrapper = ({
     }
   }, [contentId, title, userProfile, userId, canStream, startWatchSession]);
 
-  // Handle iframe load
   const handleIframeLoad = useCallback(() => {
     setIsLoading(false);
     setLoadError(false);
   }, []);
 
-  // Handle iframe error
   const handleIframeError = useCallback(() => {
     setIsLoading(false);
     setLoadError(true);
-    setFailedSources(prev => {
-      if (prev.includes(activeSource)) return prev;
-      return [...prev, activeSource];
-    });
+    setFailedSources(prev => prev.includes(activeSource) ? prev : [...prev, activeSource]);
   }, [activeSource]);
 
-  // Auto-fallback to next source on error
+  // Auto-fallback
   useEffect(() => {
     if (!loadError) return;
-
     const allSources = getAvailableSources();
     if (failedSources.length >= allSources.length) {
       toast.error('All sources appear to be blocked. Please try again later.');
       return;
     }
-
     const nextSource = allSources.find(s => !failedSources.includes(s));
     if (!nextSource || nextSource === activeSource) return;
-
     const timer = window.setTimeout(() => {
       toast.warning(`Source ${activeSource} blocked. Switching to Source ${nextSource}.`);
       setIsLoading(true);
@@ -180,24 +173,19 @@ const VideoPlayerWrapper = ({
       setActiveSource(nextSource);
       setSavedSource(nextSource);
     }, 1000);
-
     return () => window.clearTimeout(timer);
   }, [loadError, failedSources, activeSource, setSavedSource]);
 
-  // Source change handler
   const handleSourceChange = useCallback((sourceNum: number) => {
     if (sourceNum === activeSource) return;
-
     setIsLoading(true);
     setLoadError(false);
     setFailedSources([]);
     setActiveSource(sourceNum);
     setSavedSource(sourceNum);
-
     toast.info(`Switched to Source ${sourceNum}`);
   }, [activeSource, setSavedSource]);
 
-  // Retry with next source
   const handleRetry = useCallback(() => {
     const allSources = getAvailableSources();
     const currentIndex = allSources.findIndex(s => s === activeSource);
@@ -205,7 +193,6 @@ const VideoPlayerWrapper = ({
     handleSourceChange(allSources[nextIndex]);
   }, [activeSource, handleSourceChange]);
 
-  // Reset all sources
   const resetSources = useCallback(() => {
     const defaultSource = getDefaultSource(isPremium);
     setFailedSources([]);
@@ -220,16 +207,49 @@ const VideoPlayerWrapper = ({
     setFailedSources([]);
     setLoadError(false);
     setIsLoading(true);
+    hasAutoFullscreened.current = false;
   }, [contentId, seasonNumber, episodeNumber]);
 
-  // Generate iframe key for controlled re-renders
+  const handleFullscreen = useCallback(() => {
+    if (containerRef.current) {
+      requestFullscreenLandscape(containerRef.current);
+    }
+  }, []);
+
+  const handlePiP = useCallback(async () => {
+    // PiP requires a real <video> element; with iframes we attempt via the iframe's video
+    try {
+      const iframe = iframeRef.current;
+      if (!iframe) return;
+      
+      // Try getting video from within iframe (same-origin only)
+      try {
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+        if (iframeDoc) {
+          const video = iframeDoc.querySelector('video');
+          if (video && document.pictureInPictureEnabled) {
+            await video.requestPictureInPicture();
+            return;
+          }
+        }
+      } catch {
+        // Cross-origin — can't access iframe content
+      }
+
+      toast.info('PiP is not available for this source. Try a different source.');
+    } catch {
+      toast.error('Picture-in-Picture failed');
+    }
+  }, []);
+
   const iframeKey = `${contentId}-${seasonNumber ?? 1}-${episodeNumber ?? 1}-${activeSource}`;
+  const showPiP = isPipSupported();
 
   return (
     <div className="space-y-4">
-      {/* Source Selector + Cast + Fullscreen */}
-      <div className="bg-card/50 backdrop-blur-sm rounded-xl border border-border p-3 flex items-center gap-3">
-        <div className="flex-1">
+      {/* Source Selector + Controls */}
+      <div className="bg-card/50 backdrop-blur-sm rounded-xl border border-border p-3 flex items-center gap-3 flex-wrap">
+        <div className="flex-1 min-w-0">
           <SourceSelector
             activeSource={activeSource}
             onSourceChange={handleSourceChange}
@@ -239,23 +259,29 @@ const VideoPlayerWrapper = ({
           />
         </div>
         <CastButton videoUrl={videoSrc} title={title} />
-        {isMobileDevice() && (
+        {showPiP && (
           <Button
             variant="ghost"
             size="sm"
             className="gap-1 text-muted-foreground hover:text-foreground"
-            onClick={() => {
-              const container = document.querySelector('[style*="aspect-ratio"]');
-              if (container) requestFullscreenLandscape(container as HTMLElement);
-            }}
-            title="Fullscreen"
+            onClick={handlePiP}
+            title="Picture-in-Picture"
           >
-            <Maximize className="h-4 w-4" />
+            <PictureInPicture2 className="h-4 w-4" />
           </Button>
         )}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-1 text-muted-foreground hover:text-foreground"
+          onClick={handleFullscreen}
+          title="Fullscreen"
+        >
+          <Maximize className="h-4 w-4" />
+        </Button>
       </div>
 
-      {/* Upgrade modal if user can't stream */}
+      {/* Upgrade modal */}
       {userProfile && userUsage && !canStream() && (
         <UpgradeModal
           isOpen={showUpgradeModal}
@@ -265,9 +291,13 @@ const VideoPlayerWrapper = ({
         />
       )}
 
-      {/* Video player - Modern Container */}
+      {/* Video player */}
       {(!userProfile || canStream()) && (
-        <div className="relative w-full bg-black rounded-xl overflow-hidden shadow-2xl shadow-black/50 ring-1 ring-white/10" style={{ aspectRatio: '16/9' }}>
+        <div
+          ref={containerRef}
+          className="relative w-full bg-black rounded-xl overflow-hidden shadow-2xl shadow-black/50 ring-1 ring-white/10"
+          style={{ aspectRatio: '16/9' }}
+        >
           {/* Loading Overlay */}
           {isLoading && (
             <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-black via-black/95 to-black z-10">
@@ -307,7 +337,6 @@ const VideoPlayerWrapper = ({
               </div>
             </div>
           ) : (
-            /* Video Iframe */
             <iframe
               ref={iframeRef}
               key={iframeKey}

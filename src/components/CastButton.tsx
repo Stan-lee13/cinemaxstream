@@ -1,12 +1,12 @@
 /**
  * Cast to TV Button Component
  * Supports Google Cast (Chromecast) and AirPlay
- * Only shows when cast-capable devices are available
+ * Includes retry discovery loop and debug status
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from './ui/button';
-import { Cast, Monitor, X } from 'lucide-react';
+import { Cast, Monitor, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface CastButtonProps {
@@ -26,35 +26,77 @@ type ChromeCastWindow = Window & {
   PresentationRequest?: PresentationRequestLike;
 };
 
+const MAX_DISCOVERY_RETRIES = 3;
+const RETRY_INTERVAL_MS = 2000;
+
 const CastButton = ({ videoUrl, title, className }: CastButtonProps) => {
   const [isCasting, setIsCasting] = useState(false);
   const [castAvailable, setCastAvailable] = useState(false);
   const [deviceName, setDeviceName] = useState<string>('');
+  const [discoveryState, setDiscoveryState] = useState<'idle' | 'discovering' | 'ready' | 'failed'>('idle');
 
-
-  // Check for Cast availability
+  // Discovery with retry loop
   useEffect(() => {
-    const browserWindow = window as ChromeCastWindow;
+    let retryCount = 0;
+    let retryTimer: ReturnType<typeof setTimeout>;
+    let cancelled = false;
 
-    // Check for AirPlay support (Safari)
-    if ('WebKitPlaybackTargetAvailabilityEvent' in window) {
-      setCastAvailable(true);
-    }
+    const attemptDiscovery = () => {
+      if (cancelled) return;
+      setDiscoveryState('discovering');
 
-    // Check for Chrome Cast API
-    if (browserWindow.chrome?.cast) {
-      setCastAvailable(true);
-    }
+      const browserWindow = window as ChromeCastWindow;
+      let found = false;
 
-    // For browsers with Remote Playback API
-    if ('RemotePlayback' in window) {
-      setCastAvailable(true);
-    }
+      // Check AirPlay (Safari)
+      if ('WebKitPlaybackTargetAvailabilityEvent' in window) {
+        found = true;
+      }
+
+      // Check Chrome Cast API
+      if (browserWindow.chrome?.cast) {
+        found = true;
+      }
+
+      // Check Remote Playback API
+      if ('RemotePlayback' in window) {
+        found = true;
+      }
+
+      if (found) {
+        setCastAvailable(true);
+        setDiscoveryState('ready');
+        return;
+      }
+
+      retryCount++;
+      if (retryCount < MAX_DISCOVERY_RETRIES) {
+        retryTimer = setTimeout(attemptDiscovery, RETRY_INTERVAL_MS);
+      } else {
+        setDiscoveryState('failed');
+        setCastAvailable(false);
+      }
+    };
+
+    // Wait for network + page load before starting discovery
+    const startAfterReady = () => {
+      if (document.readyState === 'complete') {
+        attemptDiscovery();
+      } else {
+        window.addEventListener('load', attemptDiscovery, { once: true });
+      }
+    };
+
+    startAfterReady();
+
+    return () => {
+      cancelled = true;
+      clearTimeout(retryTimer);
+    };
   }, []);
 
   const handleCast = useCallback(async () => {
     if (isCasting) {
-      // Disconnect
       setIsCasting(false);
       setDeviceName('');
       toast.info('Disconnected from cast device');
@@ -106,7 +148,6 @@ const CastButton = ({ videoUrl, title, className }: CastButtonProps) => {
         }
       }
 
-      // No cast method worked
       toast.error('No cast devices found. Make sure your device is on the same network.');
     } catch (error) {
       console.error('Cast error:', error);
@@ -114,7 +155,18 @@ const CastButton = ({ videoUrl, title, className }: CastButtonProps) => {
     }
   }, [isCasting, videoUrl]);
 
-  // Don't show button if casting is not available at all
+  // Don't show until discovery completes
+  if (discoveryState === 'idle' || discoveryState === 'discovering') {
+    return (
+      <div className={className}>
+        <Button variant="ghost" size="sm" disabled className="gap-2 text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span className="text-xs hidden sm:inline">Scanning...</span>
+        </Button>
+      </div>
+    );
+  }
+
   if (!castAvailable) {
     return null;
   }
