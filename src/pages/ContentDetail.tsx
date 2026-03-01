@@ -107,9 +107,6 @@ const ContentDetail = () => {
     }
   }, [isPlaying, setIsPlaying, navigate]);
 
-  const handleSkipPlayback = useCallback((seconds: number) => {
-    // Skip functionality implementation would go here
-  }, []);
 
   useEffect(() => {
     if (seasons.length > 0) {
@@ -233,7 +230,7 @@ const ContentDetail = () => {
               contentTitle={content.title || ''}
               contentType={content.content_type || 'movie'}
               onRequestEpisode={handleEpisodeSelect}
-              onRequestSkip={handleSkipPlayback}
+              onRequestSkip={() => {}}
             />
           </div>
         ) : (

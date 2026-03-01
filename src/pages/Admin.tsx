@@ -267,12 +267,10 @@ const Admin = () => {
           blocked_by: user?.id,
           reason: 'Blocked by admin'
         });
-        await supabase.from('user_roles').delete().eq('user_id', userId).eq('role', 'premium');
-        await supabase.from('user_profiles').update({
-          subscription_tier: 'free',
-          role: 'free',
-          subscription_expires_at: null
-        }).eq('id', userId);
+        // Use edge function for profile downgrade (needs service role key for RLS)
+        await supabase.functions.invoke('upgrade-user-subscription', {
+          body: { userId, tier: 'free', expiresAt: null }
+        });
         toast.success("User blocked");
       }
       fetchData();

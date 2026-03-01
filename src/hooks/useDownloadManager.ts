@@ -129,7 +129,7 @@ export const useDownloadManager = () => {
         });
       }
 
-      const blob = new Blob(chunks, { type: mimeType });
+      const blob = new Blob(chunks as BlobPart[], { type: mimeType });
       const cached = await mediaCache.cacheMedia(cacheKey, blob, { maxAge: 1000 * 60 * 60 * 24 * 30, maxSize: 1024, priority: 'high' });
 
       if (!cached) throw new Error('Failed to persist file to offline cache');
