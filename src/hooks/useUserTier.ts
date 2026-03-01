@@ -84,15 +84,11 @@ export const useUserTier = (userId?: string) => {
         userTier = 'premium';
       }
 
-      // Check if subscription has expired
+      // Check if subscription has expired (local state only — server handles DB cleanup)
       if (userTier === 'premium' && profile?.subscription_expires_at) {
         const expiryDate = new Date(profile.subscription_expires_at);
         if (expiryDate < new Date()) {
           userTier = 'free';
-          await supabase
-            .from('user_profiles')
-            .update({ role: 'free', subscription_tier: 'free', subscription_expires_at: null })
-            .eq('id', userId);
         }
       }
 

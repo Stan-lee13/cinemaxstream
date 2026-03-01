@@ -81,9 +81,10 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
       return;
     }
 
+    let trackingRowId: string | null = null;
     try {
-      // 1. Record download in database FIRST
-      const { error: dbError } = await supabase
+      // 1. Record download in database FIRST and capture the row id
+      const { data: insertedRow, error: dbError } = await supabase
         .from('download_requests')
         .insert({
           user_id: user.id,
@@ -95,11 +96,14 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
           download_url: downloadUrl,
           quality: 'HD',
           status: 'pending'
-        });
+        })
+        .select('id')
+        .single();
 
       if (dbError) {
         console.error('Download tracking error:', dbError);
-        // Still allow download even if tracking fails
+      } else {
+        trackingRowId = insertedRow?.id ?? null;
       }
 
       // 2. Download into offline cache (internal download manager)
@@ -113,17 +117,16 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
       });
 
       // 3. Mark DB record completed with actual size metadata
-      await supabase
-        .from('download_requests')
-        .update({
-          status: 'completed',
-          file_size: completed.fileSizeLabel,
-          completed_at: new Date().toISOString()
-        })
-        .eq('user_id', user.id)
-        .eq('content_title', contentTitle)
-        .eq('content_type', contentType)
-        .is('completed_at', null);
+      if (trackingRowId) {
+        await supabase
+          .from('download_requests')
+          .update({
+            status: 'completed',
+            file_size: completed.fileSizeLabel,
+            completed_at: new Date().toISOString()
+          })
+          .eq('id', trackingRowId);
+      }
 
       // 4. Deduct credit only after successful persistence
       await deductDownloadCredit();
@@ -135,13 +138,12 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
       console.error('Download error:', error);
       const message = error instanceof Error ? error.message : 'Download failed. Please try again.';
 
-      await supabase
-        .from('download_requests')
-        .update({ status: 'failed', error_message: message })
-        .eq('user_id', user.id)
-        .eq('content_title', contentTitle)
-        .eq('content_type', contentType)
-        .is('completed_at', null);
+      if (trackingRowId) {
+        await supabase
+          .from('download_requests')
+          .update({ status: 'failed', error_message: message })
+          .eq('id', trackingRowId);
+      }
 
       setDownloadResult({ success: false, error: message });
     } finally {

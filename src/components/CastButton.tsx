@@ -30,7 +30,7 @@ const CastButton = ({ videoUrl, title, className }: CastButtonProps) => {
   const [isCasting, setIsCasting] = useState(false);
   const [castAvailable, setCastAvailable] = useState(false);
   const [deviceName, setDeviceName] = useState<string>('');
-  const airplayRef = useRef<HTMLVideoElement | null>(null);
+
 
   // Check for Cast availability
   useEffect(() => {
@@ -114,10 +114,8 @@ const CastButton = ({ videoUrl, title, className }: CastButtonProps) => {
     }
   }, [isCasting, videoUrl]);
 
-  const browserWindow = window as ChromeCastWindow;
-
   // Don't show button if casting is not available at all
-  if (!castAvailable && typeof browserWindow.PresentationRequest !== 'function' && !('RemotePlayback' in window)) {
+  if (!castAvailable) {
     return null;
   }
 
