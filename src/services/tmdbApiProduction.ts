@@ -482,8 +482,10 @@ const getTvShowSeasons = async (id: string): Promise<Season[]> => {
     }
 
     const seasonsArr = ensureArray(data.seasons) as TMDbSeason[];
-    // Filter out specials (season 0)
-    const filteredSeasons = seasonsArr.filter((s) => (s.season_number && s.season_number > 0));
+    // Filter out specials (season 0) AND seasons with no episodes
+    const filteredSeasons = seasonsArr.filter((s) => 
+      s.season_number != null && s.season_number > 0 && (s.episode_count == null || s.episode_count > 0)
+    );
 
     // Format seasons
     return filteredSeasons.map((s) => ({

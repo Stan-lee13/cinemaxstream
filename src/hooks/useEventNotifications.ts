@@ -1,14 +1,17 @@
 /**
- * Event-driven notification system
+ * Event-driven notification system with DB persistence
  * Triggers notifications based on real app events:
  * - Monthly/Yearly Wrap availability
  * - Promo code success
  * - Download complete
  * - Account/security changes
+ * 
+ * Falls back to localStorage for unauthenticated users.
  */
 
-import { useCallback } from 'react';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { useCallback, useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface AppNotification {
   id: string;
@@ -18,36 +21,112 @@ export interface AppNotification {
   route?: string;
   isRead: boolean;
   type: 'wrap' | 'promo' | 'download' | 'account' | 'content' | 'system';
-  icon?: string;
 }
 
-const NOTIFICATIONS_KEY = 'app_event_notifications';
+const LOCAL_KEY = 'app_event_notifications';
 
 export function useEventNotifications() {
-  const [notifications, setNotifications] = useLocalStorage<AppNotification[]>(NOTIFICATIONS_KEY, []);
+  const { user } = useAuth();
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [loaded, setLoaded] = useState(false);
 
-  const addNotification = useCallback((notif: Omit<AppNotification, 'id' | 'date' | 'isRead'>) => {
+  // Load notifications from DB or localStorage
+  useEffect(() => {
+    const load = async () => {
+      if (user) {
+        const { data } = await supabase
+          .from('user_notifications')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(50);
+
+        if (data) {
+          setNotifications(data.map(n => ({
+            id: n.id,
+            title: n.title,
+            message: n.message,
+            date: n.created_at,
+            route: n.route ?? undefined,
+            isRead: n.is_read,
+            type: n.type as AppNotification['type'],
+          })));
+        }
+      } else {
+        try {
+          const raw = localStorage.getItem(LOCAL_KEY);
+          if (raw) setNotifications(JSON.parse(raw));
+        } catch {
+          // ignore
+        }
+      }
+      setLoaded(true);
+    };
+    load();
+  }, [user]);
+
+  // Sync to localStorage for non-auth fallback
+  useEffect(() => {
+    if (!user && loaded) {
+      localStorage.setItem(LOCAL_KEY, JSON.stringify(notifications));
+    }
+  }, [notifications, user, loaded]);
+
+  const addNotification = useCallback(async (notif: Omit<AppNotification, 'id' | 'date' | 'isRead'>) => {
+    const tempId = `notif-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const newNotif: AppNotification = {
       ...notif,
-      id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      id: tempId,
       date: new Date().toISOString(),
       isRead: false,
     };
+
+    // Optimistically add to state
     setNotifications(prev => [newNotif, ...prev].slice(0, 50));
+
+    // Persist to DB if authenticated
+    if (user) {
+      const { data } = await supabase
+        .from('user_notifications')
+        .insert({
+          user_id: user.id,
+          title: notif.title,
+          message: notif.message,
+          type: notif.type,
+          route: notif.route ?? null,
+        })
+        .select('id')
+        .single();
+
+      if (data) {
+        // Update the temp id with the real one
+        setNotifications(prev => prev.map(n => n.id === tempId ? { ...n, id: data.id } : n));
+      }
+    }
+
     return newNotif;
-  }, [setNotifications]);
+  }, [user]);
 
-  const markAsRead = useCallback((id: string) => {
+  const markAsRead = useCallback(async (id: string) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
-  }, [setNotifications]);
+    if (user) {
+      await supabase.from('user_notifications').update({ is_read: true }).eq('id', id);
+    }
+  }, [user]);
 
-  const markAllAsRead = useCallback(() => {
+  const markAllAsRead = useCallback(async () => {
     setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-  }, [setNotifications]);
+    if (user) {
+      await supabase.from('user_notifications').update({ is_read: true }).eq('user_id', user.id).eq('is_read', false);
+    }
+  }, [user]);
 
-  const clearAll = useCallback(() => {
+  const clearAll = useCallback(async () => {
     setNotifications([]);
-  }, [setNotifications]);
+    if (user) {
+      await supabase.from('user_notifications').delete().eq('user_id', user.id);
+    }
+  }, [user]);
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
@@ -103,8 +182,7 @@ export function useEventNotifications() {
     const now = new Date();
     const today = now.getDate();
     const month = now.getMonth();
-    const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000);
-    
+
     const lastMonthlyTrigger = localStorage.getItem('last_monthly_wrap_trigger');
     const lastYearlyTrigger = localStorage.getItem('last_yearly_wrap_trigger');
     const currentMonthKey = `${now.getFullYear()}-${month}`;
