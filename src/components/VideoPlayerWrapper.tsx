@@ -2,7 +2,7 @@
  * Modern Video Player Wrapper Component
  * Clean, minimal UI with smooth transitions
  * Uses obfuscated source labels for provider protection
- * Includes: mobile fullscreen landscape, PiP support, cast
+ * Includes: mobile fullscreen landscape, PiP support, cast, 10s timeout
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import UpgradeModal from "./UpgradeModal";
 import SourceSelector from "./SourceSelector";
 import CastButton from "./CastButton";
-import { AlertCircle, RefreshCw, PictureInPicture2, Maximize } from "lucide-react";
+import { AlertCircle, RefreshCw, PictureInPicture2, Maximize, Loader2 } from "lucide-react";
 import { Button } from "./ui/button";
 import { requestFullscreenLandscape, exitFullscreenAndUnlock, isPipSupported, isMobileDevice } from "@/utils/playerUtils";
 import {
@@ -24,6 +24,7 @@ import {
   getDefaultSource,
   isVidRockSource
 } from "@/utils/providers/providerUtils";
+import { Skeleton } from "./ui/skeleton";
 
 interface VideoPlayerWrapperProps {
   contentId: string;
@@ -37,6 +38,8 @@ interface VideoPlayerWrapperProps {
   poster?: string;
   title?: string;
 }
+
+const LOAD_TIMEOUT_MS = 10_000;
 
 const VideoPlayerWrapper = ({
   contentId,
@@ -62,24 +65,58 @@ const VideoPlayerWrapper = ({
   const [loadError, setLoadError] = useState<boolean>(false);
   const [failedSources, setFailedSources] = useState<number[]>([]);
   const [showUpgradeModal, setShowUpgradeModal] = useState<boolean>(false);
+  const [retryWithServer2, setRetryWithServer2] = useState(false);
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const hasStartedSession = useRef<boolean>(false);
   const vidRockListenerRef = useRef<boolean>(false);
   const hasAutoFullscreened = useRef<boolean>(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { startWatchSession } = useWatchTracking();
   const { saveProgress } = useVideoProgress();
 
   const videoSrc = useMemo(() => {
-    return getStreamingUrlForSource(contentId, activeSource, {
+    const baseUrl = getStreamingUrlForSource(contentId, activeSource, {
       contentType,
       autoplay: autoPlay,
       season: typeof seasonNumber === 'number' && !isNaN(seasonNumber) ? seasonNumber : undefined,
       episodeNum: typeof episodeNumber === 'number' && !isNaN(episodeNumber) ? episodeNumber : undefined,
     });
-  }, [contentId, contentType, activeSource, seasonNumber, episodeNumber, autoPlay]);
+    // If first load timed out, retry with ?server=2
+    if (retryWithServer2 && activeSource === 1) {
+      return baseUrl + (baseUrl.includes('?') ? '&' : '?') + 'server=2';
+    }
+    return baseUrl;
+  }, [contentId, contentType, activeSource, seasonNumber, episodeNumber, autoPlay, retryWithServer2]);
+
+  // 10-second timeout detection
+  useEffect(() => {
+    if (!isLoading) {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      return;
+    }
+
+    timeoutRef.current = setTimeout(() => {
+      if (isLoading) {
+        // If Source 1 (AutoEmbed) and haven't tried server=2 yet
+        if (activeSource === 1 && !retryWithServer2) {
+          setRetryWithServer2(true);
+          setIsLoading(true);
+          toast.info('Retrying with alternate server...');
+        } else {
+          setIsLoading(false);
+          setLoadError(true);
+          setFailedSources(prev => prev.includes(activeSource) ? prev : [...prev, activeSource]);
+        }
+      }
+    }, LOAD_TIMEOUT_MS);
+
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, [isLoading, activeSource, retryWithServer2]);
 
   // Auto fullscreen landscape on mobile when player loads
   useEffect(() => {
@@ -161,15 +198,15 @@ const VideoPlayerWrapper = ({
     if (!loadError) return;
     const allSources = getAvailableSources();
     if (failedSources.length >= allSources.length) {
-      toast.error('All sources appear to be blocked. Please try again later.');
-      return;
+      return; // All failed — show fallback UI
     }
     const nextSource = allSources.find(s => !failedSources.includes(s));
     if (!nextSource || nextSource === activeSource) return;
     const timer = window.setTimeout(() => {
-      toast.warning(`Source ${activeSource} blocked. Switching to Source ${nextSource}.`);
+      toast.warning(`Source ${activeSource} unavailable. Switching to Source ${nextSource}.`);
       setIsLoading(true);
       setLoadError(false);
+      setRetryWithServer2(false);
       setActiveSource(nextSource);
       setSavedSource(nextSource);
     }, 1000);
@@ -181,6 +218,7 @@ const VideoPlayerWrapper = ({
     setIsLoading(true);
     setLoadError(false);
     setFailedSources([]);
+    setRetryWithServer2(false);
     setActiveSource(sourceNum);
     setSavedSource(sourceNum);
     toast.info(`Switched to Source ${sourceNum}`);
@@ -198,6 +236,7 @@ const VideoPlayerWrapper = ({
     setFailedSources([]);
     setLoadError(false);
     setIsLoading(true);
+    setRetryWithServer2(false);
     setActiveSource(defaultSource);
     setSavedSource(defaultSource);
   }, [isPremium, setSavedSource]);
@@ -207,6 +246,7 @@ const VideoPlayerWrapper = ({
     setFailedSources([]);
     setLoadError(false);
     setIsLoading(true);
+    setRetryWithServer2(false);
     hasAutoFullscreened.current = false;
   }, [contentId, seasonNumber, episodeNumber]);
 
@@ -217,12 +257,9 @@ const VideoPlayerWrapper = ({
   }, []);
 
   const handlePiP = useCallback(async () => {
-    // PiP requires a real <video> element; with iframes we attempt via the iframe's video
     try {
       const iframe = iframeRef.current;
       if (!iframe) return;
-      
-      // Try getting video from within iframe (same-origin only)
       try {
         const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
         if (iframeDoc) {
@@ -233,17 +270,17 @@ const VideoPlayerWrapper = ({
           }
         }
       } catch {
-        // Cross-origin — can't access iframe content
+        // Cross-origin
       }
-
       toast.info('PiP is not available for this source. Try a different source.');
     } catch {
       toast.error('Picture-in-Picture failed');
     }
   }, []);
 
-  const iframeKey = `${contentId}-${seasonNumber ?? 1}-${episodeNumber ?? 1}-${activeSource}`;
+  const iframeKey = `${contentId}-${seasonNumber ?? 1}-${episodeNumber ?? 1}-${activeSource}-${retryWithServer2}`;
   const showPiP = isPipSupported();
+  const allSourcesFailed = failedSources.length >= getAvailableSources().length;
 
   return (
     <div className="space-y-4">
@@ -298,25 +335,42 @@ const VideoPlayerWrapper = ({
           className="relative w-full bg-black rounded-xl overflow-hidden shadow-2xl shadow-black/50 ring-1 ring-white/10"
           style={{ aspectRatio: '16/9' }}
         >
-          {/* Loading Overlay */}
+          {/* Loading Skeleton */}
           {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-black via-black/95 to-black z-10">
-              <div className="flex flex-col items-center gap-4">
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black">
+              <Skeleton className="absolute inset-0 bg-muted/20" />
+              <div className="relative flex flex-col items-center gap-4 z-20">
                 <div className="relative">
                   <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl animate-pulse" />
-                  <div className="relative w-16 h-16 rounded-full border-4 border-primary/30 border-t-primary animate-spin" />
+                  <Loader2 className="relative w-12 h-12 text-primary animate-spin" />
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-medium text-foreground">Loading video...</p>
-                  <p className="text-xs text-muted-foreground mt-1">Source {activeSource}</p>
+                  <p className="text-sm font-medium text-foreground">Loading stream...</p>
+                  <p className="text-xs text-muted-foreground mt-1">Source {activeSource}{retryWithServer2 ? ' (alt server)' : ''}</p>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Error State */}
-          {loadError ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-black via-black/95 to-black z-10 gap-6 p-6 text-center">
+          {/* All sources failed — clean fallback */}
+          {allSourcesFailed ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black z-10 gap-6 p-6 text-center">
+              <div className="w-20 h-20 rounded-full bg-destructive/10 flex items-center justify-center">
+                <AlertCircle className="h-10 w-10 text-destructive" />
+              </div>
+              <div>
+                <p className="text-lg font-semibold text-foreground mb-2">Streaming Temporarily Unavailable</p>
+                <p className="text-sm text-muted-foreground max-w-xs">
+                  All sources are currently down. Please try again later.
+                </p>
+              </div>
+              <Button onClick={resetSources} className="gap-2 h-11">
+                <RefreshCw className="h-4 w-4" />
+                Try Again
+              </Button>
+            </div>
+          ) : loadError ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black z-10 gap-6 p-6 text-center">
               <div className="w-20 h-20 rounded-full bg-destructive/10 flex items-center justify-center">
                 <AlertCircle className="h-10 w-10 text-destructive" />
               </div>

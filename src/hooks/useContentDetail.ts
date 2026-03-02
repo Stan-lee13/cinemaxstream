@@ -388,22 +388,20 @@ export const useContentDetail = (contentId: string | undefined, contentTypeHint?
   const loadEpisodesForSeason = async (seasonNumber: number) => {
     if (!contentId) return;
 
+    // Use tmdbId when available (for DB content where contentId is a UUID)
+    const idForApi = tmdbId || contentId;
+
     try {
-      const episodes = await tmdbApi.getTvShowEpisodes(contentId, seasonNumber);
+      const episodes = await tmdbApi.getTvShowEpisodes(idForApi, seasonNumber);
       if (episodes && episodes.length > 0) {
-        // Update the episodes of the selected season
         setSeasons(prev => prev.map(season => {
           if (season.season_number === seasonNumber) {
-            return {
-              ...season,
-              episodes: episodes
-            };
+            return { ...season, episodes };
           }
           return season;
         }));
       }
     } catch (error) {
-      // Error loading episodes - keeping existing episodes
       // Keep existing episodes if error
     }
   };

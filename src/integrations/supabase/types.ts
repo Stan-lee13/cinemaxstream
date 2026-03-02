@@ -607,6 +607,75 @@ export type Database = {
           },
         ]
       }
+      user_wraps: {
+        Row: {
+          active_days: number | null
+          binge_streak: number | null
+          completion_rate: number | null
+          downloads_count: number | null
+          favorites_count: number | null
+          generated_at: string
+          id: string
+          longest_binge_session: number | null
+          month: number
+          monthly_trend: Json | null
+          most_active_day: string | null
+          personality_comment: string | null
+          personality_title: string | null
+          top_genre: string | null
+          top_titles: Json | null
+          total_minutes: number
+          total_titles: number
+          user_id: string
+          wrap_type: string
+          year: number
+        }
+        Insert: {
+          active_days?: number | null
+          binge_streak?: number | null
+          completion_rate?: number | null
+          downloads_count?: number | null
+          favorites_count?: number | null
+          generated_at?: string
+          id?: string
+          longest_binge_session?: number | null
+          month: number
+          monthly_trend?: Json | null
+          most_active_day?: string | null
+          personality_comment?: string | null
+          personality_title?: string | null
+          top_genre?: string | null
+          top_titles?: Json | null
+          total_minutes?: number
+          total_titles?: number
+          user_id: string
+          wrap_type?: string
+          year: number
+        }
+        Update: {
+          active_days?: number | null
+          binge_streak?: number | null
+          completion_rate?: number | null
+          downloads_count?: number | null
+          favorites_count?: number | null
+          generated_at?: string
+          id?: string
+          longest_binge_session?: number | null
+          month?: number
+          monthly_trend?: Json | null
+          most_active_day?: string | null
+          personality_comment?: string | null
+          personality_title?: string | null
+          top_genre?: string | null
+          top_titles?: Json | null
+          total_minutes?: number
+          total_titles?: number
+          user_id?: string
+          wrap_type?: string
+          year?: number
+        }
+        Relationships: []
+      }
       watch_sessions: {
         Row: {
           content_duration: number | null

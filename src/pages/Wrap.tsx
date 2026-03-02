@@ -1,84 +1,333 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
-import BackButton from '@/components/BackButton';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Play, Clock, Film, Tv, Download, Heart, Calendar,
-  TrendingUp, Award, BarChart3, Star, Flame, Zap
+  Play, Clock, Download as DownloadIcon, Calendar,
+  Award, Star, Flame, Zap, ChevronLeft, ChevronRight,
+  Share2, Download, Heart
 } from 'lucide-react';
 import LoadingState from '@/components/LoadingState';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 
+// ── Types ──────────────────────────────────────────────
 interface WrapData {
-  titlesWatched: number;
-  totalWatchTimeMinutes: number;
+  totalMinutes: number;
+  totalTitles: number;
+  topGenre: string;
+  topTitles: { title: string; count: number; minutes: number }[];
+  longestBingeSession: number;
+  mostActiveDay: string;
+  bingeStreak: number;
+  completionRate: number;
+  personalityTitle: string;
+  personalityComment: string;
   downloadsCount: number;
   favoritesCount: number;
   activeDays: number;
-  topContentType: string;
-  mostWatchedTitle: string;
-  topTitles: { title: string; count: number; minutes: number }[];
   monthlyTrend: { month: string; count: number }[];
-  completionRate: number;
-  bingeStreak: number;
-  personalityTitle: string;
-  personalityComment: string;
 }
 
 const emptyWrap: WrapData = {
-  titlesWatched: 0,
-  totalWatchTimeMinutes: 0,
-  downloadsCount: 0,
-  favoritesCount: 0,
-  activeDays: 0,
-  topContentType: 'N/A',
-  mostWatchedTitle: 'N/A',
-  topTitles: [],
-  monthlyTrend: [],
-  completionRate: 0,
-  bingeStreak: 0,
-  personalityTitle: '',
-  personalityComment: '',
+  totalMinutes: 0, totalTitles: 0, topGenre: 'N/A',
+  topTitles: [], longestBingeSession: 0, mostActiveDay: 'N/A',
+  bingeStreak: 0, completionRate: 0, personalityTitle: '',
+  personalityComment: '', downloadsCount: 0, favoritesCount: 0,
+  activeDays: 0, monthlyTrend: [],
 };
 
-// Personality engine — generates dynamic titles + commentary
+// ── Personality Engine ─────────────────────────────────
 function computePersonality(data: {
-  totalMinutes: number;
-  activeDays: number;
-  completionRate: number;
-  bingeStreak: number;
-  topContentType: string;
-  titlesWatched: number;
-}): { title: string; comment: string } {
-  const { totalMinutes, activeDays, completionRate, bingeStreak, topContentType, titlesWatched } = data;
+  totalMinutes: number; activeDays: number; completionRate: number;
+  bingeStreak: number; topGenre: string; titlesWatched: number;
+}): { title: string; comment: string; emoji: string } {
+  const { totalMinutes, activeDays, completionRate, bingeStreak, topGenre, titlesWatched } = data;
 
-  // Priority rules
-  if (bingeStreak >= 5) return { title: '🔥 Binge Machine', comment: `${bingeStreak} days in a row — no one can stop you.` };
-  if (completionRate >= 80) return { title: '🏁 The Finisher', comment: "You don't start stories — you finish them." };
-  if (totalMinutes > 3000) return { title: '🎬 Cinema Addict', comment: `${Math.round(totalMinutes / 60)} hours watched. That's dedication.` };
-  if (activeDays >= 20) return { title: '📅 Daily Watcher', comment: 'You showed up almost every day this period.' };
+  if (bingeStreak >= 5) return { emoji: '🔥', title: 'Binge Machine', comment: `${bingeStreak} days in a row — no one can stop you.` };
+  if (completionRate >= 80) return { emoji: '🏁', title: 'The Finisher', comment: "You don't start stories — you finish them." };
+  if (totalMinutes > 3000) return { emoji: '🎬', title: 'Cinema Addict', comment: `${Math.round(totalMinutes / 60)} hours watched. That's dedication.` };
+  if (activeDays >= 20) return { emoji: '📅', title: 'Daily Watcher', comment: 'You showed up almost every day this period.' };
 
-  // Genre-based
-  const type = topContentType.toLowerCase();
-  if (type.includes('anime')) return { title: '⚔️ Anime Sensei', comment: 'Your anime knowledge is over 9000.' };
-  if (type.includes('horror')) return { title: '👻 Horror Hound', comment: 'You face your fears — one movie at a time.' };
-  if (type.includes('action')) return { title: '💥 Adrenaline Junkie', comment: 'Explosions, chases, fights — your comfort zone.' };
-  if (type.includes('comedy')) return { title: '😂 Comedy King', comment: 'Laughter is the best medicine, and you\'re stocked up.' };
-  if (type.includes('drama')) return { title: '🎭 Drama Enthusiast', comment: 'You live for the emotional rollercoaster.' };
-  if (type.includes('documentary')) return { title: '🧠 Knowledge Seeker', comment: 'You watch to learn. Respect.' };
+  const g = topGenre.toLowerCase();
+  if (g.includes('anime')) return { emoji: '⚔️', title: 'Anime Sensei', comment: 'Your anime knowledge is over 9000.' };
+  if (g.includes('horror')) return { emoji: '👻', title: 'Horror Hound', comment: 'You face your fears — one movie at a time.' };
+  if (g.includes('action')) return { emoji: '💥', title: 'Adrenaline Junkie', comment: 'Explosions, chases, fights — your comfort zone.' };
+  if (g.includes('comedy')) return { emoji: '😂', title: 'Comedy Commander', comment: "Laughter is the best medicine, and you're stocked up." };
+  if (g.includes('thriller')) return { emoji: '🕵️', title: 'Thriller Strategist', comment: 'You live for the plot twist.' };
+  if (g.includes('drama')) return { emoji: '🎭', title: 'Drama Architect', comment: 'You live for the emotional rollercoaster.' };
+  if (g.includes('documentary')) return { emoji: '🧠', title: 'Knowledge Seeker', comment: 'You watch to learn. Respect.' };
 
-  if (titlesWatched >= 10) return { title: '🌟 Explorer', comment: 'You watch a bit of everything. Eclectic taste.' };
-  if (titlesWatched > 0) return { title: '🍿 Casual Viewer', comment: 'Quality over quantity. We get it.' };
-
-  return { title: '👋 New Here', comment: 'Start watching to unlock your personality!' };
+  if (titlesWatched >= 10) return { emoji: '🌟', title: 'Explorer', comment: 'You watch a bit of everything. Eclectic taste.' };
+  if (titlesWatched > 0) return { emoji: '🍿', title: 'Casual Viewer', comment: 'Quality over quantity. We get it.' };
+  return { emoji: '👋', title: 'New Here', comment: 'Start watching to unlock your personality!' };
 }
+
+// ── Data processing ────────────────────────────────────
+function processWrapData(
+  sessions: any[], downloads: any[], favorites: any[]
+): WrapData {
+  const s = sessions || [];
+  const totalSeconds = s.reduce((sum: number, sess: any) => sum + (sess.total_watched_time || 0), 0);
+  const totalMinutes = Math.round(totalSeconds / 60);
+
+  const titleData: Record<string, { count: number; minutes: number }> = {};
+  s.forEach((sess: any) => {
+    const t = sess.content_title || `Content ${sess.content_id}`;
+    if (!titleData[t]) titleData[t] = { count: 0, minutes: 0 };
+    titleData[t].count += 1;
+    titleData[t].minutes += Math.round((sess.total_watched_time || 0) / 60);
+  });
+  const sorted = Object.entries(titleData).sort((a, b) => b[1].minutes - a[1].minutes);
+
+  const daySet = new Set(s.map((sess: any) => sess.created_at?.split('T')[0]).filter(Boolean));
+  const activeDays = daySet.size;
+
+  // Binge streak
+  const sortedDays = [...daySet].sort();
+  let maxStreak = sortedDays.length >= 1 ? 1 : 0;
+  let currentStreak = 1;
+  for (let i = 1; i < sortedDays.length; i++) {
+    const diff = (new Date(sortedDays[i]).getTime() - new Date(sortedDays[i - 1]).getTime()) / 86400000;
+    if (diff === 1) { currentStreak++; maxStreak = Math.max(maxStreak, currentStreak); }
+    else currentStreak = 1;
+  }
+
+  // Most active day
+  const dayCounts: Record<string, number> = {};
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  s.forEach((sess: any) => {
+    const d = new Date(sess.created_at || '');
+    const name = dayNames[d.getDay()];
+    dayCounts[name] = (dayCounts[name] || 0) + 1;
+  });
+  const mostActiveDay = Object.entries(dayCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
+
+  // Longest single session
+  const longestBingeSession = Math.round(Math.max(0, ...s.map((sess: any) => sess.total_watched_time || 0)) / 60);
+
+  // Completion rate
+  const withDuration = s.filter((sess: any) => sess.content_duration && sess.content_duration > 0);
+  const completed = withDuration.filter((sess: any) => ((sess.total_watched_time || 0) / (sess.content_duration || 1)) >= 0.7);
+  const completionRate = withDuration.length > 0 ? Math.round((completed.length / withDuration.length) * 100) : 0;
+
+  const topGenre = s.length > 0 ? 'Movies' : 'N/A';
+
+  const personality = computePersonality({
+    totalMinutes, activeDays, completionRate,
+    bingeStreak: maxStreak, topGenre, titlesWatched: Object.keys(titleData).length,
+  });
+
+  return {
+    totalMinutes, totalTitles: Object.keys(titleData).length,
+    topGenre, downloadsCount: (downloads || []).length,
+    favoritesCount: (favorites || []).length, activeDays,
+    topTitles: sorted.slice(0, 5).map(([t, d]) => ({ title: t, count: d.count, minutes: d.minutes })),
+    longestBingeSession, mostActiveDay, bingeStreak: maxStreak,
+    completionRate, personalityTitle: `${personality.emoji} ${personality.title}`,
+    personalityComment: personality.comment, monthlyTrend: [],
+  };
+}
+
+// ── Animated counter ───────────────────────────────────
+function AnimatedCounter({ value, duration = 1.5 }: { value: number; duration?: number }) {
+  const [display, setDisplay] = useState(0);
+  const ref = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (value === 0) { setDisplay(0); return; }
+    const start = performance.now();
+    const animate = (now: number) => {
+      const elapsed = (now - start) / 1000;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplay(Math.round(eased * value));
+      if (progress < 1) ref.current = requestAnimationFrame(animate);
+    };
+    ref.current = requestAnimationFrame(animate);
+    return () => { if (ref.current) cancelAnimationFrame(ref.current); };
+  }, [value, duration]);
+
+  return <span>{display.toLocaleString()}</span>;
+}
+
+// ── Slide components ───────────────────────────────────
+const slideTransition = {
+  initial: { opacity: 0, x: 60 },
+  animate: { opacity: 1, x: 0, transition: { duration: 0.5 } },
+  exit: { opacity: 0, x: -60, transition: { duration: 0.3 } },
+};
+
+function SlideMinutes({ data, label }: { data: WrapData; label: string }) {
+  return (
+    <motion.div {...slideTransition} className="flex flex-col items-center justify-center h-full text-center px-6 gap-6">
+      <Badge className="bg-gradient-to-r from-violet-500 to-pink-500 text-white border-0 text-sm px-4 py-1">
+        {label}
+      </Badge>
+      <div className="text-7xl sm:text-9xl font-black bg-gradient-to-b from-white to-white/60 bg-clip-text text-transparent">
+        <AnimatedCounter value={data.totalMinutes} />
+      </div>
+      <p className="text-xl text-muted-foreground">minutes watched</p>
+      <div className="flex gap-6 text-muted-foreground text-sm">
+        <span className="flex items-center gap-1"><Play className="h-4 w-4" />{data.totalTitles} titles</span>
+        <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />{data.activeDays} active days</span>
+      </div>
+    </motion.div>
+  );
+}
+
+function SlideTopTitles({ data }: { data: WrapData }) {
+  return (
+    <motion.div {...slideTransition} className="flex flex-col items-center justify-center h-full px-6 gap-6">
+      <h2 className="text-3xl font-bold flex items-center gap-2"><Star className="h-7 w-7 text-amber-400" />Your Top Titles</h2>
+      <div className="w-full max-w-md space-y-3">
+        {data.topTitles.length > 0 ? data.topTitles.map((item, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 + i * 0.15 }}
+            className="flex items-center gap-4 bg-white/5 rounded-xl p-4"
+          >
+            <span className="text-3xl font-black text-muted-foreground w-10 text-center">#{i + 1}</span>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold truncate">{item.title}</p>
+              <p className="text-xs text-muted-foreground">{item.minutes} min · {item.count} sessions</p>
+            </div>
+          </motion.div>
+        )) : (
+          <p className="text-muted-foreground text-center">No watch data yet</p>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+function SlideGenre({ data }: { data: WrapData }) {
+  const stats = [
+    { icon: Clock, value: `${Math.round(data.totalMinutes / 60)}h`, label: 'Watch Time' },
+    { icon: Flame, value: `${data.bingeStreak}`, label: 'Day Streak' },
+    { icon: Zap, value: `${data.completionRate}%`, label: 'Completion' },
+    { icon: DownloadIcon, value: `${data.downloadsCount}`, label: 'Downloads' },
+  ];
+
+  return (
+    <motion.div {...slideTransition} className="flex flex-col items-center justify-center h-full px-6 gap-8">
+      <h2 className="text-3xl font-bold">Your Stats</h2>
+      <div className="grid grid-cols-2 gap-4 w-full max-w-sm">
+        {stats.map((s, i) => (
+          <motion.div
+            key={s.label}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 + i * 0.1 }}
+            className="bg-white/5 rounded-2xl p-5 text-center"
+          >
+            <s.icon className="h-6 w-6 mx-auto mb-2 text-primary" />
+            <div className="text-2xl font-bold">{s.value}</div>
+            <p className="text-xs text-muted-foreground">{s.label}</p>
+          </motion.div>
+        ))}
+      </div>
+      <div className="text-center">
+        <p className="text-muted-foreground text-sm">Most active day: <strong className="text-foreground">{data.mostActiveDay}</strong></p>
+        <p className="text-muted-foreground text-sm">Longest session: <strong className="text-foreground">{data.longestBingeSession} min</strong></p>
+      </div>
+    </motion.div>
+  );
+}
+
+function SlidePersonality({ data }: { data: WrapData }) {
+  const emoji = data.personalityTitle.split(' ')[0];
+  const title = data.personalityTitle.slice(data.personalityTitle.indexOf(' ') + 1);
+
+  return (
+    <motion.div {...slideTransition} className="flex flex-col items-center justify-center h-full px-6 gap-6 text-center">
+      <motion.div
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.2 }}
+        className="text-8xl"
+      >
+        {emoji}
+      </motion.div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+      >
+        <Badge className="bg-gradient-to-r from-violet-500 to-pink-500 text-white border-0 text-lg px-6 py-2 mb-4">
+          {title}
+        </Badge>
+      </motion.div>
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.7 }}
+        className="text-lg text-muted-foreground max-w-sm"
+      >
+        {data.personalityComment}
+      </motion.p>
+    </motion.div>
+  );
+}
+
+function SlideSummary({ data, label, username }: { data: WrapData; label: string; username?: string }) {
+  const summaryRef = useRef<HTMLDivElement>(null);
+
+  const handleShare = useCallback(async () => {
+    const text = `🎬 My ${label} Wrap\n⏱️ ${data.totalMinutes} minutes watched\n🎯 ${data.completionRate}% completion rate\n🔥 ${data.bingeStreak} day streak\n${data.personalityTitle}\n\n#CinemaxStream #Wrap`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: `My ${label} Wrap`, text });
+      } catch { /* user cancelled */ }
+    } else {
+      await navigator.clipboard.writeText(text);
+    }
+  }, [data, label]);
+
+  return (
+    <motion.div {...slideTransition} className="flex flex-col items-center justify-center h-full px-6 gap-6">
+      <div
+        ref={summaryRef}
+        className="w-full max-w-xs bg-gradient-to-br from-violet-900/80 to-pink-900/80 rounded-3xl p-6 text-center border border-white/10 shadow-2xl"
+        style={{ aspectRatio: '9/16', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
+      >
+        <div>
+          <p className="text-xs text-white/60 uppercase tracking-widest mb-2">CinemaxStream</p>
+          <h3 className="text-2xl font-black text-white">{label} Wrap</h3>
+          {username && <p className="text-sm text-white/70 mt-1">@{username}</p>}
+        </div>
+        <div className="space-y-4 my-auto py-6">
+          <div>
+            <div className="text-5xl font-black text-white">{data.totalMinutes.toLocaleString()}</div>
+            <p className="text-xs text-white/60">minutes watched</p>
+          </div>
+          <div className="flex justify-center gap-6 text-sm text-white/80">
+            <span>{data.totalTitles} titles</span>
+            <span>{data.completionRate}%</span>
+          </div>
+          <div className="text-4xl">{data.personalityTitle.split(' ')[0]}</div>
+          <p className="text-sm font-bold text-white">{data.personalityTitle.slice(data.personalityTitle.indexOf(' ') + 1)}</p>
+        </div>
+        <p className="text-[10px] text-white/40">cinemaxstream.lovable.app</p>
+      </div>
+
+      <div className="flex gap-3">
+        <Button onClick={handleShare} variant="outline" className="gap-2 border-white/10 hover:bg-white/5">
+          <Share2 className="h-4 w-4" />
+          Share
+        </Button>
+      </div>
+    </motion.div>
+  );
+}
+
+// ── Main Component ─────────────────────────────────────
+const TOTAL_SLIDES = 5;
 
 const Wrap = () => {
   const { user } = useAuth();
@@ -87,12 +336,10 @@ const Wrap = () => {
   const [period, setPeriod] = useState<'monthly' | 'yearly'>('monthly');
   const [monthlyData, setMonthlyData] = useState<WrapData>(emptyWrap);
   const [yearlyData, setYearlyData] = useState<WrapData>(emptyWrap);
+  const [slide, setSlide] = useState(0);
+  const [username, setUsername] = useState<string | undefined>();
 
-  useEffect(() => {
-    if (!user) return;
-    fetchWrapData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  useEffect(() => { if (!user) return; fetchWrapData(); }, [user]);
 
   async function fetchWrapData() {
     if (!user) return;
@@ -104,113 +351,56 @@ const Wrap = () => {
       const yearStart = new Date(now.getFullYear(), 0, 1).toISOString();
 
       const [
-        { data: monthSessions },
-        { data: yearSessions },
-        { data: monthDownloads },
-        { data: yearDownloads },
-        { data: favorites },
+        { data: monthSessions }, { data: yearSessions },
+        { data: monthDownloads }, { data: yearDownloads },
+        { data: favorites }, { data: profile },
       ] = await Promise.all([
         supabase.from('watch_sessions').select('*').eq('user_id', user.id).gte('created_at', monthStart),
         supabase.from('watch_sessions').select('*').eq('user_id', user.id).gte('created_at', yearStart),
         supabase.from('download_requests').select('*').eq('user_id', user.id).gte('created_at', monthStart),
         supabase.from('download_requests').select('*').eq('user_id', user.id).gte('created_at', yearStart),
         supabase.from('user_favorites').select('*').eq('user_id', user.id),
+        supabase.from('user_profiles').select('username').eq('id', user.id).single(),
       ]);
 
-      const processData = (
-        sessions: typeof monthSessions,
-        downloads: typeof monthDownloads,
-        favs: typeof favorites
-      ): WrapData => {
-        const s = sessions || [];
-        const totalSeconds = s.reduce((sum, sess) => sum + (sess.total_watched_time || 0), 0);
-        const totalMinutes = Math.round(totalSeconds / 60);
+      setUsername((profile as any)?.username || undefined);
 
-        // Title counts + watch time per title
-        const titleData: Record<string, { count: number; minutes: number }> = {};
-        s.forEach(sess => {
-          const t = sess.content_title || `Content ${sess.content_id}`;
-          if (!titleData[t]) titleData[t] = { count: 0, minutes: 0 };
-          titleData[t].count += 1;
-          titleData[t].minutes += Math.round((sess.total_watched_time || 0) / 60);
-        });
-        const sorted = Object.entries(titleData).sort((a, b) => b[1].minutes - a[1].minutes);
-
-        // Active days
-        const daySet = new Set(s.map(sess => sess.created_at?.split('T')[0]).filter((d): d is string => !!d));
-        const activeDays = daySet.size;
-
-        // Binge streak (consecutive days)
-        const sortedDays = [...daySet].sort();
-        let maxStreak = 0;
-        let currentStreak = 1;
-        for (let i = 1; i < sortedDays.length; i++) {
-          const prev = new Date(sortedDays[i - 1]);
-          const curr = new Date(sortedDays[i]);
-          const diffDays = (curr.getTime() - prev.getTime()) / 86400000;
-          if (diffDays === 1) {
-            currentStreak++;
-            maxStreak = Math.max(maxStreak, currentStreak);
-          } else {
-            currentStreak = 1;
-          }
-        }
-        if (sortedDays.length === 1) maxStreak = 1;
-        else maxStreak = Math.max(maxStreak, currentStreak);
-
-        // Completion rate (sessions with content_duration > 0)
-        const sessionsWithDuration = s.filter(sess => sess.content_duration && sess.content_duration > 0);
-        const completedSessions = sessionsWithDuration.filter(sess => {
-          const watchedRatio = (sess.total_watched_time || 0) / (sess.content_duration || 1);
-          return watchedRatio >= 0.7;
-        });
-        const completionRate = sessionsWithDuration.length > 0
-          ? Math.round((completedSessions.length / sessionsWithDuration.length) * 100)
-          : 0;
-
-        // Top content type (crude: use "Movies" as default since watch_sessions doesn't store genre)
-        const topContentType = s.length > 0 ? 'Movies' : 'N/A';
-
-        const personality = computePersonality({
-          totalMinutes,
-          activeDays,
-          completionRate,
-          bingeStreak: maxStreak,
-          topContentType,
-          titlesWatched: Object.keys(titleData).length,
-        });
-
-        return {
-          titlesWatched: Object.keys(titleData).length,
-          totalWatchTimeMinutes: totalMinutes,
-          downloadsCount: (downloads || []).length,
-          favoritesCount: (favs || []).length,
-          activeDays,
-          topContentType,
-          mostWatchedTitle: sorted[0]?.[0] || 'N/A',
-          topTitles: sorted.slice(0, 5).map(([t, d]) => ({ title: t, count: d.count, minutes: d.minutes })),
-          monthlyTrend: [],
-          completionRate,
-          bingeStreak: maxStreak,
-          personalityTitle: personality.title,
-          personalityComment: personality.comment,
-        };
-      };
-
-      const mData = processData(monthSessions, monthDownloads, favorites);
+      const mData = processWrapData(monthSessions || [], monthDownloads || [], favorites || []);
       setMonthlyData(mData);
 
-      const yData = processData(yearSessions, yearDownloads, favorites);
+      const yData = processWrapData(yearSessions || [], yearDownloads || [], favorites || []);
       // Monthly trend for yearly
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       const trendMap: Record<string, number> = {};
-      (yearSessions || []).forEach(s => {
-        const d = new Date(s.created_at || '');
-        const key = monthNames[d.getMonth()];
+      (yearSessions || []).forEach((s: any) => {
+        const key = monthNames[new Date(s.created_at || '').getMonth()];
         trendMap[key] = (trendMap[key] || 0) + 1;
       });
       yData.monthlyTrend = monthNames.map(m => ({ month: m, count: trendMap[m] || 0 }));
       setYearlyData(yData);
+
+      // Persist wrap snapshot to DB (upsert)
+      const wrapMonth = now.getMonth() + 1;
+      const wrapYear = now.getFullYear();
+      await supabase.from('user_wraps' as any).upsert({
+        user_id: user.id,
+        month: wrapMonth,
+        year: wrapYear,
+        wrap_type: 'monthly',
+        total_minutes: mData.totalMinutes,
+        total_titles: mData.totalTitles,
+        top_genre: mData.topGenre,
+        top_titles: mData.topTitles,
+        longest_binge_session: mData.longestBingeSession,
+        most_active_day: mData.mostActiveDay,
+        binge_streak: mData.bingeStreak,
+        completion_rate: mData.completionRate,
+        personality_title: mData.personalityTitle,
+        personality_comment: mData.personalityComment,
+        downloads_count: mData.downloadsCount,
+        favorites_count: mData.favoritesCount,
+        active_days: mData.activeDays,
+      } as any, { onConflict: 'user_id,month,year,wrap_type' } as any);
     } catch (error) {
       console.error('Error fetching wrap data:', error);
     } finally {
@@ -222,6 +412,21 @@ const Wrap = () => {
   const periodLabel = period === 'monthly'
     ? new Date().toLocaleString('default', { month: 'long', year: 'numeric' })
     : `${new Date().getFullYear()}`;
+
+  const hasData = data.totalTitles > 0 || data.downloadsCount > 0;
+
+  const nextSlide = useCallback(() => setSlide(s => Math.min(s + 1, TOTAL_SLIDES - 1)), []);
+  const prevSlide = useCallback(() => setSlide(s => Math.max(s - 1, 0)), []);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') nextSlide();
+      if (e.key === 'ArrowLeft') prevSlide();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [nextSlide, prevSlide]);
 
   if (!user) {
     return (
@@ -240,203 +445,89 @@ const Wrap = () => {
 
   if (isLoading) return <LoadingState message="Generating your wrap..." />;
 
-  const hasData = data.titlesWatched > 0 || data.downloadsCount > 0;
-
-  const cardVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: (i: number) => ({ opacity: 1, y: 0, transition: { delay: i * 0.1, duration: 0.4 } }),
-  };
-
+  // Full-screen slide-based experience
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Navbar />
-
-      <main className="flex-1 pt-24 pb-12">
-        <div className="container mx-auto px-4 max-w-4xl">
-          <div className="mb-6">
-            <BackButton />
-          </div>
-
-          <div className="text-center mb-8">
-            <Badge className="mb-4 bg-gradient-to-r from-violet-500 to-pink-500 text-white border-0">
-              <Flame className="h-3 w-3 mr-1" />
-              Your Activity Wrap
-            </Badge>
-            <h1 className="text-4xl font-bold mb-2">{periodLabel} Wrap</h1>
-            <p className="text-muted-foreground">Your personalized streaming summary</p>
-          </div>
-
-          <Tabs value={period} onValueChange={(v) => setPeriod(v as 'monthly' | 'yearly')} className="mb-8">
-            <TabsList className="grid w-full max-w-xs mx-auto grid-cols-2">
-              <TabsTrigger value="monthly">Monthly</TabsTrigger>
-              <TabsTrigger value="yearly">Yearly</TabsTrigger>
-            </TabsList>
-          </Tabs>
-
-          {!hasData ? (
-            <Card className="text-center p-12">
-              <CardContent>
-                <BarChart3 className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                <h2 className="text-2xl font-bold mb-2">Not Enough Data Yet</h2>
-                <p className="text-muted-foreground mb-6">
-                  Start watching content to build your wrap! We need real activity data to generate your summary.
-                </p>
-                <Button onClick={() => navigate('/')}>Start Watching</Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-6">
-              {/* Personality Card */}
-              {data.personalityTitle && (
-                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }}>
-                  <Card className="bg-gradient-to-br from-violet-500/10 to-pink-500/10 border-violet-500/30">
-                    <CardContent className="pt-6 text-center">
-                      <div className="text-5xl mb-3">{data.personalityTitle.split(' ')[0]}</div>
-                      <h2 className="text-2xl font-bold mb-2">{data.personalityTitle.slice(data.personalityTitle.indexOf(' ') + 1)}</h2>
-                      <p className="text-muted-foreground">{data.personalityComment}</p>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              )}
-
-              {/* Main stats */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {[
-                  { icon: Play, value: data.titlesWatched, label: 'Titles Watched', color: 'text-primary' },
-                  { icon: Clock, value: data.totalWatchTimeMinutes, label: 'Minutes Watched', color: 'text-blue-500' },
-                  { icon: Download, value: data.downloadsCount, label: 'Downloads', color: 'text-emerald-500' },
-                  { icon: Calendar, value: data.activeDays, label: 'Active Days', color: 'text-orange-500' },
-                ].map((stat, i) => (
-                  <motion.div key={stat.label} custom={i} initial="hidden" animate="visible" variants={cardVariants}>
-                    <Card>
-                      <CardContent className="pt-6 text-center">
-                        <stat.icon className={`h-8 w-8 mx-auto mb-2 ${stat.color}`} />
-                        <motion.div
-                          className="text-3xl font-bold"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ delay: 0.3 + i * 0.1 }}
-                        >
-                          {stat.value}
-                        </motion.div>
-                        <p className="text-xs text-muted-foreground">{stat.label}</p>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                ))}
-              </div>
-
-              {/* Streak + Completion */}
-              <div className="grid md:grid-cols-3 gap-4">
-                <Card>
-                  <CardContent className="pt-6 text-center">
-                    <Flame className="h-8 w-8 mx-auto mb-2 text-red-500" />
-                    <div className="text-3xl font-bold">{data.bingeStreak}</div>
-                    <p className="text-xs text-muted-foreground">Day Binge Streak</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-6 text-center">
-                    <Zap className="h-8 w-8 mx-auto mb-2 text-amber-500" />
-                    <div className="text-3xl font-bold">{data.completionRate}%</div>
-                    <p className="text-xs text-muted-foreground">Completion Rate</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <Heart className="h-5 w-5 text-pink-500" />
-                      Favorites
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-xl font-bold">{data.favoritesCount} saved</p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Most watched + top titles */}
-              <div className="grid md:grid-cols-2 gap-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <Award className="h-5 w-5 text-amber-500" />
-                      Most Watched
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-xl font-bold">{data.mostWatchedTitle}</p>
-                  </CardContent>
-                </Card>
-
-                {data.topTitles.length > 0 && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-lg">
-                        <Star className="h-5 w-5 text-primary" />
-                        Top Titles
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        {data.topTitles.map((item, i) => (
-                          <motion.div
-                            key={i}
-                            className="flex items-center gap-3"
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.2 + i * 0.1 }}
-                          >
-                            <span className="text-2xl font-bold text-muted-foreground w-8">#{i + 1}</span>
-                            <div className="flex-1">
-                              <p className="font-medium">{item.title}</p>
-                              <p className="text-xs text-muted-foreground">{item.minutes} min • {item.count} session{item.count !== 1 ? 's' : ''}</p>
-                            </div>
-                          </motion.div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-
-              {/* Monthly trend (yearly only) */}
-              {period === 'yearly' && data.monthlyTrend.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <TrendingUp className="h-5 w-5 text-primary" />
-                      Monthly Watch Trend
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-end gap-1 h-32">
-                      {data.monthlyTrend.map((m) => {
-                        const maxCount = Math.max(...data.monthlyTrend.map(t => t.count), 1);
-                        const height = (m.count / maxCount) * 100;
-                        return (
-                          <div key={m.month} className="flex-1 flex flex-col items-center gap-1">
-                            <span className="text-[10px] text-muted-foreground">{m.count || ''}</span>
-                            <motion.div
-                              className="w-full bg-primary/80 rounded-t-sm min-h-[2px]"
-                              initial={{ height: 0 }}
-                              animate={{ height: `${Math.max(height, 2)}%` }}
-                              transition={{ duration: 0.5, delay: 0.1 }}
-                            />
-                            <span className="text-[10px] text-muted-foreground">{m.month}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          )}
+    <div className="fixed inset-0 z-50 bg-background flex flex-col overflow-hidden">
+      {/* Top bar */}
+      <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-4">
+        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="text-muted-foreground hover:text-foreground">
+          <ChevronLeft className="h-5 w-5 mr-1" /> Back
+        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant={period === 'monthly' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => { setPeriod('monthly'); setSlide(0); }}
+          >
+            Monthly
+          </Button>
+          <Button
+            variant={period === 'yearly' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => { setPeriod('yearly'); setSlide(0); }}
+          >
+            Yearly
+          </Button>
         </div>
-      </main>
+      </div>
 
-      <Footer />
+      {/* Progress dots */}
+      <div className="absolute top-16 left-0 right-0 z-20 flex justify-center gap-2 px-4">
+        {Array.from({ length: TOTAL_SLIDES }).map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setSlide(i)}
+            className={`h-1 rounded-full transition-all duration-300 ${
+              i === slide ? 'w-8 bg-primary' : 'w-4 bg-white/20'
+            }`}
+          />
+        ))}
+      </div>
+
+      {/* Slides */}
+      <div className="flex-1 flex items-center justify-center pt-20 pb-20">
+        {!hasData ? (
+          <div className="text-center px-6">
+            <Flame className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+            <h2 className="text-2xl font-bold mb-2">Not Enough Data Yet</h2>
+            <p className="text-muted-foreground mb-6">Start watching to build your wrap!</p>
+            <Button onClick={() => navigate('/')}>Start Watching</Button>
+          </div>
+        ) : (
+          <AnimatePresence mode="wait">
+            {slide === 0 && <SlideMinutes key="minutes" data={data} label={periodLabel} />}
+            {slide === 1 && <SlideTopTitles key="titles" data={data} />}
+            {slide === 2 && <SlideGenre key="genre" data={data} />}
+            {slide === 3 && <SlidePersonality key="personality" data={data} />}
+            {slide === 4 && <SlideSummary key="summary" data={data} label={periodLabel} username={username} />}
+          </AnimatePresence>
+        )}
+      </div>
+
+      {/* Navigation arrows */}
+      {hasData && (
+        <div className="absolute bottom-6 left-0 right-0 z-20 flex items-center justify-center gap-8">
+          <Button
+            variant="ghost"
+            size="lg"
+            onClick={prevSlide}
+            disabled={slide === 0}
+            className="rounded-full w-12 h-12 p-0 text-muted-foreground hover:text-foreground disabled:opacity-20"
+          >
+            <ChevronLeft className="h-6 w-6" />
+          </Button>
+          <span className="text-sm text-muted-foreground">{slide + 1} / {TOTAL_SLIDES}</span>
+          <Button
+            variant="ghost"
+            size="lg"
+            onClick={nextSlide}
+            disabled={slide === TOTAL_SLIDES - 1}
+            className="rounded-full w-12 h-12 p-0 text-muted-foreground hover:text-foreground disabled:opacity-20"
+          >
+            <ChevronRight className="h-6 w-6" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
