@@ -1,7 +1,7 @@
-import React, { useState, memo, useCallback } from 'react';
+import React, { useState, memo, useCallback, useRef } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Download, AlertCircle, CheckCircle, Wifi, X, Sparkles, Crown, Lock } from 'lucide-react';
+import { Download, AlertCircle, CheckCircle, X, Sparkles, Crown, Lock, FileVideo, Upload, Trash2, Play } from 'lucide-react';
 import { useCreditSystem } from '@/hooks/useCreditSystem';
 import { useUserTier } from '@/hooks/useUserTier';
 import { useAuth } from '@/contexts/AuthContext';
@@ -22,9 +22,15 @@ interface DownloadModalProps {
   contentId?: string;
 }
 
+const MIN_FILE_SIZE_MB = 50;
+
 /**
- * Download Modal — opens dl.vidsrc.vip in a new tab (CORS prevents fetch).
- * Records every download in DB for tracking.
+ * Download Modal — Mode A: External Download + File Confirmation
+ * 1. Opens download link in new tab
+ * 2. User confirms by attaching the downloaded file
+ * 3. File validated (size > 50MB, name fuzzy-matches title)
+ * 4. Stored in IndexedDB for offline playback
+ * 5. Credits deducted only after confirmation
  */
 const DownloadModal: React.FC<DownloadModalProps> = memo(({
   isOpen,
@@ -41,9 +47,14 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
   const { tier, isPro, isPremium } = useUserTier(user?.id);
   const navigate = useNavigate();
   const { notifyDownloadComplete } = useEventNotifications();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const [downloadResult, setDownloadResult] = useState<{ success: boolean; error?: string } | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
+  type ModalStep = 'action' | 'awaiting_file' | 'validating' | 'confirmed' | 'error';
+  const [step, setStep] = useState<ModalStep>('action');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [dbRowId, setDbRowId] = useState<string | null>(null);
+  const [confirmedFileName, setConfirmedFileName] = useState('');
+  const [confirmedFileSize, setConfirmedFileSize] = useState('');
 
   const canDownload = isPro || isPremium;
 
@@ -60,20 +71,26 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
     return null;
   }, [contentId, contentType, seasonNumber, episodeNumber]);
 
-  const handleDownload = useCallback(async () => {
+  const formatBytes = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
+    if (bytes < 1073741824) return `${(bytes / 1048576).toFixed(1)} MB`;
+    return `${(bytes / 1073741824).toFixed(2)} GB`;
+  };
+
+  // Step 1: Open external download link + record as "awaiting_file_confirmation"
+  const handleStartDownload = useCallback(async () => {
     if (!canDownload || !contentId || !user) return;
 
-    setIsProcessing(true);
     const downloadUrl = getDownloadUrl();
-
     if (!downloadUrl) {
-      setDownloadResult({ success: false, error: 'Could not generate download URL' });
-      setIsProcessing(false);
+      setErrorMessage('Could not generate download URL');
+      setStep('error');
       return;
     }
 
     try {
-      // 1. Record download in database
+      // Record in DB as awaiting confirmation
       const { data: insertedRow, error: dbError } = await supabase
         .from('download_requests')
         .insert({
@@ -85,17 +102,21 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
           year: year ?? null,
           download_url: downloadUrl,
           quality: 'HD',
-          status: 'completed',
-          completed_at: new Date().toISOString()
+          status: 'pending',
         })
         .select('id')
         .single();
 
       if (dbError) {
         console.error('Download tracking error:', dbError);
+        setErrorMessage('Failed to record download. Please try again.');
+        setStep('error');
+        return;
       }
 
-      // 2. Open download URL directly in new tab (CORS prevents in-app fetch)
+      setDbRowId(insertedRow?.id || null);
+
+      // Open in new tab
       const anchor = document.createElement('a');
       anchor.href = downloadUrl;
       anchor.target = '_blank';
@@ -104,24 +125,100 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
       anchor.click();
       document.body.removeChild(anchor);
 
-      // 3. Deduct credit
+      setStep('awaiting_file');
+      toast.success('Download opened in new tab');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Download failed. Please try again.';
+      setErrorMessage(message);
+      setStep('error');
+    }
+  }, [canDownload, contentId, user, getDownloadUrl, contentTitle, contentType, seasonNumber, episodeNumber, year]);
+
+  // Step 2: User attaches downloaded file for validation
+  const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setStep('validating');
+
+    // Validate file size (must be > 50MB)
+    const fileSizeMB = file.size / (1024 * 1024);
+    if (fileSizeMB < MIN_FILE_SIZE_MB) {
+      setErrorMessage(`File too small (${fileSizeMB.toFixed(1)} MB). Video files should be larger than ${MIN_FILE_SIZE_MB} MB.`);
+      setStep('error');
+      return;
+    }
+
+    // Fuzzy name match: check if file name contains any word from content title (3+ chars)
+    const titleWords = contentTitle.toLowerCase().split(/\s+/).filter(w => w.length >= 3);
+    const fileNameLower = file.name.toLowerCase();
+    const nameMatches = titleWords.length === 0 || titleWords.some(word => fileNameLower.includes(word));
+
+    if (!nameMatches) {
+      // Warn but don't block — file might have encoded name
+      toast.warning('File name doesn\'t closely match the content title. Proceeding anyway.');
+    }
+
+    try {
+      // Store in IndexedDB
+      const db = await openOfflineDB();
+      const tx = db.transaction('offline_media', 'readwrite');
+      const store = tx.objectStore('offline_media');
+
+      const record = {
+        id: dbRowId || `offline-${Date.now()}`,
+        title: contentTitle,
+        contentType,
+        seasonNumber,
+        episodeNumber,
+        fileName: file.name,
+        fileSize: file.size,
+        fileSizeLabel: formatBytes(file.size),
+        mimeType: file.type || 'video/mp4',
+        blob: file,
+        createdAt: new Date().toISOString(),
+      };
+
+      await new Promise<void>((resolve, reject) => {
+        const req = store.put(record);
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+      });
+
+      tx.oncomplete = () => db.close();
+
+      // Update DB status to completed
+      if (dbRowId && user) {
+        await supabase
+          .from('download_requests')
+          .update({
+            status: 'completed',
+            completed_at: new Date().toISOString(),
+            file_size: formatBytes(file.size),
+          })
+          .eq('id', dbRowId);
+      }
+
+      // Deduct credit only after real file confirmed
       await deductDownloadCredit();
 
-      setDownloadResult({ success: true });
-      toast.success('Download started in new tab');
+      setConfirmedFileName(file.name);
+      setConfirmedFileSize(formatBytes(file.size));
+      setStep('confirmed');
       notifyDownloadComplete(contentTitle);
     } catch (error) {
-      console.error('Download error:', error);
-      const message = error instanceof Error ? error.message : 'Download failed. Please try again.';
-      setDownloadResult({ success: false, error: message });
-    } finally {
-      setIsProcessing(false);
+      const message = error instanceof Error ? error.message : 'Failed to save file offline.';
+      setErrorMessage(message);
+      setStep('error');
     }
-  }, [canDownload, contentId, user, getDownloadUrl, contentTitle, contentType, seasonNumber, episodeNumber, year, deductDownloadCredit, notifyDownloadComplete]);
+  }, [dbRowId, user, contentTitle, contentType, seasonNumber, episodeNumber, deductDownloadCredit, notifyDownloadComplete]);
 
   const resetModal = useCallback(() => {
-    setDownloadResult(null);
-    setIsProcessing(false);
+    setStep('action');
+    setErrorMessage('');
+    setDbRowId(null);
+    setConfirmedFileName('');
+    setConfirmedFileSize('');
     onClose();
   }, [onClose]);
 
@@ -154,7 +251,7 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
               </div>
               <div>
                 <h2 className="text-lg font-bold text-white leading-tight">Download Content</h2>
-                <p className="text-xs text-gray-400">Opens in a new tab</p>
+                <p className="text-xs text-gray-400">Offline with file confirmation</p>
               </div>
             </div>
 
@@ -195,93 +292,133 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
                       Upgrade to Pro
                     </Button>
                   </motion.div>
-                ) : isProcessing ? (
-                  <motion.div
-                    key="processing"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="space-y-6 text-center py-4"
-                  >
-                    <div className="relative w-24 h-24 mx-auto">
-                      <div className="absolute inset-0 rounded-full border-4 border-white/10" />
-                      <div className="absolute inset-0 rounded-full border-4 border-t-blue-500 animate-spin" />
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <Download className="h-8 w-8 text-blue-400 animate-pulse" />
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="text-white font-medium mb-1">Starting Download...</h3>
-                      <p className="text-xs text-gray-500">Recording to your library</p>
-                    </div>
-                  </motion.div>
-                ) : downloadResult ? (
-                  <motion.div
-                    key="result"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="space-y-4"
-                  >
-                    {downloadResult.success ? (
-                      <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-6 text-center">
-                        <div className="w-14 h-14 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-4">
-                          <CheckCircle className="h-7 w-7 text-emerald-500" />
-                        </div>
-                        <h3 className="font-bold text-white text-lg mb-1">Download Started</h3>
-                        <p className="text-sm text-gray-400 mb-4">The download has been opened in a new tab. Check your browser's downloads.</p>
-                        <Button
-                          variant="outline"
-                          onClick={() => { resetModal(); navigate('/downloads'); }}
-                          className="border-white/10 hover:bg-white/5 text-white"
-                        >
-                          View Download History
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-6 text-center">
-                        <div className="w-14 h-14 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
-                          <AlertCircle className="h-7 w-7 text-red-500" />
-                        </div>
-                        <h3 className="font-bold text-white text-lg mb-2">Download Failed</h3>
-                        <p className="text-sm text-gray-400 mb-4">{downloadResult.error}</p>
-                        <Button variant="outline" onClick={() => setDownloadResult(null)} className="border-white/10 hover:bg-white/5 text-white">
-                          Try Again
-                        </Button>
-                      </div>
-                    )}
-                  </motion.div>
-                ) : (
+
+                ) : step === 'action' ? (
                   <motion.div
                     key="action"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
                     className="space-y-4"
                   >
-                    <div className="grid grid-cols-2 gap-3 text-xs text-gray-400 mb-2">
-                      <div className="bg-white/5 p-3 rounded-lg flex flex-col items-center gap-2">
-                        <Wifi className="h-4 w-4 text-blue-400" />
-                        <span>High Speed</span>
-                      </div>
-                      <div className="bg-white/5 p-3 rounded-lg flex flex-col items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-emerald-400" />
-                        <span>Tracked</span>
-                      </div>
+                    <div className="bg-white/5 p-4 rounded-xl text-xs text-gray-400 space-y-2">
+                      <p><strong className="text-white">How it works:</strong></p>
+                      <ol className="list-decimal list-inside space-y-1">
+                        <li>Click download — file opens in a new tab</li>
+                        <li>Save the file from your browser</li>
+                        <li>Come back and attach the file to confirm</li>
+                        <li>File is stored offline for playback anytime</li>
+                      </ol>
                     </div>
 
                     <Button
-                      onClick={handleDownload}
+                      onClick={handleStartDownload}
                       disabled={!contentId}
                       className="w-full h-14 text-lg bg-white text-black hover:bg-gray-200 font-bold shadow-lg shadow-white/10 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98]"
                     >
                       <Sparkles size={20} className="mr-2 text-amber-500" />
                       Download HD
                     </Button>
-
-                    <p className="text-center text-xs text-gray-500">
-                      {isPremium ? 'Premium: Unlimited HD downloads' : 'Pro: Downloads tracked in your library'}
-                    </p>
                   </motion.div>
-                )}
+
+                ) : step === 'awaiting_file' ? (
+                  <motion.div
+                    key="awaiting"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="space-y-4"
+                  >
+                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-6 text-center">
+                      <FileVideo className="h-12 w-12 text-blue-400 mx-auto mb-3" />
+                      <h3 className="font-bold text-white text-lg mb-2">Download Started</h3>
+                      <p className="text-sm text-gray-400 mb-4">
+                        The file is downloading in your browser. Once complete, attach it below to save for offline playback.
+                      </p>
+
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="video/*,.mkv,.avi,.mp4,.webm,.mov"
+                        className="hidden"
+                        onChange={handleFileSelect}
+                      />
+
+                      <Button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-full h-12 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-400 hover:to-cyan-400 text-white font-bold"
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        Attach Downloaded File
+                      </Button>
+
+                      <p className="text-[10px] text-gray-500 mt-3">
+                        File must be &gt; {MIN_FILE_SIZE_MB} MB to be accepted as a valid video file.
+                      </p>
+                    </div>
+                  </motion.div>
+
+                ) : step === 'validating' ? (
+                  <motion.div
+                    key="validating"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="text-center py-8"
+                  >
+                    <div className="relative w-20 h-20 mx-auto mb-4">
+                      <div className="absolute inset-0 rounded-full border-4 border-white/10" />
+                      <div className="absolute inset-0 rounded-full border-4 border-t-emerald-500 animate-spin" />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <FileVideo className="h-8 w-8 text-emerald-400 animate-pulse" />
+                      </div>
+                    </div>
+                    <p className="text-white font-medium">Validating & saving file...</p>
+                  </motion.div>
+
+                ) : step === 'confirmed' ? (
+                  <motion.div
+                    key="confirmed"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="space-y-4"
+                  >
+                    <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-6 text-center">
+                      <div className="w-14 h-14 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-4">
+                        <CheckCircle className="h-7 w-7 text-emerald-500" />
+                      </div>
+                      <h3 className="font-bold text-white text-lg mb-1">Saved Offline!</h3>
+                      <p className="text-sm text-gray-400 mb-1">{confirmedFileName}</p>
+                      <p className="text-xs text-gray-500 mb-4">{confirmedFileSize}</p>
+                      <Button
+                        variant="outline"
+                        onClick={() => { resetModal(); navigate('/downloads'); }}
+                        className="border-white/10 hover:bg-white/5 text-white"
+                      >
+                        View Offline Library
+                      </Button>
+                    </div>
+                  </motion.div>
+
+                ) : step === 'error' ? (
+                  <motion.div
+                    key="error"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="space-y-4"
+                  >
+                    <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-6 text-center">
+                      <div className="w-14 h-14 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
+                        <AlertCircle className="h-7 w-7 text-red-500" />
+                      </div>
+                      <h3 className="font-bold text-white text-lg mb-2">Error</h3>
+                      <p className="text-sm text-gray-400 mb-4">{errorMessage}</p>
+                      <Button variant="outline" onClick={() => setStep('action')} className="border-white/10 hover:bg-white/5 text-white">
+                        Try Again
+                      </Button>
+                    </div>
+                  </motion.div>
+                ) : null}
               </AnimatePresence>
             </div>
           </div>
@@ -290,6 +427,21 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
     </Dialog>
   );
 });
+
+// IndexedDB helper
+function openOfflineDB(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('cinemaxstream_offline', 2);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains('offline_media')) {
+        db.createObjectStore('offline_media', { keyPath: 'id' });
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
 
 DownloadModal.displayName = 'DownloadModal';
 
