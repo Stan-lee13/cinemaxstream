@@ -1,117 +1,63 @@
-# Full Codebase Audit and Fix Plan
+# Audit & Fix Plan
 
-## Build Errors (Critical - Must Fix First)
+## Issues Found
 
-### 1. TypeScript `error` of type `unknown` in Edge Functions
+### 1. VidRock (Source 3) — URLs completely broken
 
-Three edge functions use `error.message` without narrowing `unknown`:
+**Root cause:** `providerUtils.ts` builds VidRock URLs as `vidrock.net/embed/{id}` and `vidrock.net/embed/tv/{id}/...` but VidRock's actual API uses `vidrock.net/movie/{id}` and `vidrock.net/tv/{id}/...` (no `/embed/` prefix).
 
-- `supabase/functions/admin-confirm-user/index.ts` (line 119)
-- `supabase/functions/admin-get-users/index.ts` (line 122)
-- `supabase/functions/upgrade-user-subscription/index.ts` (line 153)
+**Fix:** Update `buildEmbedUrl` for `vidrock_net`:
 
-**Fix:** Cast `error` to `Error` or use conditional check:
+- Movies: `https://vidrock.net/movie/{tmdb_id}`
+- TV: `https://vidrock.net/tv/{tmdb_id}/{season}/{episode}`
 
-```typescript
-const message = error instanceof Error ? error.message : "Internal server error";
-```
+### 2. AutoEmbed (Source 1) — URL pattern is already correct
 
-### 2. TypeScript `Uint8Array` incompatibility in `useDownloadManager.ts` (line 132)
+Confirmed from autoembed.cc docs: `player.autoembed.cc/embed/movie/{tmdb_id}` and `player.autoembed.cc/embed/tv/{tmdb_id}/{season}/{episode}`. Our code matches. The `?server=2` fallback is also documented. No change needed.
 
-`new Blob(chunks)` fails because `Uint8Array<ArrayBufferLike>[]` is not assignable to `BlobPart[]`.
+### 3. Anime Season/Episode — Jujutsu Kaisen showing 1 season with 59 episodes
 
-**Fix:** Cast chunks explicitly:
+**Root cause:** The `getTvShowSeasons` in `tmdbApiProduction.ts` fetches season data from TMDB correctly (TMDB returns 3 seasons for JJK). The filter `s.episode_count > 0` is fine. However, the issue is that `useContentDetail.ts` line 111-114 has a `useEffect` that calls `loadEpisodesForSeason(seasons[0].season_number)` every time `seasons` changes — and `loadEpisodesForSeason` is not memoized with `useCallback`, so it changes on every render, causing an infinite loop that may collapse state. Also, this effect fires redundantly since the initial fetch already loads first season episodes.
 
-```typescript
-const blob = new Blob(chunks as BlobPart[], { type: mimeType });
-```
+**Fix:**
 
----
+- Remove the redundant `useEffect` in `ContentDetail.tsx` (lines 111-115) that calls `loadEpisodesForSeason` on mount — the hook already loads first season episodes during initial fetch.
+- Wrap `loadEpisodesForSeason` in `useCallback` in `useContentDetail.ts`.
 
-## Functional Issues Found
+### 4. Download system — "Download failed" for pro users
 
-### 3. `useUserTier.ts` - Self-Downgrade on Expired Subscription (Security Risk)
+**Root cause:** The download system itself works (DB insert + new tab open). The likely failure is the `dl.vidsrc.vip` URL pattern. Let me verify the URL construction: for movies it builds `dl.vidsrc.vip/movie/{contentId}` — but `contentId` could be a UUID from Supabase DB, not a TMDB ID. The download URL needs the TMDB ID. And also the offline functionality isnt found users cant see where to add file even when in the download page 
 
-Lines 91-96: When a premium user's subscription expires, the hook tries to update `user_profiles` directly. This will **silently fail** due to the RLS policy that prevents users from changing their own `role`, `subscription_tier`, and `subscription_expires_at`. The user sees `free` tier in UI but the DB may still say `premium`.
+**Fix:** In `DownloadModal.tsx`, accept a `tmdbId` prop and use it for building the download URL instead of `contentId`. Update `ContentDetail.tsx` to pass `tmdbId` to `DownloadButton`/`DownloadModal`. And also Fix the offline and file functionalities 
 
-**Fix:** Remove the client-side downgrade attempt. Instead, just set the local state to `free` without touching the DB. Expired subscription handling should be done server-side (e.g., a scheduled function or during the next edge function call).
+### 5. Wrap — Top Titles slide shows only text, no TMDB posters
 
-### 4. `DownloadModal.tsx` - Download Tracking Uses Wrong Update Matcher (line 123-126)
+**Root cause:** `SlideTopTitles` renders title text only — no poster images. The `topTitles` data only has `{ title, count, minutes }` with no image URL.
 
-The `update` query after download completion uses `.eq('content_title', contentTitle).eq('content_type', contentType).is('completed_at', null)` which is fragile and could match wrong rows if user downloads the same content twice.
+**Fix:** When processing wrap data, look up each top title's TMDB poster by searching TMDB. Store poster URL in `topTitles` array. Render poster images in `SlideTopTitles`.
 
-**Fix:** Store the inserted row's `id` from the initial insert and use it for the update.
+### 6. Wrap — Shareable summary shares text, not an image card
 
-### 5. `ContentDetail.tsx` - Skip Functionality Stub (line 110-112)
+**Root cause:** `SlideSummary` shares plain text via `navigator.share()`. The "Download as Image" button is missing — no canvas/PNG export.
 
-`handleSkipPlayback` is an empty callback. Not harmful but is unused dead code.
+**Fix:** Add `html2canvas` or use the native Canvas API to render the summary card `div` as a PNG, add a "Download as Image" button that exports it.
 
-**Fix:** Remove.
+### 7. `topGenre` is always "Movies" — hardcoded fallback
 
-### 6. Admin Panel - `handleBanUser` Updates `user_profiles` Directly (lines 271-275)
+**Root cause:** In `processWrapData` line 117: `const topGenre = s.length > 0 ? 'Movies' : 'N/A';` — the genre is never computed from actual data because `watch_sessions` doesn't store genre info.
 
-The admin bans a user and then tries to update `user_profiles.subscription_tier`, `role`, and `subscription_expires_at` directly. This will fail because the admin's RLS policy on `user_profiles` requires `has_role(auth.uid(), 'admin')`, but the Supabase client uses the **anon key**, not the service role key. The `user_roles` delete on line 270 may work since admin has an ALL policy on `user_roles`.
-
-**Fix:** Use the `upgrade-user-subscription` edge function for profile updates during ban, or add a dedicated admin ban edge function that uses the service role key.
-
-### 7. Admin Panel - `handleTogglePromo` and `handleDeletePromo` Use Client Queries
-
-Lines 370-388: These operations query `premium_codes` directly via the Supabase client. The RLS policy requires `is_admin()` which checks `user_roles`. This should work if the admin user has the `admin` role in `user_roles`, but the `is_admin()` function uses `auth.uid()` which relies on the JWT. If the admin role was granted via a migration, this should be fine.
-
-**Status:** Working if admin role is properly set. No fix needed but worth verifying.
-
-### 8. `supabase/config.toml` - Missing Edge Function JWT Config
-
-The config only has `project_id`. No `[functions.*]` sections with `verify_jwt = false`. Edge functions default to `verify_jwt = true`, which means the Supabase client's `functions.invoke()` automatically passes the JWT. This is correct behavior for authenticated endpoints.
-
-**Status:** OK - no change needed.
-
-### 9. Upgrade Page Plans Grid Shows 3 Columns But Only 2 Plans (line 174)
-
-`grid md:grid-cols-3` with only 2 plan cards creates unbalanced layout.
-
-**Fix:** Change to `md:grid-cols-2`.
-
-### 10. `CastButton.tsx` - Unused `airplayRef` (line 33)
-
-`airplayRef` is declared but never used.
-
-**Fix:** Remove unused ref.
-
-### 11. `CastButton.tsx` - `window` Access at Module Level (line 117)
-
-`const browserWindow = window as ChromeCastWindow;` is called at the component body level (outside hooks/callbacks). This is evaluated on every render and is fine in browser but would fail in SSR.
-
-**Status:** Not harmful for this Vite/SPA setup, but could be moved inside the conditional check.
-
-### 12. `useContentDetail.ts` - TMDB ID Extraction from Image URL (lines 186-192)
-
-The regex `'/t/p/[^/]+/([^./]+)\\.(?:jpg|png|jpeg)'` tries to extract a TMDB ID from an image URL. TMDB image URLs contain a hash, not the content ID. This will produce incorrect IDs.
-
-**Status:** Fallback is `contentId` so impact is minimal, but the logic is incorrect. Should be corrected.
-
-### 13. `useSmartDownload.ts` - Still References AI Search and Nkiri Scraper
-
-This hook still contains the full "smart download" pipeline (AI search, Nkiri scraper) that was supposed to be removed. It's used alongside the newer `useDownloadManager` and `DownloadModal`.
-
-**Fix:** Either delete `useSmartDownload.ts` entirely (if no longer imported) or clean it up. Check imports first.
+**Fix:** Use the content titles from watch sessions to look up genres from TMDB, or at minimum derive genre from content_type categories. For now, use a simple heuristic based on content metadata available in sessions.
 
 ---
 
 ## Summary of Changes
 
-```text
-Files to edit:
-1. supabase/functions/admin-confirm-user/index.ts    - Fix error type
-2. supabase/functions/admin-get-users/index.ts        - Fix error type  
-3. supabase/functions/upgrade-user-subscription/index.ts - Fix error type
-4. src/hooks/useDownloadManager.ts                    - Fix Uint8Array blob cast
-5. src/hooks/useUserTier.ts                           - Remove client-side downgrade
-6. src/components/DownloadModal.tsx                    - Fix tracking update matcher
-7. src/pages/Admin.tsx                                - Fix ban profile update
-8. src/pages/Upgrade.tsx                              - Fix grid columns
-9. src/components/CastButton.tsx                      - Remove unused ref
-10. src/pages/ContentDetail.tsx                       - Remove empty stub
-```
 
-All 3 edge functions will be redeployed after fixes.
+| File                                   | Change                                                                              |
+| -------------------------------------- | ----------------------------------------------------------------------------------- |
+| `src/utils/providers/providerUtils.ts` | Fix VidRock URL pattern: `/movie/{id}` and `/tv/{id}/s/e`                           |
+| `src/pages/ContentDetail.tsx`          | Remove redundant `loadEpisodesForSeason` useEffect; pass `tmdbId` to DownloadButton |
+| `src/hooks/useContentDetail.ts`        | Wrap `loadEpisodesForSeason` in `useCallback`                                       |
+| `src/components/DownloadModal.tsx`     | Accept `tmdbId` prop, use for download URL                                          |
+| `src/components/DownloadButton.tsx`    | Pass through `tmdbId` prop                                                          |
+| `src/pages/Wrap.tsx`                   | Fetch TMDB posters for top titles; add canvas-based PNG export for summary card     |
