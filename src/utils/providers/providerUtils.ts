@@ -110,12 +110,12 @@ const buildEmbedUrl = (providerId: string, tmdbId: string, opts: ProviderOptions
     return `https://${domain}/embed/tv/${tmdbId}/${season}/${episode}`;
   }
 
-  // VidRock has a unique structure for movies
+  // VidRock uses /movie/{id} and /tv/{id}/s/e (no /embed/ prefix)
   if (providerId === 'vidrock_net') {
     if (isMovie) {
-      return `https://${domain}/embed/${tmdbId}`;
+      return `https://${domain}/movie/${tmdbId}`;
     }
-    return `https://${domain}/embed/tv/${tmdbId}/${season}/${episode}`;
+    return `https://${domain}/tv/${tmdbId}/${season}/${episode}`;
   }
 
   // Fallback standard vidsrc structure

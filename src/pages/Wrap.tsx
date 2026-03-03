@@ -6,20 +6,21 @@ import { Badge } from '@/components/ui/badge';
 import {
   Play, Clock, Download as DownloadIcon, Calendar,
   Award, Star, Flame, Zap, ChevronLeft, ChevronRight,
-  Share2, Download, Heart
+  Share2, Download, Heart, Image as ImageIcon
 } from 'lucide-react';
 import LoadingState from '@/components/LoadingState';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import html2canvas from 'html2canvas';
 
 // ── Types ──────────────────────────────────────────────
 interface WrapData {
   totalMinutes: number;
   totalTitles: number;
   topGenre: string;
-  topTitles: { title: string; count: number; minutes: number }[];
+  topTitles: { title: string; count: number; minutes: number; poster?: string }[];
   longestBingeSession: number;
   mostActiveDay: string;
   bingeStreak: number;
@@ -114,7 +115,8 @@ function processWrapData(
   const completed = withDuration.filter((sess: any) => ((sess.total_watched_time || 0) / (sess.content_duration || 1)) >= 0.7);
   const completionRate = withDuration.length > 0 ? Math.round((completed.length / withDuration.length) * 100) : 0;
 
-  const topGenre = s.length > 0 ? 'Movies' : 'N/A';
+  // topGenre will be resolved after TMDB lookup
+  const topGenre = s.length > 0 ? 'Mixed' : 'N/A';
 
   const personality = computePersonality({
     totalMinutes, activeDays, completionRate,
@@ -190,9 +192,21 @@ function SlideTopTitles({ data }: { data: WrapData }) {
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 + i * 0.15 }}
-            className="flex items-center gap-4 bg-white/5 rounded-xl p-4"
+            className="flex items-center gap-4 bg-white/5 rounded-xl p-3"
           >
-            <span className="text-3xl font-black text-muted-foreground w-10 text-center">#{i + 1}</span>
+            <span className="text-2xl font-black text-muted-foreground w-8 text-center">#{i + 1}</span>
+            {item.poster ? (
+              <img
+                src={item.poster}
+                alt={item.title}
+                className="w-12 h-16 rounded-lg object-cover flex-shrink-0"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              />
+            ) : (
+              <div className="w-12 h-16 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0">
+                <Play className="h-5 w-5 text-muted-foreground" />
+              </div>
+            )}
             <div className="flex-1 min-w-0">
               <p className="font-semibold truncate">{item.title}</p>
               <p className="text-xs text-muted-foreground">{item.minutes} min · {item.count} sessions</p>
@@ -277,31 +291,69 @@ function SlidePersonality({ data }: { data: WrapData }) {
 
 function SlideSummary({ data, label, username }: { data: WrapData; label: string; username?: string }) {
   const summaryRef = useRef<HTMLDivElement>(null);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleDownloadImage = useCallback(async () => {
+    if (!summaryRef.current) return;
+    setIsExporting(true);
+    try {
+      const canvas = await html2canvas(summaryRef.current, {
+        backgroundColor: null,
+        scale: 2,
+        useCORS: true,
+      });
+      const link = document.createElement('a');
+      link.download = `cinemaxstream-wrap-${label.replace(/\s+/g, '-').toLowerCase()}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch {
+      // fallback: share text
+    } finally {
+      setIsExporting(false);
+    }
+  }, [label]);
 
   const handleShare = useCallback(async () => {
-    const text = `🎬 My ${label} Wrap\n⏱️ ${data.totalMinutes} minutes watched\n🎯 ${data.completionRate}% completion rate\n🔥 ${data.bingeStreak} day streak\n${data.personalityTitle}\n\n#CinemaxStream #Wrap`;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: `My ${label} Wrap`, text });
-      } catch { /* user cancelled */ }
-    } else {
-      await navigator.clipboard.writeText(text);
-    }
+    if (!summaryRef.current) return;
+    try {
+      const canvas = await html2canvas(summaryRef.current, { backgroundColor: null, scale: 2, useCORS: true });
+      canvas.toBlob(async (blob) => {
+        if (blob && navigator.share && navigator.canShare?.({ files: [new File([blob], 'wrap.png', { type: 'image/png' })] })) {
+          await navigator.share({
+            title: `My ${label} Wrap`,
+            files: [new File([blob], 'wrap.png', { type: 'image/png' })],
+          });
+        } else {
+          const text = `🎬 My ${label} Wrap\n⏱️ ${data.totalMinutes} minutes watched\n🔥 ${data.bingeStreak} day streak\n${data.personalityTitle}\n\n#CinemaxStream`;
+          if (navigator.share) {
+            await navigator.share({ title: `My ${label} Wrap`, text });
+          } else {
+            await navigator.clipboard.writeText(text);
+          }
+        }
+      }, 'image/png');
+    } catch { /* user cancelled */ }
   }, [data, label]);
+
+  // Find top title poster for background
+  const topPoster = data.topTitles[0]?.poster;
 
   return (
     <motion.div {...slideTransition} className="flex flex-col items-center justify-center h-full px-6 gap-6">
       <div
         ref={summaryRef}
-        className="w-full max-w-xs bg-gradient-to-br from-violet-900/80 to-pink-900/80 rounded-3xl p-6 text-center border border-white/10 shadow-2xl"
-        style={{ aspectRatio: '9/16', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
+        className="w-full max-w-xs rounded-3xl p-6 text-center border border-white/10 shadow-2xl overflow-hidden relative"
+        style={{ aspectRatio: '9/16', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', background: 'linear-gradient(135deg, #1a0533, #2d1050, #0d1117)' }}
       >
-        <div>
+        {topPoster && (
+          <img src={topPoster} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20" />
+        )}
+        <div className="relative z-10">
           <p className="text-xs text-white/60 uppercase tracking-widest mb-2">CinemaxStream</p>
           <h3 className="text-2xl font-black text-white">{label} Wrap</h3>
           {username && <p className="text-sm text-white/70 mt-1">@{username}</p>}
         </div>
-        <div className="space-y-4 my-auto py-6">
+        <div className="space-y-4 my-auto py-6 relative z-10">
           <div>
             <div className="text-5xl font-black text-white">{data.totalMinutes.toLocaleString()}</div>
             <p className="text-xs text-white/60">minutes watched</p>
@@ -312,11 +364,18 @@ function SlideSummary({ data, label, username }: { data: WrapData; label: string
           </div>
           <div className="text-4xl">{data.personalityTitle.split(' ')[0]}</div>
           <p className="text-sm font-bold text-white">{data.personalityTitle.slice(data.personalityTitle.indexOf(' ') + 1)}</p>
+          {data.topGenre !== 'N/A' && (
+            <p className="text-xs text-white/50">Top genre: {data.topGenre}</p>
+          )}
         </div>
-        <p className="text-[10px] text-white/40">cinemaxstream.lovable.app</p>
+        <p className="text-[10px] text-white/40 relative z-10">cinemaxstream.lovable.app</p>
       </div>
 
       <div className="flex gap-3">
+        <Button onClick={handleDownloadImage} variant="outline" className="gap-2 border-white/10 hover:bg-white/5" disabled={isExporting}>
+          <ImageIcon className="h-4 w-4" />
+          {isExporting ? 'Exporting...' : 'Download as Image'}
+        </Button>
         <Button onClick={handleShare} variant="outline" className="gap-2 border-white/10 hover:bg-white/5">
           <Share2 className="h-4 w-4" />
           Share
@@ -366,9 +425,77 @@ const Wrap = () => {
       setUsername((profile as any)?.username || undefined);
 
       const mData = processWrapData(monthSessions || [], monthDownloads || [], favorites || []);
+      const yData = processWrapData(yearSessions || [], yearDownloads || [], favorites || []);
+
+      // Fetch TMDB posters + genres for top titles
+      const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY || '4626200399b08f9d04b72348e3625f15';
+      const enrichTitles = async (titles: WrapData['topTitles']) => {
+        const enriched = await Promise.all(titles.map(async (item) => {
+          try {
+            const res = await fetch(`https://api.themoviedb.org/3/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(item.title)}&page=1`);
+            const json = await res.json();
+            const result = json.results?.[0];
+            return {
+              ...item,
+              poster: result?.poster_path ? `https://image.tmdb.org/t/p/w300${result.poster_path}` : undefined,
+              genreIds: result?.genre_ids || [],
+            };
+          } catch {
+            return item;
+          }
+        }));
+        return enriched;
+      };
+
+      // Resolve top genre from TMDB genre IDs
+      const resolveTopGenre = (enrichedTitles: { genreIds?: number[] }[]) => {
+        const GENRE_MAP: Record<number, string> = {
+          28: 'Action', 12: 'Adventure', 16: 'Anime', 35: 'Comedy', 80: 'Crime',
+          99: 'Documentary', 18: 'Drama', 10751: 'Family', 14: 'Fantasy',
+          36: 'History', 27: 'Horror', 10402: 'Music', 9648: 'Mystery',
+          10749: 'Romance', 878: 'Sci-Fi', 10770: 'TV Movie', 53: 'Thriller',
+          10752: 'War', 37: 'Western', 10759: 'Action', 10765: 'Sci-Fi',
+          10768: 'War', 10762: 'Kids', 10763: 'News', 10764: 'Reality',
+          10766: 'Soap', 10767: 'Talk',
+        };
+        const genreCount: Record<string, number> = {};
+        enrichedTitles.forEach(t => {
+          (t.genreIds || []).forEach((id: number) => {
+            const name = GENRE_MAP[id] || 'Other';
+            genreCount[name] = (genreCount[name] || 0) + 1;
+          });
+        });
+        const sorted = Object.entries(genreCount).sort((a, b) => b[1] - a[1]);
+        return sorted[0]?.[0] || 'Mixed';
+      };
+
+      const [enrichedMonthly, enrichedYearly] = await Promise.all([
+        enrichTitles(mData.topTitles),
+        enrichTitles(yData.topTitles),
+      ]);
+
+      mData.topTitles = enrichedMonthly;
+      mData.topGenre = enrichedMonthly.length > 0 ? resolveTopGenre(enrichedMonthly as any) : 'N/A';
+      // Recompute personality with real genre
+      const mPersonality = computePersonality({
+        totalMinutes: mData.totalMinutes, activeDays: mData.activeDays,
+        completionRate: mData.completionRate, bingeStreak: mData.bingeStreak,
+        topGenre: mData.topGenre, titlesWatched: mData.totalTitles,
+      });
+      mData.personalityTitle = `${mPersonality.emoji} ${mPersonality.title}`;
+      mData.personalityComment = mPersonality.comment;
       setMonthlyData(mData);
 
-      const yData = processWrapData(yearSessions || [], yearDownloads || [], favorites || []);
+      yData.topTitles = enrichedYearly;
+      yData.topGenre = enrichedYearly.length > 0 ? resolveTopGenre(enrichedYearly as any) : 'N/A';
+      const yPersonality = computePersonality({
+        totalMinutes: yData.totalMinutes, activeDays: yData.activeDays,
+        completionRate: yData.completionRate, bingeStreak: yData.bingeStreak,
+        topGenre: yData.topGenre, titlesWatched: yData.totalTitles,
+      });
+      yData.personalityTitle = `${yPersonality.emoji} ${yPersonality.title}`;
+      yData.personalityComment = yPersonality.comment;
+
       // Monthly trend for yearly
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       const trendMap: Record<string, number> = {};

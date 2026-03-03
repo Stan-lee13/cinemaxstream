@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from 'sonner';
@@ -385,7 +385,7 @@ export const useContentDetail = (contentId: string | undefined, contentTypeHint?
   };
 
   // Load episodes for a season
-  const loadEpisodesForSeason = async (seasonNumber: number) => {
+  const loadEpisodesForSeason = useCallback(async (seasonNumber: number) => {
     if (!contentId) return;
 
     // Use tmdbId when available (for DB content where contentId is a UUID)
@@ -404,7 +404,7 @@ export const useContentDetail = (contentId: string | undefined, contentTypeHint?
     } catch (error) {
       // Keep existing episodes if error
     }
-  };
+  }, [contentId, tmdbId]);
 
   return {
     content,
