@@ -108,11 +108,8 @@ const ContentDetail = () => {
   }, [isPlaying, setIsPlaying, navigate]);
 
 
-  useEffect(() => {
-    if (seasons.length > 0) {
-      loadEpisodesForSeason(seasons[0].season_number);
-    }
-  }, [seasons, loadEpisodesForSeason]);
+  // Removed: redundant useEffect that re-loaded first season episodes
+  // The hook already loads first season episodes during initial fetch
 
   useEffect(() => {
     return () => {
@@ -348,7 +345,7 @@ const ContentDetail = () => {
                           {/* Download System */}
                           <div className="mt-4">
                             <DownloadButton
-                              contentId={String(content.id)}
+                              contentId={tmdbId || String(content.id)}
                               contentTitle={content.title || 'Unknown'}
                               contentType={content.content_type || 'movie'}
                               seasonNumber={currentSeason}
