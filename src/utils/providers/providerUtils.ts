@@ -28,7 +28,7 @@ const INTERNAL_SOURCES: Record<number, string> = {
 // Provider domain mapping - INTERNAL ONLY
 const PROVIDER_DOMAINS: Record<string, string> = {
   autoembed: 'player.autoembed.cc',
-  vidsrc_vip: 'vidsrc.vip',
+  vidsrc_vip: 'vidsrc-embed.ru',
   vidrock_net: 'vidrock.net'
 };
 
