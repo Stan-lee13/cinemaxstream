@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 import { logError } from '@/utils/productionLogger';
-import { getErrorMessage } from '@/utils/errorHelpers';
+import { getErrorMessage as getErrorMsg } from '@/utils/errorHelpers';
 import { AuthContext } from './authContextBase';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -11,6 +11,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPremium, setIsPremium] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -30,8 +31,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(currentSession?.user ?? null);
           setIsLoading(false);
           
-          // Check premium status from database
+          // Check blocked & premium status from database
           if (currentSession?.user) {
+            checkBlockedStatus(currentSession.user.id);
             checkPremiumStatus(currentSession.user.id);
           }
         }
@@ -58,11 +60,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           
           // Only show sign-in toast for actual sign-in events, not session restores
           if (event === 'SIGNED_IN' && currentSession?.user) {
-            // Defer premium check to avoid auth state change deadlock
-            setTimeout(() => checkPremiumStatus(currentSession.user.id), 0);
+            // Defer checks to avoid auth state change deadlock
+            setTimeout(() => {
+              checkBlockedStatus(currentSession.user.id);
+              checkPremiumStatus(currentSession.user.id);
+            }, 0);
           } else if (event === 'SIGNED_OUT') {
             toast.success('Successfully signed out!');
             setIsPremium(false);
+            setIsBlocked(false);
           } else if (event === 'TOKEN_REFRESHED') {
             // Token refreshed
           }
@@ -75,6 +81,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       subscription.unsubscribe();
     };
   }, []);
+
+  // Check if user is blocked
+  const checkBlockedStatus = async (userId: string) => {
+    try {
+      const { data } = await supabase
+        .from('blocked_users')
+        .select('id')
+        .eq('user_id', userId)
+        .maybeSingle();
+      
+      if (data) {
+        setIsBlocked(true);
+        // Sign them out
+        await supabase.auth.signOut();
+        toast.error('Your account has been suspended. Please contact support.');
+      } else {
+        setIsBlocked(false);
+      }
+    } catch {
+      setIsBlocked(false);
+    }
+  };
 
   // Check premium status from database
   const checkPremiumStatus = async (userId: string) => {
@@ -234,17 +262,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const value = {
-    user,
-    session,
+    user: isBlocked ? null : user,
+    session: isBlocked ? null : session,
     isLoading,
     signIn,
     signInWithGoogle,
     signUp,
     signOut,
-    isAuthenticated: !!user,
+    isAuthenticated: !!user && !isBlocked,
     
     isPremium,
-    activatePremium
+    activatePremium,
+    isBlocked
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

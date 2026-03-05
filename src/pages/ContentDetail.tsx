@@ -239,7 +239,8 @@ const ContentDetail = () => {
                 rating: String(safeContent.rating || ''),
                 duration: String(safeContent.duration || ''),
                 type: safeContent.content_type || 'movie',
-                is_premium: safeContent.is_premium || undefined
+                is_premium: safeContent.is_premium || undefined,
+                genres: (safeContent as any).genres || []
               } as unknown as Content}
               liked={liked}
               toggleFavorite={toggleFavorite}

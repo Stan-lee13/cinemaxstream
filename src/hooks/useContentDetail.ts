@@ -37,9 +37,9 @@ export interface Content extends Omit<ContentRow, 'content_type' | 'rating'> {
   content_categories?: ContentCategoryRow | null;
   is_premium?: boolean | null;
   tmdb_id?: string | null;
-  // Make these properties optional to avoid conflicts
   content_type?: string;
   rating?: string | null;
+  genres?: string[];
 }
 
 export const useContentDetail = (contentId: string | undefined, contentTypeHint?: string) => {
@@ -103,6 +103,7 @@ export const useContentDetail = (contentId: string | undefined, contentTypeHint?
               trending: true,
               popular: true,
               is_premium: parseFloat(tmdbContent.rating) > 8.0,
+              genres: tmdbContent.genres || [],
               content_categories: {
                 id: '1',
                 name: tmdbContent.category,

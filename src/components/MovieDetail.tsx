@@ -18,6 +18,7 @@ interface Content {
   title?: string;
   description?: string;
   trailer_key?: string;
+  genres?: string[];
 }
 
 interface MovieDetailProps {
@@ -123,6 +124,20 @@ const MovieDetail = ({
               <span className="text-yellow-500 text-xs font-medium">{content.rating || "—"}</span>
             </span>
           </div>
+          
+          {/* Genres */}
+          {content.genres && content.genres.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {content.genres.map((genre) => (
+                <span
+                  key={genre}
+                  className="px-3 py-1 rounded-full bg-secondary/60 text-xs font-medium text-foreground border border-border/50"
+                >
+                  {genre}
+                </span>
+              ))}
+            </div>
+          )}
           
           <h1 className="text-4xl md:text-5xl font-bold mb-4">{content.title || "Untitled"}</h1>
           <p className="text-gray-300 mb-8 text-sm md:text-base max-w-2xl">
