@@ -23,6 +23,8 @@ const API_KEY = import.meta.env.VITE_TMDB_API_KEY || "4626200399b08f9d04b72348e3
 const ensureArray = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
 
 // Minimal local typings for TMDB responses to avoid using `any` across the file
+type TMDbGenre = { id: number; name: string };
+
 type TMDbItem = Partial<{
   id: number | string;
   media_type: string;
@@ -41,6 +43,8 @@ type TMDbItem = Partial<{
   season_number: number;
   air_date: string;
   episode_count: number;
+  genres: TMDbGenre[];
+  genre_ids: number[];
 }>;
 
 type TMDbSeason = Partial<{
@@ -60,11 +64,35 @@ type TMDbEpisode = Partial<{
   air_date: string;
 }>;
 
+// TMDB genre ID to name mapping (common genres)
+const GENRE_MAP: Record<number, string> = {
+  28: 'Action', 12: 'Adventure', 16: 'Animation', 35: 'Comedy', 80: 'Crime',
+  99: 'Documentary', 18: 'Drama', 10751: 'Family', 14: 'Fantasy', 36: 'History',
+  27: 'Horror', 10402: 'Music', 9648: 'Mystery', 10749: 'Romance', 878: 'Sci-Fi',
+  10770: 'TV Movie', 53: 'Thriller', 10752: 'War', 37: 'Western',
+  10759: 'Action & Adventure', 10762: 'Kids', 10763: 'News', 10764: 'Reality',
+  10765: 'Sci-Fi & Fantasy', 10766: 'Soap', 10767: 'Talk', 10768: 'War & Politics',
+};
+
+// Extract genre names from TMDB data
+const extractGenres = (it: TMDbItem): string[] => {
+  // If full genre objects are present (from detail endpoint)
+  if (Array.isArray(it.genres) && it.genres.length > 0) {
+    return it.genres.map(g => g.name).filter(Boolean);
+  }
+  // If genre_ids are present (from list endpoints)
+  if (Array.isArray(it.genre_ids) && it.genre_ids.length > 0) {
+    return it.genre_ids.map(id => GENRE_MAP[id]).filter(Boolean);
+  }
+  return [];
+};
+
 // Function to format content item
 const formatContentItem = (item: unknown, type: string = 'movie'): ContentItem => {
   const it = (item as TMDbItem) || {};
   const isMovie = type === 'movie';
   const contentType = normalizeContentType(type);
+  const genres = extractGenres(it);
   
   return {
     id: String(it.id ?? ''),
@@ -81,7 +109,8 @@ const formatContentItem = (item: unknown, type: string = 'movie'): ContentItem =
     category: contentType,
     type: contentType,
     content_type: contentType,
-    trailer_key: (it.id ?? '').toString() // Will be replaced with actual trailer key when needed
+    trailer_key: (it.id ?? '').toString(), // Will be replaced with actual trailer key when needed
+    genres
   };
 };
 

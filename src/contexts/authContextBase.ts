@@ -13,6 +13,7 @@ export interface AuthContextType {
   
   isPremium: boolean;
   activatePremium: (promoCode: string) => Promise<boolean>;
+  isBlocked?: boolean;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);

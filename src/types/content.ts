@@ -12,6 +12,7 @@ export interface ContentItem {
   type: string;
   trailer_key?: string | undefined;
   content_type?: string;
+  genres?: string[];
 }
 
 export interface SearchResult {

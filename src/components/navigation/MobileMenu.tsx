@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   Sheet, 
   SheetContent, 
@@ -24,12 +25,14 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserTier } from "@/hooks/useUserTier";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import { Badge } from "@/components/ui/badge";
 
 const MobileMenu: React.FC = () => {
   const navigate = useNavigate();
   const { user, signOut, isAuthenticated } = useAuth();
   const { tier, isPro, isPremium } = useUserTier(user?.id);
+  const { profileData } = useUserProfile();
   
   const handleSignOut = async () => {
     await signOut();
@@ -82,12 +85,15 @@ const MobileMenu: React.FC = () => {
         {isAuthenticated && user && (
           <div className="mb-6 p-4 rounded-xl bg-white/5 border border-white/10">
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
-                <User size={18} className="text-white" />
-              </div>
+              <Avatar className="w-10 h-10">
+                <AvatarImage src={profileData?.avatar_url || user?.user_metadata?.avatar_url} alt="User avatar" />
+                <AvatarFallback className="bg-gradient-to-br from-primary to-primary/60 text-white text-sm font-bold">
+                  {(profileData?.username || user.email || 'U').charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
               <div className="flex-1 min-w-0">
                 <p className="text-white font-medium truncate text-sm">
-                  {user.email?.split('@')[0] || 'User'}
+                  {profileData?.username || user.email?.split('@')[0] || 'User'}
                 </p>
                 <div className="flex items-center gap-2 mt-1">
                   <Badge className={`text-xs px-2 py-0.5 ${getTierBadgeClass()}`}>

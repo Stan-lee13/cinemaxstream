@@ -2,10 +2,10 @@
  * Provider utilities with source obfuscation
  * Users see "Source 1-3" only - never actual provider names/URLs
  * 
- * RESTRUCTURED: Exactly 3 sources as required
- * - Source 1: AutoEmbed (primary)
- * - Source 2: VidSrc (previously Source 3)
- * - Source 3: VidRock (previously Source 5)
+ * RESTRUCTURED: Exactly 3 sources
+ * - Source 1: embed.su (primary, reliable)
+ * - Source 2: vidbinge.to (alternative)
+ * - Source 3: VidRock (premium)
  * 
  * SECURITY: Provider domains are never exposed to the client UI
  */
@@ -18,22 +18,18 @@ export type ProviderOptions = {
 };
 
 // Internal source mapping - NEVER expose provider names to UI
-// Source 1-3 map to these internal providers
 const INTERNAL_SOURCES: Record<number, string> = {
-  1: 'autoembed',    // Primary - AutoEmbed
-  2: 'vidsrc_vip',   // VidSrc VIP (previously Source 3)
-  3: 'vidrock_net'   // VidRock (previously Source 5)
+  1: 'embed_su',      // Primary - embed.su
+  2: 'vidbinge',      // Alternative - vidbinge.to
+  3: 'vidrock_net'    // VidRock (premium)
 };
 
 // Provider domain mapping - INTERNAL ONLY
 const PROVIDER_DOMAINS: Record<string, string> = {
-  autoembed: 'player.autoembed.cc',
-  vidsrc_vip: 'vidsrc-embed.ru',
+  embed_su: 'embed.su',
+  vidbinge: 'vidbinge.to',
   vidrock_net: 'vidrock.net'
 };
-
-// AutoEmbed alternate domain for fallback
-const AUTOEMBED_DOMAIN = 'player.autoembed.cc';
 
 const DEFAULT_SOURCE = 1;
 const PREMIUM_DEFAULT_SOURCE = 3; // VidRock for premium users
@@ -94,20 +90,22 @@ const buildEmbedUrl = (providerId: string, tmdbId: string, opts: ProviderOptions
   const episode = clampEpisodeInfo(opts.episodeNum, 1);
   const isMovie = isMovieContent(opts.contentType);
 
-  // AutoEmbed - Primary source
-  if (providerId === 'autoembed') {
+  // embed.su - Primary source
+  // URL pattern: https://embed.su/embed/movie/{tmdb_id} or /embed/tv/{tmdb_id}/{season}/{episode}
+  if (providerId === 'embed_su') {
     if (isMovie) {
       return `https://${domain}/embed/movie/${tmdbId}`;
     }
     return `https://${domain}/embed/tv/${tmdbId}/${season}/${episode}`;
   }
 
-  // VidSrc VIP
-  if (providerId === 'vidsrc_vip') {
+  // vidbinge.to - Alternative source
+  // URL pattern: https://vidbinge.to/movie/{tmdb_id} or /tv/{tmdb_id}/{season}/{episode}
+  if (providerId === 'vidbinge') {
     if (isMovie) {
-      return `https://${domain}/embed/movie/${tmdbId}`;
+      return `https://${domain}/movie/${tmdbId}`;
     }
-    return `https://${domain}/embed/tv/${tmdbId}/${season}/${episode}`;
+    return `https://${domain}/tv/${tmdbId}/${season}/${episode}`;
   }
 
   // VidRock uses /movie/{id} and /tv/{id}/s/e (no /embed/ prefix)
@@ -118,7 +116,7 @@ const buildEmbedUrl = (providerId: string, tmdbId: string, opts: ProviderOptions
     return `https://${domain}/tv/${tmdbId}/${season}/${episode}`;
   }
 
-  // Fallback standard vidsrc structure
+  // Fallback
   if (isMovie) {
     return `https://${domain}/embed/movie/${tmdbId}`;
   }
@@ -127,9 +125,6 @@ const buildEmbedUrl = (providerId: string, tmdbId: string, opts: ProviderOptions
 
 /**
  * Get streaming URL for a specific source number
- * @param contentId - TMDB content ID
- * @param sourceNumber - Source number (1-3)
- * @param options - Provider options
  */
 export const getStreamingUrlForSource = (
   contentId: string,
@@ -146,7 +141,7 @@ export const getStreamingUrlForSource = (
  */
 export const getStreamingUrlForProvider = (
   contentId: string,
-  provider: string = 'autoembed',
+  provider: string = 'embed_su',
   options: ProviderOptions = {}
 ): string => {
   const sourceNumber = getSourceNumber(provider);
@@ -164,7 +159,6 @@ export const isVidRockSource = (sourceNumber: number): boolean => {
  * Determine if a provider requires iframe embedding
  */
 export const isIframeSourceImpl = (): boolean => {
-  // All our providers use iframe embedding
   return true;
 };
 
