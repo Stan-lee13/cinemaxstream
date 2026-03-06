@@ -32,7 +32,8 @@ import {
   XCircle,
   TrendingUp,
   Film,
-  Eye
+  Eye,
+  MonitorSmartphone
 } from "lucide-react";
 import LoadingState from "@/components/LoadingState";
 import { getErrorMessage } from "@/utils/errorHelpers";
@@ -59,6 +60,18 @@ interface AnalyticsData {
   newUsersThisWeek: number;
   watchSessions: number;
   totalContent: number;
+}
+
+
+interface DeviceSession {
+  id: string;
+  user_id: string;
+  device_os: string | null;
+  device_browser: string | null;
+  device_resolution: string | null;
+  device_fingerprint: string;
+  last_active_at: string;
+  created_at: string;
 }
 
 interface PromoCode {
@@ -100,6 +113,7 @@ const Admin = () => {
     expiresAt: ""
   });
   const [isSavingPromo, setIsSavingPromo] = useState(false);
+  const [deviceSessions, setDeviceSessions] = useState<DeviceSession[]>([]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -165,12 +179,14 @@ const Admin = () => {
         { data: roles },
         { data: sessions },
         { data: contentData },
-        { data: promoData }
+        { data: promoData },
+        { data: deviceData }
       ] = await Promise.all([
         supabase.from('user_roles').select('*'),
         supabase.from('watch_sessions').select('id, created_at').gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()),
         supabase.from('content').select('*').order('created_at', { ascending: false }),
-        supabase.from('premium_codes').select('*').order('created_at', { ascending: false })
+        supabase.from('premium_codes').select('*').order('created_at', { ascending: false }),
+        supabase.from('device_sessions').select('*').order('last_active_at', { ascending: false }).limit(200)
       ]);
 
       const premiumCount = usersFromEdge.filter(u => u.role === 'premium' || u.subscription_tier === 'premium').length || 
@@ -201,6 +217,7 @@ const Admin = () => {
       })));
 
       setPromoCodes((promoData || []) as PromoCode[]);
+      setDeviceSessions((deviceData || []) as DeviceSession[]);
     } catch (error) {
       console.error('Fetch error:', error);
       toast.error("Failed to load data");
@@ -435,6 +452,10 @@ const Admin = () => {
               <Users className="h-4 w-4" />
               <span>Users</span>
             </TabsTrigger>
+            <TabsTrigger value="devices" className="gap-2 data-[state=active]:bg-background">
+              <MonitorSmartphone className="h-4 w-4" />
+              Device Sessions
+            </TabsTrigger>
             <TabsTrigger value="promos" className="gap-2 data-[state=active]:bg-background">
               <Crown className="h-4 w-4" />
               <span>Promo Codes</span>
@@ -646,6 +667,51 @@ const Admin = () => {
           </TabsContent>
 
           {/* Promo Codes Tab */}
+          <TabsContent value="devices" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MonitorSmartphone className="h-5 w-5" />
+                  Active Device Sessions
+                </CardTitle>
+                <CardDescription>
+                  Monitor tracked devices and enforce device limits.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {deviceSessions.length === 0 && (
+                    <p className="text-sm text-muted-foreground">No device sessions found.</p>
+                  )}
+                  {deviceSessions.map((d) => (
+                    <div key={d.id} className="rounded-md border p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-medium">{d.device_os || 'Unknown OS'} • {d.device_browser || 'Unknown Browser'}</p>
+                        <p className="text-xs text-muted-foreground">{d.device_resolution || 'Unknown resolution'} • Last active {new Date(d.last_active_at).toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">User: {d.user_id}</p>
+                      </div>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={async () => {
+                          const { error } = await supabase.from('device_sessions').delete().eq('id', d.id);
+                          if (error) {
+                            toast.error('Failed to remove device session');
+                            return;
+                          }
+                          toast.success('Device session removed');
+                          fetchData();
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="promos" className="space-y-6">
             {/* Create New Promo */}
             <Card>

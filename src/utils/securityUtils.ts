@@ -12,7 +12,7 @@ export const CSP_HEADERS = {
     "font-src 'self' https://fonts.gstatic.com",
     "connect-src 'self' https://api.themoviedb.org https://*.supabase.co wss://*.supabase.co",
     "media-src 'self' https: blob:",
-    "frame-src 'self' https://vidsrc.xyz https://vidsrc.su https://vidsrc.vip https://player.vimeo.com",
+    "frame-src 'self' https://player.videasy.net https://vidnest.fun https://vidlink.pro https://player.vimeo.com",
     "object-src 'none'",
     "base-uri 'self'"
   ].join('; ')

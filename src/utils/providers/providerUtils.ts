@@ -1,3 +1,9 @@
+import { videasyProvider } from './adapters/videasyProvider';
+import { vidnestProvider } from './adapters/vidnestProvider';
+import { vidrockProvider } from './adapters/vidrockProvider';
+import { vidlinkProvider } from './adapters/vidlinkProvider';
+import type { ProviderAdapter, ProviderOptions } from './adapters/types';
+
 /**
  * Provider utilities — 4 streaming sources
  * Server 1: Vidrock (vidrock.net)
@@ -6,19 +12,11 @@
  * Server 4: Vidlink (vidlink.pro)
  */
 
-export type ProviderOptions = {
-  autoplay?: boolean;
-  contentType?: 'movie' | 'series' | 'anime' | 'documentary' | string;
-  season?: number | null;
-  episodeNum?: number | null;
-  progress?: number; // resume position in seconds
-  color?: string; // hex accent color without #
-};
+export type { ProviderOptions } from './adapters/types';
 
-// ── Source map ──────────────────────────────────────────────────────
 export interface SourceConfig {
   key: string;
-  label: string;        // user-facing label
+  label: string;
   domain: string;
   isPremium: boolean;
   headers?: Record<string, string>;
@@ -89,7 +87,6 @@ export const getDefaultSource = (isPremium = false): number =>
   isPremium ? PREMIUM_DEFAULT_SOURCE : DEFAULT_SOURCE;
 
 const normalizeContentType = (type?: string) => (type ?? 'movie').toLowerCase();
-
 const isMovieContent = (type?: string) => {
   const n = normalizeContentType(type);
   return n === 'movie' || n === 'documentary';
@@ -98,60 +95,68 @@ const isMovieContent = (type?: string) => {
 const clamp = (v?: number | null, fallback = 1) =>
   typeof v === 'number' && !Number.isNaN(v) && v >= 1 ? Math.floor(v) : fallback;
 
-// ── URL builders ───────────────────────────────────────────────────
-
-const buildEmbedUrl = (sourceNumber: number, tmdbId: string, opts: ProviderOptions): string => {
-  const cfg = SOURCE_CONFIGS[sourceNumber];
-  if (!cfg) return '';
-  const { domain, key } = cfg;
-  const season = clamp(opts.season);
-  const episode = clamp(opts.episodeNum);
-  const isMovie = isMovieContent(opts.contentType);
-
-  // Build query params
-  const params = new URLSearchParams();
-
-  if (key === 'videasy') {
-    // Videasy supports color, progress, nextEpisode, autoplayNextEpisode, episodeSelector
-    if (opts.color) params.set('color', opts.color);
-    if (opts.progress && opts.progress > 0) params.set('progress', String(Math.floor(opts.progress)));
-    if (!isMovie) {
-      params.set('nextEpisode', 'true');
-      params.set('autoplayNextEpisode', 'true');
-    }
-    const qs = params.toString();
-    if (isMovie) return `https://${domain}/movie/${tmdbId}${qs ? '?' + qs : ''}`;
-    return `https://${domain}/tv/${tmdbId}/${season}/${episode}${qs ? '?' + qs : ''}`;
-  }
-
-  if (key === 'vidnest') {
-    // Vidnest supports startAt, server
-    if (opts.progress && opts.progress > 0) params.set('startAt', String(Math.floor(opts.progress)));
-    const qs = params.toString();
-    if (isMovie) return `https://${domain}/movie/${tmdbId}${qs ? '?' + qs : ''}`;
-    return `https://${domain}/tv/${tmdbId}/${season}/${episode}${qs ? '?' + qs : ''}`;
-  }
-
-  if (key === 'vidrock') {
-    if (isMovie) return `https://${domain}/movie/${tmdbId}`;
-    return `https://${domain}/tv/${tmdbId}/${season}/${episode}`;
-  }
-
-  if (key === 'vidlink') {
-    if (isMovie) return `https://${domain}/movie/${tmdbId}`;
-    return `https://${domain}/tv/${tmdbId}/${season}/${episode}`;
-  }
-
-  // Fallback
-  if (isMovie) return `https://${domain}/movie/${tmdbId}`;
-  return `https://${domain}/tv/${tmdbId}/${season}/${episode}`;
+export const getSourceConfig = (sourceNumber: number): SourceConfig => {
+  const adapter = SOURCE_REGISTRY[sourceNumber] || SOURCE_REGISTRY[DEFAULT_SOURCE];
+  return {
+    key: adapter.key,
+    label: adapter.label,
+    domain: adapter.domain,
+    isPremium: adapter.isPremium,
+    referrer: adapter.referrer,
+    headers: { Referer: adapter.referrer },
+  };
 };
+
+export const getAllSourceConfigs = (): Record<number, SourceConfig> =>
+  Object.fromEntries(Object.entries(SOURCE_REGISTRY).map(([source, adapter]) => [
+    Number(source),
+    {
+      key: adapter.key,
+      label: adapter.label,
+      domain: adapter.domain,
+      isPremium: adapter.isPremium,
+      referrer: adapter.referrer,
+      headers: { Referer: adapter.referrer },
+    },
+  ]));
+
+export const getSourceNumber = (providerId: string): number => {
+  const normalized = providerId.toLowerCase().trim();
+
+  if (normalized.startsWith('source_')) {
+    const sourceNum = parseInt(normalized.replace('source_', ''), 10);
+    if (SOURCE_REGISTRY[sourceNum]) return sourceNum;
+  }
+
+  const byKey = Object.entries(SOURCE_REGISTRY).find(([, adapter]) => adapter.key === normalized);
+  if (byKey) return parseInt(byKey[0], 10);
+
+  return DEFAULT_SOURCE;
+};
+
+export const getProviderFromSource = (sourceNumber: number): string =>
+  (SOURCE_REGISTRY[sourceNumber] || SOURCE_REGISTRY[DEFAULT_SOURCE]).key;
+
+export const getAvailableSources = (): number[] => [1, 2, 3, 4];
+
+export const getDefaultSource = (isPremium = false): number =>
+  isPremium ? PREMIUM_DEFAULT_SOURCE : DEFAULT_SOURCE;
 
 export const getStreamingUrlForSource = (
   contentId: string,
   sourceNumber: number = DEFAULT_SOURCE,
   options: ProviderOptions = {}
-): string => buildEmbedUrl(sourceNumber, contentId, options);
+): string => {
+  const adapter = SOURCE_REGISTRY[sourceNumber] || SOURCE_REGISTRY[DEFAULT_SOURCE];
+  const season = clamp(options.season);
+  const episode = clamp(options.episodeNum);
+
+  if (isMovieContent(options.contentType)) {
+    return adapter.getMovieEmbedUrl(contentId, options);
+  }
+
+  return adapter.getTVEmbedUrl(contentId, season, episode, options);
+};
 
 /** @deprecated Use getStreamingUrlForSource */
 export const getStreamingUrlForProvider = (
@@ -165,14 +170,16 @@ export const isVidRockSource = (sourceNumber: number): boolean => sourceNumber =
 export const isIframeSourceImpl = (): boolean => true;
 
 export const getSourceLabel = (sourceNumber: number): string => {
-  const cfg = SOURCE_CONFIGS[sourceNumber];
-  return cfg ? cfg.label : `Source ${sourceNumber}`;
+  const adapter = SOURCE_REGISTRY[sourceNumber];
+  return adapter ? adapter.label : `Source ${sourceNumber}`;
 };
 
-/**
- * Get the referrer policy value for a given source
- */
 export const getSourceReferrer = (sourceNumber: number): string => {
-  const cfg = SOURCE_CONFIGS[sourceNumber];
-  return cfg?.referrer || '';
+  const adapter = SOURCE_REGISTRY[sourceNumber];
+  return adapter?.referrer || '';
+};
+
+export const probeProviderHealth = async (sourceNumber: number, tmdbId = '299534') => {
+  const adapter = SOURCE_REGISTRY[sourceNumber] || SOURCE_REGISTRY[DEFAULT_SOURCE];
+  return adapter.probeHealth(tmdbId);
 };

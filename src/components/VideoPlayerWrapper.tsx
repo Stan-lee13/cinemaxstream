@@ -350,9 +350,10 @@ const VideoPlayerWrapper = ({
     setFailedSources([]);
     setActiveSource(sourceNum);
     setSavedSource(sourceNum);
+    onSourceChange?.(getProviderFromSource(sourceNum));
     saveGlobalState({ preferredSource: sourceNum });
     toast.info(`Switched to ${getSourceConfig(sourceNum).label}`);
-  }, [activeSource, setSavedSource]);
+  }, [activeSource, setSavedSource, onSourceChange]);
 
   const handleRetry = useCallback(() => {
     const allSources = getAvailableSources();
