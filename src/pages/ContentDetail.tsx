@@ -210,7 +210,6 @@ const ContentDetail = () => {
                   poster={getImageUrlFlexible(safeContent)}
                   title={String(safeContent.title || '')}
                   forcedSource={getSourceNumber(activeProvider)}
-                  onSourceChange={setActiveProvider}
                 />
               
               {(content.content_type === 'series' || content.content_type === 'anime') && seasons.length > 0 && (

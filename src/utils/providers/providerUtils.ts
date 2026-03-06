@@ -5,11 +5,11 @@ import { vidlinkProvider } from './adapters/vidlinkProvider';
 import type { ProviderAdapter, ProviderOptions } from './adapters/types';
 
 /**
- * Streaming provider registry
- * Source 1: Videasy
- * Source 2: Vidnest
- * Source 3: Vidrock
- * Source 4: Vidlink
+ * Provider utilities — 4 streaming sources
+ * Server 1: Vidrock (vidrock.net)
+ * Server 2: Vidnest (vidnest.fun)
+ * Server 3: Videasy (player.videasy.net)
+ * Server 4: Vidlink (vidlink.pro)
  */
 
 export type { ProviderOptions } from './adapters/types';
@@ -23,15 +23,68 @@ export interface SourceConfig {
   referrer?: string;
 }
 
-const SOURCE_REGISTRY: Record<number, ProviderAdapter> = {
-  1: videasyProvider,
-  2: vidnestProvider,
-  3: vidrockProvider,
-  4: vidlinkProvider,
+const SOURCE_CONFIGS: Record<number, SourceConfig> = {
+  1: {
+    key: 'vidrock',
+    label: 'Vidrock',
+    domain: 'vidrock.net',
+    isPremium: true,
+    referrer: 'https://vidrock.net',
+    headers: { 'Referer': 'https://vidrock.net' },
+  },
+  2: {
+    key: 'vidnest',
+    label: 'Vidnest',
+    domain: 'vidnest.fun',
+    isPremium: false,
+    referrer: 'https://vidnest.fun',
+    headers: { 'Referer': 'https://vidnest.fun' },
+  },
+  3: {
+    key: 'videasy',
+    label: 'Videasy',
+    domain: 'player.videasy.net',
+    isPremium: false,
+    referrer: 'https://player.videasy.net',
+    headers: { 'Referer': 'https://player.videasy.net' },
+  },
+  4: {
+    key: 'vidlink',
+    label: 'Vidlink',
+    domain: 'vidlink.pro',
+    isPremium: false,
+    referrer: 'https://vidlink.pro',
+    headers: { 'Referer': 'https://vidlink.pro' },
+  },
 };
 
 const DEFAULT_SOURCE = 1;
-const PREMIUM_DEFAULT_SOURCE = 3;
+const PREMIUM_DEFAULT_SOURCE = 1;
+
+// ── Helpers ────────────────────────────────────────────────────────
+
+export const getSourceConfig = (sourceNumber: number): SourceConfig =>
+  SOURCE_CONFIGS[sourceNumber] || SOURCE_CONFIGS[DEFAULT_SOURCE];
+
+export const getAllSourceConfigs = (): Record<number, SourceConfig> => SOURCE_CONFIGS;
+
+export const getSourceNumber = (providerId: string): number => {
+  const normalized = providerId.toLowerCase().trim();
+  if (normalized.startsWith('source_')) {
+    const sourceNum = parseInt(normalized.replace('source_', ''), 10);
+    if (SOURCE_CONFIGS[sourceNum]) return sourceNum;
+  }
+  const entry = Object.entries(SOURCE_CONFIGS).find(([, c]) => c.key === normalized);
+  return entry ? parseInt(entry[0], 10) : DEFAULT_SOURCE;
+};
+
+export const getProviderFromSource = (sourceNumber: number): string =>
+  (SOURCE_CONFIGS[sourceNumber] || SOURCE_CONFIGS[DEFAULT_SOURCE]).key;
+
+export const getAvailableSources = (): number[] => [1, 2, 3, 4];
+
+export const getDefaultSource = (isPremium = false): number =>
+  isPremium ? PREMIUM_DEFAULT_SOURCE : DEFAULT_SOURCE;
 
 const normalizeContentType = (type?: string) => (type ?? 'movie').toLowerCase();
 const isMovieContent = (type?: string) => {

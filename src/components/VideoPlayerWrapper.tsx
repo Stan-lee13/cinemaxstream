@@ -38,7 +38,6 @@ import {
 import { saveGlobalState, loadGlobalState } from "@/utils/globalState";
 import { Skeleton } from "./ui/skeleton";
 import { getBestDiscoveredSource } from "@/utils/providers/sourceDiscoveryEngine";
-import { getProviderFromSource } from "@/utils/providers/providerUtils";
 
 interface VideoPlayerWrapperProps {
   contentId: string;
@@ -52,7 +51,6 @@ interface VideoPlayerWrapperProps {
   poster?: string;
   title?: string;
   forcedSource?: number;
-  onSourceChange?: (providerKey: string) => void;
 }
 
 const LOAD_TIMEOUT_MS = 20_000;
@@ -92,7 +90,6 @@ const VideoPlayerWrapper = ({
   poster,
   title,
   forcedSource,
-  onSourceChange,
 }: VideoPlayerWrapperProps) => {
   const { userProfile, canStream, userUsage } = useCreditSystem();
   const { tier, isPremium } = useUserTier(userId);
