@@ -8,6 +8,8 @@ import { AuthContext } from './authContextBase';
 import { registerDevice } from '@/utils/providers/deviceTracker';
 import { startHealthMonitor, stopHealthMonitor } from '@/utils/providers/streamHealthMonitor';
 import { preloadAllHandshakes } from '@/utils/providers/preloadEngine';
+import { startReleaseRadarEngine, stopReleaseRadarEngine } from '@/services/releaseRadarEngine';
+import { startTorrentConversionWorker, stopTorrentConversionWorker } from '@/services/torrentConversionWorker';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -40,6 +42,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             checkPremiumStatus(currentSession.user.id);
             registerDevice(currentSession.user.id);
             startHealthMonitor(currentSession.user.id);
+            startReleaseRadarEngine();
+            startTorrentConversionWorker();
             preloadAllHandshakes();
           }
         }
@@ -72,6 +76,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               checkPremiumStatus(currentSession.user.id);
               registerDevice(currentSession.user.id);
               startHealthMonitor(currentSession.user.id);
+              startReleaseRadarEngine();
+              startTorrentConversionWorker();
               preloadAllHandshakes();
             }, 0);
           } else if (event === 'SIGNED_OUT') {
@@ -79,6 +85,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setIsPremium(false);
             setIsBlocked(false);
             stopHealthMonitor();
+            stopReleaseRadarEngine();
+            stopTorrentConversionWorker();
           } else if (event === 'TOKEN_REFRESHED') {
             // Token refreshed
           }

@@ -1,11 +1,9 @@
 /**
  * Provider utilities — 4 streaming sources
- * Source 1: Videasy (player.videasy.net)
- * Source 2: Vidnest (vidnest.fun) — ad-free plays
- * Source 3: Vidrock (vidrock.net) — premium
- * Source 4: Vidlink (vidlink.pro)
- *
- * SECURITY: Provider domains are never exposed to the client UI
+ * Server 1: Vidrock (vidrock.net)
+ * Server 2: Vidnest (vidnest.fun)
+ * Server 3: Videasy (player.videasy.net)
+ * Server 4: Vidlink (vidlink.pro)
  */
 
 export type ProviderOptions = {
@@ -29,12 +27,12 @@ export interface SourceConfig {
 
 const SOURCE_CONFIGS: Record<number, SourceConfig> = {
   1: {
-    key: 'videasy',
-    label: 'Videasy',
-    domain: 'player.videasy.net',
-    isPremium: false,
-    referrer: 'https://player.videasy.net',
-    headers: { 'Referer': 'https://player.videasy.net' },
+    key: 'vidrock',
+    label: 'Vidrock',
+    domain: 'vidrock.net',
+    isPremium: true,
+    referrer: 'https://vidrock.net',
+    headers: { 'Referer': 'https://vidrock.net' },
   },
   2: {
     key: 'vidnest',
@@ -45,12 +43,12 @@ const SOURCE_CONFIGS: Record<number, SourceConfig> = {
     headers: { 'Referer': 'https://vidnest.fun' },
   },
   3: {
-    key: 'vidrock',
-    label: 'Vidrock',
-    domain: 'vidrock.net',
-    isPremium: true,
-    referrer: 'https://vidrock.net',
-    headers: { 'Referer': 'https://vidrock.net' },
+    key: 'videasy',
+    label: 'Videasy',
+    domain: 'player.videasy.net',
+    isPremium: false,
+    referrer: 'https://player.videasy.net',
+    headers: { 'Referer': 'https://player.videasy.net' },
   },
   4: {
     key: 'vidlink',
@@ -63,7 +61,7 @@ const SOURCE_CONFIGS: Record<number, SourceConfig> = {
 };
 
 const DEFAULT_SOURCE = 1;
-const PREMIUM_DEFAULT_SOURCE = 3;
+const PREMIUM_DEFAULT_SOURCE = 1;
 
 // ── Helpers ────────────────────────────────────────────────────────
 
@@ -73,8 +71,13 @@ export const getSourceConfig = (sourceNumber: number): SourceConfig =>
 export const getAllSourceConfigs = (): Record<number, SourceConfig> => SOURCE_CONFIGS;
 
 export const getSourceNumber = (providerId: string): number => {
-  const entry = Object.entries(SOURCE_CONFIGS).find(([, c]) => c.key === providerId);
-  return entry ? parseInt(entry[0]) : DEFAULT_SOURCE;
+  const normalized = providerId.toLowerCase().trim();
+  if (normalized.startsWith('source_')) {
+    const sourceNum = parseInt(normalized.replace('source_', ''), 10);
+    if (SOURCE_CONFIGS[sourceNum]) return sourceNum;
+  }
+  const entry = Object.entries(SOURCE_CONFIGS).find(([, c]) => c.key === normalized);
+  return entry ? parseInt(entry[0], 10) : DEFAULT_SOURCE;
 };
 
 export const getProviderFromSource = (sourceNumber: number): string =>
