@@ -1,12 +1,10 @@
 /**
- * Provider utilities with source obfuscation
- * Users see "Source 1-3" only - never actual provider names/URLs
- * 
- * RESTRUCTURED: Exactly 3 sources
- * - Source 1: embed.su (primary, reliable)
- * - Source 2: vidbinge.to (alternative)
- * - Source 3: VidRock (premium)
- * 
+ * Provider utilities — 4 streaming sources
+ * Source 1: Videasy (player.videasy.net)
+ * Source 2: Vidnest (vidnest.fun) — ad-free plays
+ * Source 3: Vidrock (vidrock.net) — premium
+ * Source 4: Vidlink (vidlink.pro)
+ *
  * SECURITY: Provider domains are never exposed to the client UI
  */
 
@@ -15,156 +13,163 @@ export type ProviderOptions = {
   contentType?: 'movie' | 'series' | 'anime' | 'documentary' | string;
   season?: number | null;
   episodeNum?: number | null;
+  progress?: number; // resume position in seconds
+  color?: string; // hex accent color without #
 };
 
-// Internal source mapping - NEVER expose provider names to UI
-const INTERNAL_SOURCES: Record<number, string> = {
-  1: 'embed_su',      // Primary - embed.su
-  2: 'vidbinge',      // Alternative - vidbinge.to
-  3: 'vidrock_net'    // VidRock (premium)
-};
+// ── Source map ──────────────────────────────────────────────────────
+export interface SourceConfig {
+  key: string;
+  label: string;        // user-facing label
+  domain: string;
+  isPremium: boolean;
+  headers?: Record<string, string>;
+  referrer?: string;
+}
 
-// Provider domain mapping - INTERNAL ONLY
-const PROVIDER_DOMAINS: Record<string, string> = {
-  embed_su: 'embed.su',
-  vidbinge: 'vidbinge.to',
-  vidrock_net: 'vidrock.net'
+const SOURCE_CONFIGS: Record<number, SourceConfig> = {
+  1: {
+    key: 'videasy',
+    label: 'Videasy',
+    domain: 'player.videasy.net',
+    isPremium: false,
+    referrer: 'https://player.videasy.net',
+    headers: { 'Referer': 'https://player.videasy.net' },
+  },
+  2: {
+    key: 'vidnest',
+    label: 'Vidnest',
+    domain: 'vidnest.fun',
+    isPremium: false,
+    referrer: 'https://vidnest.fun',
+    headers: { 'Referer': 'https://vidnest.fun' },
+  },
+  3: {
+    key: 'vidrock',
+    label: 'Vidrock',
+    domain: 'vidrock.net',
+    isPremium: true,
+    referrer: 'https://vidrock.net',
+    headers: { 'Referer': 'https://vidrock.net' },
+  },
+  4: {
+    key: 'vidlink',
+    label: 'Vidlink',
+    domain: 'vidlink.pro',
+    isPremium: false,
+    referrer: 'https://vidlink.pro',
+    headers: { 'Referer': 'https://vidlink.pro' },
+  },
 };
 
 const DEFAULT_SOURCE = 1;
-const PREMIUM_DEFAULT_SOURCE = 3; // VidRock for premium users
+const PREMIUM_DEFAULT_SOURCE = 3;
 
-/**
- * Get source number from provider ID (for display)
- */
+// ── Helpers ────────────────────────────────────────────────────────
+
+export const getSourceConfig = (sourceNumber: number): SourceConfig =>
+  SOURCE_CONFIGS[sourceNumber] || SOURCE_CONFIGS[DEFAULT_SOURCE];
+
+export const getAllSourceConfigs = (): Record<number, SourceConfig> => SOURCE_CONFIGS;
+
 export const getSourceNumber = (providerId: string): number => {
-  const entry = Object.entries(INTERNAL_SOURCES).find(([, id]) => id === providerId);
+  const entry = Object.entries(SOURCE_CONFIGS).find(([, c]) => c.key === providerId);
   return entry ? parseInt(entry[0]) : DEFAULT_SOURCE;
 };
 
-/**
- * Get provider ID from source number (internal use)
- */
-export const getProviderFromSource = (sourceNumber: number): string => {
-  return INTERNAL_SOURCES[sourceNumber] || INTERNAL_SOURCES[DEFAULT_SOURCE];
-};
+export const getProviderFromSource = (sourceNumber: number): string =>
+  (SOURCE_CONFIGS[sourceNumber] || SOURCE_CONFIGS[DEFAULT_SOURCE]).key;
 
-/**
- * Get all available sources (for UI display)
- * EXACTLY 3 sources as required
- */
-export const getAvailableSources = (): number[] => {
-  return [1, 2, 3]; // Only 3 sources
-};
+export const getAvailableSources = (): number[] => [1, 2, 3, 4];
 
-/**
- * Get default source for user tier
- */
-export const getDefaultSource = (isPremium: boolean = false): number => {
-  return isPremium ? PREMIUM_DEFAULT_SOURCE : DEFAULT_SOURCE;
-};
+export const getDefaultSource = (isPremium = false): number =>
+  isPremium ? PREMIUM_DEFAULT_SOURCE : DEFAULT_SOURCE;
 
 const normalizeContentType = (type?: string) => (type ?? 'movie').toLowerCase();
 
 const isMovieContent = (type?: string) => {
-  const normalized = normalizeContentType(type);
-  return normalized === 'movie' || normalized === 'documentary';
+  const n = normalizeContentType(type);
+  return n === 'movie' || n === 'documentary';
 };
 
-const clampEpisodeInfo = (value?: number | null, fallback = 1) => {
-  if (typeof value !== 'number' || Number.isNaN(value) || value < 1) {
-    return fallback;
-  }
-  return Math.floor(value);
-};
+const clamp = (v?: number | null, fallback = 1) =>
+  typeof v === 'number' && !Number.isNaN(v) && v >= 1 ? Math.floor(v) : fallback;
 
-/**
- * Build embed URL for provider
- * Handles specific URL patterns for each provider
- */
-const buildEmbedUrl = (providerId: string, tmdbId: string, opts: ProviderOptions): string => {
-  const domain = PROVIDER_DOMAINS[providerId];
-  if (!domain) return '';
+// ── URL builders ───────────────────────────────────────────────────
 
-  const season = clampEpisodeInfo(opts.season, 1);
-  const episode = clampEpisodeInfo(opts.episodeNum, 1);
+const buildEmbedUrl = (sourceNumber: number, tmdbId: string, opts: ProviderOptions): string => {
+  const cfg = SOURCE_CONFIGS[sourceNumber];
+  if (!cfg) return '';
+  const { domain, key } = cfg;
+  const season = clamp(opts.season);
+  const episode = clamp(opts.episodeNum);
   const isMovie = isMovieContent(opts.contentType);
 
-  // embed.su - Primary source
-  // URL pattern: https://embed.su/embed/movie/{tmdb_id} or /embed/tv/{tmdb_id}/{season}/{episode}
-  if (providerId === 'embed_su') {
-    if (isMovie) {
-      return `https://${domain}/embed/movie/${tmdbId}`;
+  // Build query params
+  const params = new URLSearchParams();
+
+  if (key === 'videasy') {
+    // Videasy supports color, progress, nextEpisode, autoplayNextEpisode, episodeSelector
+    if (opts.color) params.set('color', opts.color);
+    if (opts.progress && opts.progress > 0) params.set('progress', String(Math.floor(opts.progress)));
+    if (!isMovie) {
+      params.set('nextEpisode', 'true');
+      params.set('autoplayNextEpisode', 'true');
     }
-    return `https://${domain}/embed/tv/${tmdbId}/${season}/${episode}`;
+    const qs = params.toString();
+    if (isMovie) return `https://${domain}/movie/${tmdbId}${qs ? '?' + qs : ''}`;
+    return `https://${domain}/tv/${tmdbId}/${season}/${episode}${qs ? '?' + qs : ''}`;
   }
 
-  // vidbinge.to - Alternative source
-  // URL pattern: https://vidbinge.to/movie/{tmdb_id} or /tv/{tmdb_id}/{season}/{episode}
-  if (providerId === 'vidbinge') {
-    if (isMovie) {
-      return `https://${domain}/movie/${tmdbId}`;
-    }
+  if (key === 'vidnest') {
+    // Vidnest supports startAt, server
+    if (opts.progress && opts.progress > 0) params.set('startAt', String(Math.floor(opts.progress)));
+    const qs = params.toString();
+    if (isMovie) return `https://${domain}/movie/${tmdbId}${qs ? '?' + qs : ''}`;
+    return `https://${domain}/tv/${tmdbId}/${season}/${episode}${qs ? '?' + qs : ''}`;
+  }
+
+  if (key === 'vidrock') {
+    if (isMovie) return `https://${domain}/movie/${tmdbId}`;
     return `https://${domain}/tv/${tmdbId}/${season}/${episode}`;
   }
 
-  // VidRock uses /movie/{id} and /tv/{id}/s/e (no /embed/ prefix)
-  if (providerId === 'vidrock_net') {
-    if (isMovie) {
-      return `https://${domain}/movie/${tmdbId}`;
-    }
+  if (key === 'vidlink') {
+    if (isMovie) return `https://${domain}/movie/${tmdbId}`;
     return `https://${domain}/tv/${tmdbId}/${season}/${episode}`;
   }
 
   // Fallback
-  if (isMovie) {
-    return `https://${domain}/embed/movie/${tmdbId}`;
-  }
-  return `https://${domain}/embed/tv/${tmdbId}/${season}/${episode}`;
+  if (isMovie) return `https://${domain}/movie/${tmdbId}`;
+  return `https://${domain}/tv/${tmdbId}/${season}/${episode}`;
 };
 
-/**
- * Get streaming URL for a specific source number
- */
 export const getStreamingUrlForSource = (
   contentId: string,
   sourceNumber: number = DEFAULT_SOURCE,
   options: ProviderOptions = {}
-): string => {
-  const providerId = getProviderFromSource(sourceNumber);
-  return buildEmbedUrl(providerId, contentId, options);
-};
+): string => buildEmbedUrl(sourceNumber, contentId, options);
 
-/**
- * Legacy function - get streaming URL by provider ID
- * @deprecated Use getStreamingUrlForSource instead
- */
+/** @deprecated Use getStreamingUrlForSource */
 export const getStreamingUrlForProvider = (
   contentId: string,
-  provider: string = 'embed_su',
+  provider: string = 'videasy',
   options: ProviderOptions = {}
-): string => {
-  const sourceNumber = getSourceNumber(provider);
-  return getStreamingUrlForSource(contentId, sourceNumber, options);
-};
+): string => getStreamingUrlForSource(contentId, getSourceNumber(provider), options);
 
-/**
- * Check if provider is VidRock (for special features)
- */
-export const isVidRockSource = (sourceNumber: number): boolean => {
-  return sourceNumber === 3;
-};
+export const isVidRockSource = (sourceNumber: number): boolean => sourceNumber === 3;
 
-/**
- * Determine if a provider requires iframe embedding
- */
-export const isIframeSourceImpl = (): boolean => {
-  return true;
-};
+export const isIframeSourceImpl = (): boolean => true;
 
-/**
- * Get source label for display
- */
 export const getSourceLabel = (sourceNumber: number): string => {
-  return `Source ${sourceNumber}`;
+  const cfg = SOURCE_CONFIGS[sourceNumber];
+  return cfg ? cfg.label : `Source ${sourceNumber}`;
+};
+
+/**
+ * Get the referrer policy value for a given source
+ */
+export const getSourceReferrer = (sourceNumber: number): string => {
+  const cfg = SOURCE_CONFIGS[sourceNumber];
+  return cfg?.referrer || '';
 };
