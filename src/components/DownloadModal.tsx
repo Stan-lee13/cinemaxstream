@@ -61,12 +61,12 @@ const DownloadModal: React.FC<DownloadModalProps> = memo(({
   const getDownloadUrl = useCallback(() => {
     if (!contentId) return null;
     if (contentType === 'movie') {
-      return `https://dl.vidlink.pro/movie/${contentId}`;
+      return `https://dl.vidsrc.vip/movie/${contentId}`;
     }
     if (contentType === 'tv' || contentType === 'series' || contentType === 'anime') {
       const season = seasonNumber ?? 1;
       const episode = episodeNumber ?? 1;
-      return `https://dl.vidlink.pro/tv/${contentId}/${season}/${episode}`;
+      return `https://dl.vidsrc.vip/tv/${contentId}/${season}/${episode}`;
     }
     return null;
   }, [contentId, contentType, seasonNumber, episodeNumber]);
