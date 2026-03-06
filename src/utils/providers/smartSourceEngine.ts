@@ -156,7 +156,7 @@ export const getAdaptiveSource = (excludeSources: number[] = []): number => {
 
   // On slow networks, prefer lighter providers (Vidnest/Videasy)
   if (isSlowNetwork) {
-    const lightSources = ranked.filter(s => s === 1 || s === 2);
+    const lightSources = ranked.filter(s => s === 2 || s === 3);
     if (lightSources.length > 0) return lightSources[0];
   }
 

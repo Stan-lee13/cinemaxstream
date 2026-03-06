@@ -17,7 +17,7 @@ const preloadedUrls = new Set<string>();
 export const preloadProviderHandshake = (sourceNumber: number): void => {
   const sources = [sourceNumber];
   sources.forEach(s => {
-    const config = { 1: 'player.videasy.net', 2: 'vidnest.fun', 3: 'vidrock.net', 4: 'vidlink.pro' };
+    const config = { 1: 'vidrock.net', 2: 'vidnest.fun', 3: 'player.videasy.net', 4: 'vidlink.pro' };
     const domain = config[s as keyof typeof config];
     if (!domain) return;
 
