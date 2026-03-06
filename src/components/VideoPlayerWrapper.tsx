@@ -1,8 +1,7 @@
 /**
  * Modern Video Player Wrapper Component
- * Clean, minimal UI with smooth transitions
- * Uses obfuscated source labels for provider protection
- * Includes: mobile fullscreen landscape, PiP support, cast, 10s timeout
+ * Smart Source Engine integration, anti-ad protection, aspect ratio controls
+ * 4 sources: Videasy, Vidnest, Vidrock, Vidlink
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
@@ -15,15 +14,27 @@ import { toast } from "sonner";
 import UpgradeModal from "./UpgradeModal";
 import SourceSelector from "./SourceSelector";
 import CastButton from "./CastButton";
-import { AlertCircle, RefreshCw, PictureInPicture2, Maximize, Loader2 } from "lucide-react";
+import { AlertCircle, RefreshCw, PictureInPicture2, Maximize, Loader2, Monitor, Expand, RectangleHorizontal, Tv } from "lucide-react";
 import { Button } from "./ui/button";
 import { requestFullscreenLandscape, exitFullscreenAndUnlock, isPipSupported, isMobileDevice } from "@/utils/playerUtils";
 import {
   getStreamingUrlForSource,
   getAvailableSources,
   getDefaultSource,
-  isVidRockSource
+  isVidRockSource,
+  getSourceConfig,
 } from "@/utils/providers/providerUtils";
+import {
+  getAdaptiveSource,
+  recordSourceResult,
+  getNextFallback,
+  getHealthSummary,
+} from "@/utils/providers/smartSourceEngine";
+import {
+  enableAllProtection,
+  disableAllProtection,
+} from "@/utils/providers/adProtection";
+import { saveGlobalState, loadGlobalState } from "@/utils/globalState";
 import { Skeleton } from "./ui/skeleton";
 
 interface VideoPlayerWrapperProps {
@@ -39,7 +50,30 @@ interface VideoPlayerWrapperProps {
   title?: string;
 }
 
-const LOAD_TIMEOUT_MS = 10_000;
+const LOAD_TIMEOUT_MS = 20_000;
+
+type AspectRatio = 'fit' | 'fill' | 'cinema' | 'fullscreen';
+
+const ASPECT_CLASSES: Record<AspectRatio, string> = {
+  fit: 'object-contain',
+  fill: 'object-cover',
+  cinema: 'object-cover',
+  fullscreen: 'object-cover',
+};
+
+const ASPECT_STYLES: Record<AspectRatio, string> = {
+  fit: '16/9',
+  fill: '16/9',
+  cinema: '2.35/1',
+  fullscreen: '16/9',
+};
+
+const ASPECT_ICONS: Record<AspectRatio, React.ElementType> = {
+  fit: Monitor,
+  fill: Expand,
+  cinema: RectangleHorizontal,
+  fullscreen: Tv,
+};
 
 const VideoPlayerWrapper = ({
   contentId,
@@ -51,64 +85,86 @@ const VideoPlayerWrapper = ({
   autoPlay = false,
   onEnded,
   poster,
-  title
+  title,
 }: VideoPlayerWrapperProps) => {
   const { userProfile, canStream, userUsage } = useCreditSystem();
   const { tier, isPremium } = useUserTier(userId);
-  
+
+  // Load persisted state
+  const globalState = loadGlobalState();
+
   const [savedSource, setSavedSource] = useLocalStorage<number>(
     'preferred-source',
-    getDefaultSource(isPremium)
+    getAdaptiveSource()
   );
-  const [activeSource, setActiveSource] = useState<number>(savedSource || getDefaultSource(isPremium));
+  const [activeSource, setActiveSource] = useState<number>(savedSource || getAdaptiveSource());
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [loadError, setLoadError] = useState<boolean>(false);
   const [failedSources, setFailedSources] = useState<number[]>([]);
   const [showUpgradeModal, setShowUpgradeModal] = useState<boolean>(false);
-  const [retryWithServer2, setRetryWithServer2] = useState(false);
+  const [aspectRatio, setAspectRatio] = useState<AspectRatio>(
+    (globalState.preferredAspectRatio as AspectRatio) || 'fit'
+  );
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const hasStartedSession = useRef<boolean>(false);
-  const vidRockListenerRef = useRef<boolean>(false);
   const hasAutoFullscreened = useRef<boolean>(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loadStartRef = useRef<number>(Date.now());
 
   const { startWatchSession } = useWatchTracking();
   const { saveProgress } = useVideoProgress();
 
+  // Health data for source selector
+  const healthData = useMemo(() => {
+    const summary = getHealthSummary();
+    const map: Record<number, { healthy: boolean; latency: number }> = {};
+    summary.forEach(s => { map[s.source] = { healthy: s.healthy, latency: s.latency }; });
+    return map;
+  }, [activeSource, isLoading]);
+
   const videoSrc = useMemo(() => {
-    const baseUrl = getStreamingUrlForSource(contentId, activeSource, {
+    return getStreamingUrlForSource(contentId, activeSource, {
       contentType,
       autoplay: autoPlay,
       season: typeof seasonNumber === 'number' && !isNaN(seasonNumber) ? seasonNumber : undefined,
       episodeNum: typeof episodeNumber === 'number' && !isNaN(episodeNumber) ? episodeNumber : undefined,
     });
-    // If first load timed out, retry with ?server=2
-    if (retryWithServer2 && activeSource === 1) {
-      return baseUrl + (baseUrl.includes('?') ? '&' : '?') + 'server=2';
-    }
-    return baseUrl;
-  }, [contentId, contentType, activeSource, seasonNumber, episodeNumber, autoPlay, retryWithServer2]);
+  }, [contentId, contentType, activeSource, seasonNumber, episodeNumber, autoPlay]);
 
-  // 10-second timeout detection
+  // Get referrer for current source
+  const sourceReferrer = useMemo(() => {
+    const cfg = getSourceConfig(activeSource);
+    return cfg.referrer || '';
+  }, [activeSource]);
+
+  // 20-second timeout detection with smart fallback
   useEffect(() => {
     if (!isLoading) {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       return;
     }
 
+    loadStartRef.current = Date.now();
+
     timeoutRef.current = setTimeout(() => {
       if (isLoading) {
-        // If Source 1 (AutoEmbed) and haven't tried server=2 yet
-        if (activeSource === 1 && !retryWithServer2) {
-          setRetryWithServer2(true);
+        // Record failure
+        recordSourceResult(activeSource, LOAD_TIMEOUT_MS, false);
+        setFailedSources(prev => prev.includes(activeSource) ? prev : [...prev, activeSource]);
+
+        // Try smart fallback
+        const next = getNextFallback(activeSource, failedSources);
+        if (next !== null) {
+          toast.warning(`${getSourceConfig(activeSource).label} timed out. Switching to ${getSourceConfig(next).label}...`);
           setIsLoading(true);
-          toast.info('Retrying with alternate server...');
+          setLoadError(false);
+          setActiveSource(next);
+          setSavedSource(next);
         } else {
           setIsLoading(false);
           setLoadError(true);
-          setFailedSources(prev => prev.includes(activeSource) ? prev : [...prev, activeSource]);
         }
       }
     }, LOAD_TIMEOUT_MS);
@@ -116,9 +172,17 @@ const VideoPlayerWrapper = ({
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, [isLoading, activeSource, retryWithServer2]);
+  }, [isLoading, activeSource, failedSources]);
 
-  // Auto fullscreen landscape on mobile when player loads
+  // Anti-ad protection
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    enableAllProtection(container);
+    return () => disableAllProtection(container);
+  }, []);
+
+  // Auto fullscreen landscape on mobile
   useEffect(() => {
     if (isMobileDevice() && !hasAutoFullscreened.current && containerRef.current && !isLoading) {
       hasAutoFullscreened.current = true;
@@ -126,52 +190,47 @@ const VideoPlayerWrapper = ({
     }
   }, [isLoading]);
 
-  // Release orientation lock when unmounted
+  // Release orientation lock on unmount
   useEffect(() => {
     return () => {
-      if (hasAutoFullscreened.current) {
-        exitFullscreenAndUnlock();
-      }
+      if (hasAutoFullscreened.current) exitFullscreenAndUnlock();
     };
   }, []);
 
-  // VidRock message listener
+  // Videasy/VidRock progress message listener
   useEffect(() => {
-    if (!isVidRockSource(activeSource)) return;
-    if (vidRockListenerRef.current) return;
-    vidRockListenerRef.current = true;
-
     const handleMessage = (event: MessageEvent) => {
-      if (!event.origin.includes('vidrock.net')) return;
       try {
-        const data = event.data;
-        if (data?.type === 'MEDIA_DATA' && data.data) {
-          localStorage.setItem('vidRockProgress', JSON.stringify(data.data));
-          if (data.data.currentTime && data.data.duration) {
-            saveProgress({
-              contentId, contentType, season: seasonNumber, episode: episodeNumber,
-              position: data.data.currentTime, duration: data.data.duration,
-              timestamp: Date.now(), source: activeSource, title, poster
-            });
-          }
+        const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+        if (!data) return;
+
+        // Videasy progress format
+        if (data.timestamp && data.duration) {
+          saveProgress({
+            contentId, contentType, season: seasonNumber, episode: episodeNumber,
+            position: data.timestamp, duration: data.duration,
+            timestamp: Date.now(), source: activeSource, title, poster
+          });
         }
-      } catch {
-        // Ignore
-      }
+
+        // VidRock format
+        if (data?.type === 'MEDIA_DATA' && data.data?.currentTime && data.data?.duration) {
+          saveProgress({
+            contentId, contentType, season: seasonNumber, episode: episodeNumber,
+            position: data.data.currentTime, duration: data.data.duration,
+            timestamp: Date.now(), source: activeSource, title, poster
+          });
+        }
+      } catch { /* ignore non-JSON messages */ }
     };
 
     window.addEventListener('message', handleMessage);
-    return () => {
-      window.removeEventListener('message', handleMessage);
-      vidRockListenerRef.current = false;
-    };
+    return () => window.removeEventListener('message', handleMessage);
   }, [activeSource, contentId, contentType, seasonNumber, episodeNumber, title, poster, saveProgress]);
 
   // Check streaming permission
   useEffect(() => {
-    if (userProfile && userUsage && !canStream()) {
-      setShowUpgradeModal(true);
-    }
+    if (userProfile && userUsage && !canStream()) setShowUpgradeModal(true);
   }, [userProfile, userUsage, canStream]);
 
   // Start watch session once
@@ -183,34 +242,32 @@ const VideoPlayerWrapper = ({
   }, [contentId, title, userProfile, userId, canStream, startWatchSession]);
 
   const handleIframeLoad = useCallback(() => {
+    const latency = Date.now() - loadStartRef.current;
+    recordSourceResult(activeSource, latency, true);
     setIsLoading(false);
     setLoadError(false);
-  }, []);
+  }, [activeSource]);
 
   const handleIframeError = useCallback(() => {
+    recordSourceResult(activeSource, LOAD_TIMEOUT_MS, false);
     setIsLoading(false);
     setLoadError(true);
     setFailedSources(prev => prev.includes(activeSource) ? prev : [...prev, activeSource]);
   }, [activeSource]);
 
-  // Auto-fallback
+  // Auto-fallback on error
   useEffect(() => {
     if (!loadError) return;
-    const allSources = getAvailableSources();
-    if (failedSources.length >= allSources.length) {
-      return; // All failed — show fallback UI
-    }
-    const nextSource = allSources.find(s => !failedSources.includes(s));
-    if (!nextSource || nextSource === activeSource) return;
-    const timer = window.setTimeout(() => {
-      toast.warning(`Source ${activeSource} unavailable. Switching to Source ${nextSource}.`);
+    const next = getNextFallback(activeSource, failedSources);
+    if (next === null) return;
+    const timer = setTimeout(() => {
+      toast.warning(`${getSourceConfig(activeSource).label} unavailable. Switching to ${getSourceConfig(next).label}...`);
       setIsLoading(true);
       setLoadError(false);
-      setRetryWithServer2(false);
-      setActiveSource(nextSource);
-      setSavedSource(nextSource);
+      setActiveSource(next);
+      setSavedSource(next);
     }, 1000);
-    return () => window.clearTimeout(timer);
+    return () => clearTimeout(timer);
   }, [loadError, failedSources, activeSource, setSavedSource]);
 
   const handleSourceChange = useCallback((sourceNum: number) => {
@@ -218,10 +275,10 @@ const VideoPlayerWrapper = ({
     setIsLoading(true);
     setLoadError(false);
     setFailedSources([]);
-    setRetryWithServer2(false);
     setActiveSource(sourceNum);
     setSavedSource(sourceNum);
-    toast.info(`Switched to Source ${sourceNum}`);
+    saveGlobalState({ preferredSource: sourceNum });
+    toast.info(`Switched to ${getSourceConfig(sourceNum).label}`);
   }, [activeSource, setSavedSource]);
 
   const handleRetry = useCallback(() => {
@@ -236,7 +293,6 @@ const VideoPlayerWrapper = ({
     setFailedSources([]);
     setLoadError(false);
     setIsLoading(true);
-    setRetryWithServer2(false);
     setActiveSource(defaultSource);
     setSavedSource(defaultSource);
   }, [isPremium, setSavedSource]);
@@ -246,14 +302,11 @@ const VideoPlayerWrapper = ({
     setFailedSources([]);
     setLoadError(false);
     setIsLoading(true);
-    setRetryWithServer2(false);
     hasAutoFullscreened.current = false;
   }, [contentId, seasonNumber, episodeNumber]);
 
   const handleFullscreen = useCallback(() => {
-    if (containerRef.current) {
-      requestFullscreenLandscape(containerRef.current);
-    }
+    if (containerRef.current) requestFullscreenLandscape(containerRef.current);
   }, []);
 
   const handlePiP = useCallback(async () => {
@@ -269,18 +322,26 @@ const VideoPlayerWrapper = ({
             return;
           }
         }
-      } catch {
-        // Cross-origin
-      }
-      toast.info('PiP is not available for this source. Try a different source.');
+      } catch { /* cross-origin */ }
+      toast.info('PiP is not available for this source.');
     } catch {
       toast.error('Picture-in-Picture failed');
     }
   }, []);
 
-  const iframeKey = `${contentId}-${seasonNumber ?? 1}-${episodeNumber ?? 1}-${activeSource}-${retryWithServer2}`;
+  const cycleAspectRatio = useCallback(() => {
+    const ratios: AspectRatio[] = ['fit', 'fill', 'cinema', 'fullscreen'];
+    const idx = ratios.indexOf(aspectRatio);
+    const next = ratios[(idx + 1) % ratios.length];
+    setAspectRatio(next);
+    saveGlobalState({ preferredAspectRatio: next });
+    toast.info(`Aspect: ${next.charAt(0).toUpperCase() + next.slice(1)}`);
+  }, [aspectRatio]);
+
+  const iframeKey = `${contentId}-${seasonNumber ?? 1}-${episodeNumber ?? 1}-${activeSource}`;
   const showPiP = isPipSupported();
   const allSourcesFailed = failedSources.length >= getAvailableSources().length;
+  const AspectIcon = ASPECT_ICONS[aspectRatio];
 
   return (
     <div className="space-y-4">
@@ -293,13 +354,23 @@ const VideoPlayerWrapper = ({
             isLoading={isLoading}
             isPremium={isPremium}
             disabled={loadError}
+            healthMap={healthData}
           />
         </div>
         <CastButton videoUrl={videoSrc} title={title} />
+        {/* Aspect ratio */}
+        <Button
+          variant="ghost" size="sm"
+          className="gap-1 text-muted-foreground hover:text-foreground"
+          onClick={cycleAspectRatio}
+          title={`Aspect: ${aspectRatio}`}
+          data-player-ui
+        >
+          <AspectIcon className="h-4 w-4" />
+        </Button>
         {showPiP && (
           <Button
-            variant="ghost"
-            size="sm"
+            variant="ghost" size="sm"
             className="gap-1 text-muted-foreground hover:text-foreground"
             onClick={handlePiP}
             title="Picture-in-Picture"
@@ -308,8 +379,7 @@ const VideoPlayerWrapper = ({
           </Button>
         )}
         <Button
-          variant="ghost"
-          size="sm"
+          variant="ghost" size="sm"
           className="gap-1 text-muted-foreground hover:text-foreground"
           onClick={handleFullscreen}
           title="Fullscreen"
@@ -332,8 +402,8 @@ const VideoPlayerWrapper = ({
       {(!userProfile || canStream()) && (
         <div
           ref={containerRef}
-          className="relative w-full bg-black rounded-xl overflow-hidden shadow-2xl shadow-black/50 ring-1 ring-white/10"
-          style={{ aspectRatio: '16/9' }}
+          className="video-player-container relative w-full bg-black rounded-xl overflow-hidden shadow-2xl shadow-black/50 ring-1 ring-white/10"
+          style={{ aspectRatio: ASPECT_STYLES[aspectRatio] }}
         >
           {/* Loading Skeleton */}
           {isLoading && (
@@ -346,13 +416,13 @@ const VideoPlayerWrapper = ({
                 </div>
                 <div className="text-center">
                   <p className="text-sm font-medium text-foreground">Loading stream...</p>
-                  <p className="text-xs text-muted-foreground mt-1">Source {activeSource}{retryWithServer2 ? ' (alt server)' : ''}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{getSourceConfig(activeSource).label}</p>
                 </div>
               </div>
             </div>
           )}
 
-          {/* All sources failed — clean fallback */}
+          {/* All sources failed */}
           {allSourcesFailed ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black z-10 gap-6 p-6 text-center">
               <div className="w-20 h-20 rounded-full bg-destructive/10 flex items-center justify-center">
@@ -360,13 +430,10 @@ const VideoPlayerWrapper = ({
               </div>
               <div>
                 <p className="text-lg font-semibold text-foreground mb-2">Streaming Temporarily Unavailable</p>
-                <p className="text-sm text-muted-foreground max-w-xs">
-                  All sources are currently down. Please try again later.
-                </p>
+                <p className="text-sm text-muted-foreground max-w-xs">All sources are currently down. Please try again later.</p>
               </div>
               <Button onClick={resetSources} className="gap-2 h-11">
-                <RefreshCw className="h-4 w-4" />
-                Try Again
+                <RefreshCw className="h-4 w-4" /> Try Again
               </Button>
             </div>
           ) : loadError ? (
@@ -376,18 +443,13 @@ const VideoPlayerWrapper = ({
               </div>
               <div>
                 <p className="text-lg font-semibold text-foreground mb-2">Source Unavailable</p>
-                <p className="text-sm text-muted-foreground max-w-xs">
-                  Source {activeSource} isn't responding. Switching automatically...
-                </p>
+                <p className="text-sm text-muted-foreground max-w-xs">{getSourceConfig(activeSource).label} isn't responding. Switching automatically...</p>
               </div>
               <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
                 <Button onClick={handleRetry} className="flex-1 gap-2 h-11">
-                  <RefreshCw className="h-4 w-4" />
-                  Next Source
+                  <RefreshCw className="h-4 w-4" /> Next Source
                 </Button>
-                <Button variant="outline" onClick={resetSources} className="flex-1 h-11">
-                  Reset All
-                </Button>
+                <Button variant="outline" onClick={resetSources} className="flex-1 h-11">Reset All</Button>
               </div>
             </div>
           ) : (
@@ -395,7 +457,7 @@ const VideoPlayerWrapper = ({
               ref={iframeRef}
               key={iframeKey}
               src={videoSrc}
-              className="absolute inset-0 w-full h-full border-0"
+              className={`absolute inset-0 w-full h-full border-0 ${ASPECT_CLASSES[aspectRatio]}`}
               referrerPolicy="origin"
               allowFullScreen
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"

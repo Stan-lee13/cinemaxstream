@@ -202,6 +202,39 @@ export type Database = {
         }
         Relationships: []
       }
+      device_sessions: {
+        Row: {
+          created_at: string | null
+          device_browser: string | null
+          device_fingerprint: string
+          device_os: string | null
+          device_resolution: string | null
+          id: string
+          last_active_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          device_browser?: string | null
+          device_fingerprint: string
+          device_os?: string | null
+          device_resolution?: string | null
+          id?: string
+          last_active_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          device_browser?: string | null
+          device_fingerprint?: string
+          device_os?: string | null
+          device_resolution?: string | null
+          id?: string
+          last_active_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       download_requests: {
         Row: {
           completed_at: string | null
@@ -410,6 +443,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      stream_health_metrics: {
+        Row: {
+          checked_at: string | null
+          checked_by: string | null
+          error_message: string | null
+          id: string
+          is_healthy: boolean | null
+          provider_key: string
+          response_time_ms: number | null
+        }
+        Insert: {
+          checked_at?: string | null
+          checked_by?: string | null
+          error_message?: string | null
+          id?: string
+          is_healthy?: boolean | null
+          provider_key: string
+          response_time_ms?: number | null
+        }
+        Update: {
+          checked_at?: string | null
+          checked_by?: string | null
+          error_message?: string | null
+          id?: string
+          is_healthy?: boolean | null
+          provider_key?: string
+          response_time_ms?: number | null
+        }
+        Relationships: []
       }
       user_favorites: {
         Row: {

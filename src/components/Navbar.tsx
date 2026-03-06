@@ -12,6 +12,7 @@ import MobileSearchButton from './navigation/MobileSearchButton';
 import SkipLink from './SkipLink';
 import { useAuth } from '@/contexts/AuthContext';
 import NotificationBar from './NotificationBar';
+import { Compass } from 'lucide-react';
 
 const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState<boolean>(false);
@@ -88,6 +89,18 @@ const Navbar: React.FC = () => {
           
           {/* Notification Bar */}
           <NotificationBar />
+          
+          {/* Discover / Explore */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground hover:text-foreground"
+            onClick={() => navigate('/explore')}
+            aria-label="Explore content"
+            title="Explore"
+          >
+            <Compass className="h-5 w-5" />
+          </Button>
           
           {/* Favorites - Shows on mobile and desktop */}
           <FavoritesButton />

@@ -5,6 +5,9 @@ import { toast } from 'sonner';
 import { logError } from '@/utils/productionLogger';
 import { getErrorMessage as getErrorMsg } from '@/utils/errorHelpers';
 import { AuthContext } from './authContextBase';
+import { registerDevice } from '@/utils/providers/deviceTracker';
+import { startHealthMonitor, stopHealthMonitor } from '@/utils/providers/streamHealthMonitor';
+import { preloadAllHandshakes } from '@/utils/providers/preloadEngine';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -35,6 +38,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (currentSession?.user) {
             checkBlockedStatus(currentSession.user.id);
             checkPremiumStatus(currentSession.user.id);
+            registerDevice(currentSession.user.id);
+            startHealthMonitor(currentSession.user.id);
+            preloadAllHandshakes();
           }
         }
       } catch (err: unknown) {
@@ -64,11 +70,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setTimeout(() => {
               checkBlockedStatus(currentSession.user.id);
               checkPremiumStatus(currentSession.user.id);
+              registerDevice(currentSession.user.id);
+              startHealthMonitor(currentSession.user.id);
+              preloadAllHandshakes();
             }, 0);
           } else if (event === 'SIGNED_OUT') {
             toast.success('Successfully signed out!');
             setIsPremium(false);
             setIsBlocked(false);
+            stopHealthMonitor();
           } else if (event === 'TOKEN_REFRESHED') {
             // Token refreshed
           }
