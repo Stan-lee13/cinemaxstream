@@ -164,6 +164,19 @@ let shieldElement: HTMLElement | null = null;
 export const enableOverlayShield = (container: HTMLElement) => {
   if (shieldElement) return;
 
+  if (window.getComputedStyle(container).position === 'static') {
+    container.style.position = 'relative';
+  }
+
+  shieldElement = document.createElement('div');
+  shieldElement.setAttribute('data-player-ui', 'true');
+  shieldElement.style.position = 'absolute';
+  shieldElement.style.inset = '0';
+  shieldElement.style.pointerEvents = 'none';
+  shieldElement.style.zIndex = '8';
+  shieldElement.style.background = 'transparent';
+  container.appendChild(shieldElement);
+
   // Watch for suspicious overlays being added above the iframe
   const shieldObserver = new MutationObserver(() => {
     const children = Array.from(container.children);

@@ -24,6 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Content } from "@/types/content";
 import { getImageUrlFlexible } from "@/utils/imageUtils";
+import { getSourceNumber } from "@/utils/providers/providerUtils";
 
 const ContentDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -208,6 +209,8 @@ const ContentDetail = () => {
                   onEnded={() => setIsPlaying(false)}
                   poster={getImageUrlFlexible(safeContent)}
                   title={String(safeContent.title || '')}
+                  forcedSource={getSourceNumber(activeProvider)}
+                  onSourceChange={setActiveProvider}
                 />
               
               {(content.content_type === 'series' || content.content_type === 'anime') && seasons.length > 0 && (

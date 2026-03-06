@@ -77,9 +77,9 @@ export class ProductionValidator {
     try {
       const urlObj = new URL(url);
       const allowedHosts = [
-        'vidsrc.xyz',
-        'vidsrc.su',
-        'vidsrc.vip',
+        'player.videasy.net',
+        'vidnest.fun',
+        'vidlink.pro',
         'youtube.com',
         'youtube-nocookie.com'
       ];
@@ -141,7 +141,7 @@ export class ProductionValidator {
   }
 
   static validateStreamingProvider(provider: string): boolean {
-    const validProviders = ['vidsrc_xyz', 'vidsrc_su', 'vidsrc_vip'];
+    const validProviders = ['videasy', 'vidnest', 'vidlink'];
     return validProviders.includes(provider);
   }
 }

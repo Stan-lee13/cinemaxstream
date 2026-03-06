@@ -23,7 +23,7 @@ export const useProductionValidation = () => {
     }
 
     // Validate streaming providers
-    const streamingProviders = ['vidsrc_su', 'vidsrc_xyz', 'vidsrc_vip'];
+    const streamingProviders = ['vidnest', 'videasy', 'vidlink'];
     const hasValidProviders = streamingProviders.every(provider => {
       return typeof provider === 'string' && provider.length > 0;
     });

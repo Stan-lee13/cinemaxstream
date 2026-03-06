@@ -29,6 +29,7 @@ import {
   recordSourceResult,
   getNextFallback,
   getHealthSummary,
+  getRankedSources,
 } from "@/utils/providers/smartSourceEngine";
 import {
   enableAllProtection,
@@ -36,6 +37,8 @@ import {
 } from "@/utils/providers/adProtection";
 import { saveGlobalState, loadGlobalState } from "@/utils/globalState";
 import { Skeleton } from "./ui/skeleton";
+import { getBestDiscoveredSource } from "@/utils/providers/sourceDiscoveryEngine";
+import { getProviderFromSource } from "@/utils/providers/providerUtils";
 
 interface VideoPlayerWrapperProps {
   contentId: string;
@@ -48,6 +51,8 @@ interface VideoPlayerWrapperProps {
   onEnded?: () => void;
   poster?: string;
   title?: string;
+  forcedSource?: number;
+  onSourceChange?: (providerKey: string) => void;
 }
 
 const LOAD_TIMEOUT_MS = 20_000;
@@ -86,6 +91,8 @@ const VideoPlayerWrapper = ({
   onEnded,
   poster,
   title,
+  forcedSource,
+  onSourceChange,
 }: VideoPlayerWrapperProps) => {
   const { userProfile, canStream, userUsage } = useCreditSystem();
   const { tier, isPremium } = useUserTier(userId);
@@ -114,7 +121,8 @@ const VideoPlayerWrapper = ({
   const loadStartRef = useRef<number>(Date.now());
 
   const { startWatchSession } = useWatchTracking();
-  const { saveProgress } = useVideoProgress();
+  const { saveProgress, getProgress } = useVideoProgress();
+  const [preloadedSource, setPreloadedSource] = useState<number | null>(null);
 
   // Health data for source selector
   const healthData = useMemo(() => {
@@ -124,14 +132,82 @@ const VideoPlayerWrapper = ({
     return map;
   }, [activeSource, isLoading]);
 
+  const progressState = useMemo(() => {
+    return getProgress(contentId, seasonNumber, episodeNumber);
+  }, [getProgress, contentId, seasonNumber, episodeNumber]);
+
   const videoSrc = useMemo(() => {
     return getStreamingUrlForSource(contentId, activeSource, {
       contentType,
       autoplay: autoPlay,
       season: typeof seasonNumber === 'number' && !isNaN(seasonNumber) ? seasonNumber : undefined,
       episodeNum: typeof episodeNumber === 'number' && !isNaN(episodeNumber) ? episodeNumber : undefined,
+      progress: progressState?.position,
     });
-  }, [contentId, contentType, activeSource, seasonNumber, episodeNumber, autoPlay]);
+  }, [contentId, contentType, activeSource, seasonNumber, episodeNumber, autoPlay, progressState]);
+
+  // Resolve source from ContentDetail selector and source pre-discovery
+  useEffect(() => {
+    let mounted = true;
+    const resolve = async () => {
+      if (typeof forcedSource === 'number' && forcedSource >= 1) {
+        setActiveSource(forcedSource);
+        setSavedSource(forcedSource);
+        return;
+      }
+
+      const discovered = await getBestDiscoveredSource(contentId, contentType);
+      if (mounted && typeof discovered === 'number') {
+        setActiveSource(discovered);
+        setSavedSource(discovered);
+      }
+    };
+    resolve();
+    return () => {
+      mounted = false;
+    };
+  }, [forcedSource, contentId, contentType, setSavedSource]);
+
+  // Multi-source preload race (top 2 ranked providers)
+  useEffect(() => {
+    let cancelled = false;
+    const ranked = getRankedSources();
+    const raceSources = ranked.slice(0, 2);
+    if (raceSources.length < 2) return;
+
+    const cleanup: HTMLIFrameElement[] = [];
+    raceSources.forEach((sourceNum) => {
+      const frame = document.createElement('iframe');
+      frame.src = getStreamingUrlForSource(contentId, sourceNum, {
+        contentType,
+        season: typeof seasonNumber === 'number' && !isNaN(seasonNumber) ? seasonNumber : undefined,
+        episodeNum: typeof episodeNumber === 'number' && !isNaN(episodeNumber) ? episodeNumber : undefined,
+        progress: progressState?.position,
+      });
+      frame.style.display = 'none';
+      frame.referrerPolicy = 'origin';
+
+      frame.onload = () => {
+        if (cancelled || preloadedSource !== null) return;
+        setPreloadedSource(sourceNum);
+        setActiveSource(sourceNum);
+        setSavedSource(sourceNum);
+      };
+
+      document.body.appendChild(frame);
+      cleanup.push(frame);
+    });
+
+    const timer = window.setTimeout(() => {
+      cleanup.forEach((f) => f.remove());
+    }, 9000);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+      cleanup.forEach((f) => f.remove());
+    };
+  }, [contentId, contentType, seasonNumber, episodeNumber, progressState, setSavedSource, preloadedSource]);
 
   // Get referrer for current source
   const sourceReferrer = useMemo(() => {
@@ -277,9 +353,10 @@ const VideoPlayerWrapper = ({
     setFailedSources([]);
     setActiveSource(sourceNum);
     setSavedSource(sourceNum);
+    onSourceChange?.(getProviderFromSource(sourceNum));
     saveGlobalState({ preferredSource: sourceNum });
     toast.info(`Switched to ${getSourceConfig(sourceNum).label}`);
-  }, [activeSource, setSavedSource]);
+  }, [activeSource, setSavedSource, onSourceChange]);
 
   const handleRetry = useCallback(() => {
     const allSources = getAvailableSources();
@@ -459,6 +536,7 @@ const VideoPlayerWrapper = ({
               src={videoSrc}
               className={`absolute inset-0 w-full h-full border-0 ${ASPECT_CLASSES[aspectRatio]}`}
               referrerPolicy="origin"
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation allow-pointer-lock allow-downloads"
               allowFullScreen
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
               title={title || "Video Player"}
