@@ -1,7 +1,7 @@
 
 {
-  "name": "CinemaxStream",
-  "short_name": "Cinemax",
+  "name": "CineMaxStream",
+  "short_name": "CineMax",
   "description": "The ultimate modern streaming platform",
   "start_url": "/",
   "display": "standalone",

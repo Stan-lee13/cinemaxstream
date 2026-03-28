@@ -368,7 +368,7 @@ function SlideSummary({ data, label, username }: { data: WrapData; label: string
             <p className="text-xs text-white/50">Top genre: {data.topGenre}</p>
           )}
         </div>
-        <p className="text-[10px] text-white/40 relative z-10">cinemaxstream.lovable.app</p>
+        <p className="text-[10px] text-white/40 relative z-10">cinemaxstream.com</p>
       </div>
 
       <div className="flex gap-3">
