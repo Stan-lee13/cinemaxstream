@@ -10,13 +10,13 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/lovable-uploads/15970653-43b4-4ace-962f-9f28c645ad97.png",
+      "src": "/app-icon.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/lovable-uploads/15970653-43b4-4ace-962f-9f28c645ad97.png",
+      "src": "/app-icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
@@ -25,7 +25,7 @@
   "categories": ["entertainment", "multimedia"],
   "screenshots": [
     {
-      "src": "/lovable-uploads/15970653-43b4-4ace-962f-9f28c645ad97.png",
+      "src": "/app-icon.png",
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide"

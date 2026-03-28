@@ -112,8 +112,7 @@ const defaultSecurityConfig: SecurityConfig = {
     'vidsrc.xyz',
     'vidsrc.su',
     'vidsrc.vip',
-    'supabase.co',
-    'lovable.app'
+    'supabase.co'
   ],
   rateLimit: {
     windowMs: 15 * 60 * 1000, // 15 minutes
