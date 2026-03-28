@@ -17,8 +17,8 @@ const preloadedUrls = new Set<string>();
 export const preloadProviderHandshake = (sourceNumber: number): void => {
   const sources = [sourceNumber];
   sources.forEach(s => {
-    const config = { 1: 'vidrock.net', 2: 'vidnest.fun', 3: 'player.videasy.net', 4: 'vidlink.pro' };
-    const domain = config[s as keyof typeof config];
+    const cfg = getSourceConfig(s);
+    const domain = cfg.domain;
     if (!domain) return;
 
     // Add preconnect link

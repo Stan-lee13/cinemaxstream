@@ -171,7 +171,7 @@ export const getStreamingUrlForProvider = (
   options: ProviderOptions = {}
 ): string => getStreamingUrlForSource(contentId, getSourceNumber(provider), options);
 
-export const isVidRockSource = (sourceNumber: number): boolean => sourceNumber === 3;
+export const isVidRockSource = (sourceNumber: number): boolean => sourceNumber === 1;
 
 export const isIframeSourceImpl = (): boolean => true;
 
