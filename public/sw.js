@@ -14,7 +14,7 @@ const STATIC_CACHE_URLS = [
   '/anime',
   '/manifest.json',
   '/offline.html',
-  '/lovable-uploads/15970653-43b4-4ace-962f-9f28c645ad97.png'
+  '/logo-app.png'
 ];
 
 // Cache configuration
