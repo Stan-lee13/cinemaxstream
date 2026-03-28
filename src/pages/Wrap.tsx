@@ -324,7 +324,7 @@ function SlideSummary({ data, label, username }: { data: WrapData; label: string
             files: [new File([blob], 'wrap.png', { type: 'image/png' })],
           });
         } else {
-          const text = `🎬 My ${label} Wrap\n⏱️ ${data.totalMinutes} minutes watched\n🔥 ${data.bingeStreak} day streak\n${data.personalityTitle}\n\n#CinemaxStream`;
+          const text = `🎬 My ${label} Wrap\n⏱️ ${data.totalMinutes} minutes watched\n🔥 ${data.bingeStreak} day streak\n${data.personalityTitle}\n\n#CineMaxStream`;
           if (navigator.share) {
             await navigator.share({ title: `My ${label} Wrap`, text });
           } else {
@@ -349,7 +349,7 @@ function SlideSummary({ data, label, username }: { data: WrapData; label: string
           <img src={topPoster} alt="" className="absolute inset-0 w-full h-full object-cover opacity-20" />
         )}
         <div className="relative z-10">
-          <p className="text-xs text-white/60 uppercase tracking-widest mb-2">CinemaxStream</p>
+          <p className="text-xs text-white/60 uppercase tracking-widest mb-2">CineMaxStream</p>
           <h3 className="text-2xl font-black text-white">{label} Wrap</h3>
           {username && <p className="text-sm text-white/70 mt-1">@{username}</p>}
         </div>

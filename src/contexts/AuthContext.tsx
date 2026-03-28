@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { logError } from '@/utils/productionLogger';
 import { getErrorMessage as getErrorMsg } from '@/utils/errorHelpers';
 import { AuthContext } from './authContextBase';
+import { validatePremiumCode } from '@/utils/authUtils';
 import { registerDevice } from '@/utils/providers/deviceTracker';
 import { startHealthMonitor, stopHealthMonitor } from '@/utils/providers/streamHealthMonitor';
 import { preloadAllHandshakes } from '@/utils/providers/preloadEngine';
@@ -163,7 +164,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     
     try {
-      const { validatePremiumCode } = await import('@/utils/authUtils');
       const isValid = await validatePremiumCode(promoCode);
       
       if (!isValid) {

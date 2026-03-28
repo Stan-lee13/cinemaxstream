@@ -40,7 +40,7 @@ export default function FAQ() {
               Frequently Asked Questions
             </h1>
             <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-              Everything you need to know about CinemaxStream. Can't find the answer? We're here to help.
+              Everything you need to know about CineMaxStream. Can't find the answer? We're here to help.
             </p>
           </div>
 

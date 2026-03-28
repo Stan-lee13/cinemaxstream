@@ -43,7 +43,7 @@ const Terms = () => {
                 <h2 className="text-xl font-bold text-white uppercase tracking-tight">Acceptance of Terms</h2>
               </div>
               <p className="text-gray-400 leading-relaxed font-medium">
-                By accessing and using CinemaxStream, you accept and agree to be bound by the terms
+                By accessing and using CineMaxStream, you accept and agree to be bound by the terms
                 and provision of this agreement. If you do not agree to these terms, you should not
                 use this service. Your continued interaction constitutes neural synchronization with our protocols.
               </p>
@@ -57,7 +57,7 @@ const Terms = () => {
                 <h2 className="text-xl font-bold text-white uppercase tracking-tight">Use License</h2>
               </div>
               <p className="text-gray-400 leading-relaxed font-medium mb-6">
-                Permission is granted to temporarily access CinemaxStream for personal, non-commercial
+                Permission is granted to temporarily access CineMaxStream for personal, non-commercial
                 transitory viewing only. This is the grant of a license, not a transfer of title.
               </p>
               <h3 className="text-sm font-black uppercase tracking-widest text-gray-500 mb-4">Prohibited Operations</h3>
@@ -98,7 +98,7 @@ const Terms = () => {
                 <h2 className="text-xl font-bold text-white uppercase tracking-tight">System Integrity</h2>
               </div>
               <p className="text-gray-400 leading-relaxed font-medium">
-                In no case shall CinemaxStream, nor its directors, employees, or affiliates, be liable for any
+                In no case shall CineMaxStream, nor its directors, employees, or affiliates, be liable for any
                 indirect, incidental, or consequential damages arising out of your interaction with our stream.
               </p>
             </Card>

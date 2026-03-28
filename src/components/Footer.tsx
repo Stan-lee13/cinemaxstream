@@ -22,7 +22,7 @@ const Footer = ({ forceShow = false }: FooterProps) => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           <div>
             <Link to="/">
-              <h2 className="text-xl font-bold text-gradient mb-4">CinemaxStream</h2>
+              <h2 className="text-xl font-bold text-gradient mb-4">CineMaxStream</h2>
             </Link>
             <p className="text-gray-400 text-sm mb-6">
               Your premium streaming platform for the latest movies, TV shows, anime, and sports. Watch online or download for offline viewing.
@@ -114,7 +114,7 @@ const Footer = ({ forceShow = false }: FooterProps) => {
         
         <div className="border-t border-gray-800 mt-12 pt-6 flex flex-col md:flex-row justify-between items-center">
           <p className="text-gray-500 text-sm">
-            © {new Date().getFullYear()} CinemaxStream. All rights reserved.
+            © {new Date().getFullYear()} CineMaxStream. All rights reserved.
           </p>
           <div className="flex gap-6 mt-4 md:mt-0">
             <Link to="/dmca" className="text-gray-500 text-sm hover:text-gray-300">DMCA</Link>

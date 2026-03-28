@@ -8,6 +8,7 @@ import useAuth from "@/contexts/authHooks";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { resendConfirmationEmail } from "@/utils/authUtils";
+import ProductionValidator from "@/utils/productionValidation";
 
 const glassClass =
   "backdrop-blur-lg bg-white/10 dark:bg-zinc-900/50 rounded-2xl shadow-2xl border border-white/10 dark:border-zinc-700/30";
@@ -28,6 +29,21 @@ const OnboardingAuth: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    // Validate inputs
+    if (!ProductionValidator.validateEmail(formVals.email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
+    if (tab === "signup") {
+      const passwordCheck = ProductionValidator.validatePassword(formVals.password);
+      if (!passwordCheck.isValid) {
+        toast.error(passwordCheck.errors[0]);
+        return;
+      }
+    }
+
     try {
       if (tab === "signin") {
         await signIn(formVals.email, formVals.password);
@@ -84,7 +100,7 @@ const OnboardingAuth: React.FC = () => {
       <div className={`relative z-10 w-[95vw] max-w-sm mx-auto px-2 py-8 sm:py-10 backdrop-blur-lg bg-card/80 rounded-2xl shadow-2xl border border-border`}>
         {/* App Branding */}
         <div className="flex flex-col items-center gap-0 mb-6">
-          <span className="text-3xl font-extrabold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent drop-shadow-sm">CinemaxStream</span>
+          <span className="text-3xl font-extrabold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent drop-shadow-sm">CineMaxStream</span>
           <span className="text-base text-center text-muted-foreground font-medium select-none mb-1">
             {tab === "signin"
               ? "Welcome back! Sign in to watch and stream your favorite content."

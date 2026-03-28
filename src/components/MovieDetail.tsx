@@ -103,9 +103,9 @@ const MovieDetail = ({
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent"></div>
       </div>
       
-      <div className="container mx-auto px-4 relative h-full flex items-end pb-16">
+      <div className="container mx-auto px-4 relative h-full flex items-end pb-8 sm:pb-16">
         <div className="w-full lg:w-2/3 animate-fade-in">
-          <div className="flex flex-wrap gap-3 mb-4">
+          <div className="flex flex-wrap gap-2 sm:gap-3 mb-4">
             <span className="px-2 py-1 rounded-md bg-cinemax-500/20 text-cinemax-400 text-xs font-semibold">
               <div className="inline mr-1" />
               {content.content_type || content.type || 'movie'}
@@ -139,8 +139,8 @@ const MovieDetail = ({
             </div>
           )}
           
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">{content.title || "Untitled"}</h1>
-          <p className="text-gray-300 mb-8 text-sm md:text-base max-w-2xl">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">{content.title || "Untitled"}</h1>
+          <p className="text-gray-300 mb-6 sm:mb-8 text-sm md:text-base max-w-2xl line-clamp-3 sm:line-clamp-none">
             {content.description || "No description available."}
           </p>
           

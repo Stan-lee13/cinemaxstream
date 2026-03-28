@@ -25,7 +25,7 @@ const NotificationBar = () => {
 
   // Update page title with unread count
   useEffect(() => {
-    document.title = unreadCount > 0 ? `(${unreadCount}) CinemaxStream` : 'CinemaxStream';
+    document.title = unreadCount > 0 ? `(${unreadCount}) CineMaxStream` : 'CineMaxStream';
   }, [unreadCount]);
 
   const handleClick = (notif: AppNotification) => {

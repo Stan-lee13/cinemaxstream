@@ -70,7 +70,7 @@ const HeroSection = () => {
         <div className="relative z-10 container mx-auto px-4 text-white">
           <div className="max-w-2xl">
             <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-              Welcome to CinemaxStream
+              Welcome to CineMaxStream
             </h1>
             <p className="text-gray-300 text-lg mb-8 leading-relaxed">
               Your ultimate destination for movies, TV series, anime, and more.
@@ -128,7 +128,7 @@ const HeroSection = () => {
 
           {/* Description */}
           <p className="text-gray-300 text-lg mb-8 leading-relaxed line-clamp-3">
-            {currentContent.description || "Discover amazing content on CinemaxStream."}
+            {currentContent.description || "Discover amazing content on CineMaxStream."}
           </p>
 
           {/* Action Buttons */}

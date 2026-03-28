@@ -74,7 +74,7 @@ const SplashScreen = ({ onComplete }: SplashScreenProps) => {
                 repeatType: "reverse" 
               }}
             >
-              CinemaxStream
+              CineMaxStream
             </motion.h1>
             <p className="text-gray-400 mb-8">Your Ultimate Streaming Destination</p>
             <div className="flex justify-center space-x-2">

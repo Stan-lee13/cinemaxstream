@@ -91,7 +91,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({
                 </div>
 
                 <h2 className="text-2xl md:text-3xl font-bold text-white mb-4 leading-tight">
-                  Unleash the full power of <span className="text-transparent bg-clip-text bg-gradient-to-r from-cinemax-400 to-purple-400">Cinemax</span>
+                  Unleash the full power of <span className="text-transparent bg-clip-text bg-gradient-to-r from-cinemax-400 to-purple-400">CineMax</span>
                 </h2>
 
                 <p className="text-gray-400 text-sm leading-relaxed mb-6">

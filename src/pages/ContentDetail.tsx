@@ -168,10 +168,10 @@ const ContentDetail = () => {
   <NeonEdgeEffect isActive={showNeonEffect && isPlaying} color="multi" />
         
         {isPlaying && !cleanupRef.current ? (
-          <div ref={containerRef} className="container mx-auto px-4 py-8 relative">
+          <div ref={containerRef} className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 relative">
             <div className="max-w-5xl mx-auto">
-              <div className="flex items-center justify-between mb-4">
-                <h1 className="text-2xl font-bold">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                <h1 className="text-xl sm:text-2xl font-bold truncate">
                   {safeContent.title}
                   {currentSeason && currentEpisode && 
                     ` - S${currentSeason}:E${currentEpisode}`
@@ -181,7 +181,7 @@ const ContentDetail = () => {
                 <Button 
                   variant="ghost" 
                   onClick={() => setIsPlaying(false)}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 self-start sm:self-auto"
                 >
                   <ArrowLeft size={16} />
                   <span>Back</span>

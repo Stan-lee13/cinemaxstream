@@ -28,7 +28,7 @@ interface WalkthroughStep {
 
 const desktopSteps: WalkthroughStep[] = [
   {
-    title: 'Welcome to CinemaxStream!',
+    title: 'Welcome to CineMaxStream!',
     description: 'Let us show you around. This quick tour will help you discover all the features available.',
     icon: <Home className="h-12 w-12 text-cinemax-500" />,
   },
@@ -78,7 +78,7 @@ const desktopSteps: WalkthroughStep[] = [
 
 const mobileSteps: WalkthroughStep[] = [
   {
-    title: 'Welcome to CinemaxStream!',
+    title: 'Welcome to CineMaxStream!',
     description: 'Let us show you around. Swipe through this quick tour to learn the basics.',
     icon: <Home className="h-12 w-12 text-cinemax-500" />,
   },
