@@ -96,9 +96,10 @@ export const API_ENDPOINTS = {
 
 // Allowed streaming domains for security
 export const ALLOWED_STREAMING_DOMAINS = [
-  'vidsrc.xyz',
-  'vidsrc.su', 
-  'vidsrc.vip',
+  'vidrock.net',
+  'vidnest.fun',
+  'videasy.net',
+  'vidlink.pro',
   'player.vimeo.com',
   'youtube.com',
   'youtu.be'
