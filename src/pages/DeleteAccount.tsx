@@ -99,7 +99,7 @@ const DeleteAccount: React.FC = () => {
             </div>
             <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Delete Account</h1>
             <p className="text-gray-400 max-w-md mx-auto">
-              Permanently remove your account and all associated data from CinemaxStream.
+              Permanently remove your account and all associated data from CineMaxStream.
             </p>
           </motion.div>
 

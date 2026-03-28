@@ -1,87 +1,42 @@
 /**
  * Streaming utility functions
+ * DEPRECATED: Use src/utils/providers/providerUtils.ts instead
  */
 
-// Define quality options for streaming and downloading
-export const QUALITY_OPTIONS = [
-  { value: "4k", label: "4K (2160p)" },
-  { value: "1080p", label: "Full HD (1080p)" },
-  { value: "720p", label: "HD (720p)" },
-  { value: "480p", label: "SD (480p)" },
-  { value: "360p", label: "Low (360p)" }
-];
-
-// Define source types for different providers
-export enum SourceType {
-  DIRECT = 'direct',  // Direct video URL (mp4, etc)
-  IFRAME = 'iframe',  // Embed via iframe
-  HLS = 'hls',        // HLS streaming (.m3u8)
-  DASH = 'dash'       // DASH streaming (.mpd)
-}
-
-// Define provider configuration type
-export interface ProviderConfig {
-  type: SourceType;
-  supportsFullHD?: boolean;
-  isPremium?: boolean;
-  contentTypes: string[];
-  supportsDownload?: boolean;
-}
-
-// Provider configuration - updated with 5 new providers
-export const providerConfigs: Record<string, ProviderConfig> = {
-  vidsrc_me: {
-    type: SourceType.IFRAME,
-    supportsFullHD: true,
-    contentTypes: ['movie', 'series', 'anime']
-  },
-  vidsrcme_ru: {
-    type: SourceType.IFRAME,
-    supportsFullHD: true,
-    contentTypes: ['movie', 'series', 'anime']
-  },
-  vidsrc_embed_ru: { 
-    type: SourceType.IFRAME,
-    supportsFullHD: true,
-    contentTypes: ['movie', 'series', 'anime']
-  },
-  vidsrc_embed_su: {
-    type: SourceType.IFRAME,
-    supportsFullHD: true,
-    contentTypes: ['movie', 'series', 'anime']
-  },
-  vidrock_net: {
-    type: SourceType.IFRAME,
-    supportsFullHD: true,
-    contentTypes: ['movie', 'series', 'anime']
-  }
-};
-
-// Import the provider functions from separate modules
 import {
-  getStreamingUrlForProvider,
-  isIframeSourceImpl
+  getStreamingUrlForSource,
+  getSourceFromProvider,
+  QUALITY_OPTIONS as CONSOLIDATED_QUALITY_OPTIONS,
+  getAllStreamingServices as getConsolidatedServices
 } from './providers/providerUtils';
 
 import { getDownloadUrlImpl } from './providers/downloadProviders';
 import { getTrailerUrlImpl } from './providers/trailerProviders';
 import type { ProviderOptions } from './providers/providerUtils';
 
+export const QUALITY_OPTIONS = CONSOLIDATED_QUALITY_OPTIONS;
+
+export enum SourceType {
+  DIRECT = 'direct',
+  IFRAME = 'iframe',
+  HLS = 'hls',
+  DASH = 'dash'
+}
+
 export type StreamingOptions = ProviderOptions;
 
 /**
  * Get streaming URL for the content
  */
-export const getStreamingUrl = (contentId: string, provider: string = 'vidsrc_embed_ru', options: StreamingOptions = {}): string => {
-  return getStreamingUrlForProvider(contentId, provider, options);
+export const getStreamingUrl = (contentId: string, provider: string = 'source_1', options: StreamingOptions = {}): string => {
+  const sourceNum = getSourceFromProvider(provider);
+  return getStreamingUrlForSource(contentId, sourceNum, options);
 };
 
 /**
  * Determine if a provider requires iframe embedding
  */
-export const isIframeSource = (): boolean => {
-  return isIframeSourceImpl();
-};
+export const isIframeSource = (): boolean => true;
 
 /**
  * Get download URL for the content
@@ -100,19 +55,16 @@ export const getTrailerUrl = async (contentId: string, contentType: string = 'mo
 /**
  * Start recording for live content
  */
-export const startRecording = async (options = {}): Promise<MediaStream | null> => {
+export const startRecording = async (): Promise<MediaStream | null> => {
   try {
     if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
-      const stream = await navigator.mediaDevices.getDisplayMedia({
+      return await navigator.mediaDevices.getDisplayMedia({
         video: true,
         audio: true
       });
-      return stream;
-    } else {
-      throw new Error('Screen recording not supported');
     }
-  } catch (error) {
-    // Production error handling - no console.error
+    return null;
+  } catch {
     return null;
   }
 };
@@ -121,25 +73,17 @@ export const startRecording = async (options = {}): Promise<MediaStream | null> 
  * Get a list of all available streaming services
  */
 export const getAllStreamingServices = () => {
-  return Object.entries(providerConfigs).map(([id, config]) => ({
-    id,
-    name: id.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-    isPremium: config.isPremium || false,
-    supportsDownload: config.supportsDownload || false,
-    contentTypes: config.contentTypes || ['movie'],
-    supportsFullHD: config.supportsFullHD !== undefined ? config.supportsFullHD : false
-  }));
+  return getConsolidatedServices();
 };
 
 /**
  * Generate correct runtime for content based on content type
  */
-export const getContentRuntime = (contentType: string, episodeNumber?: number): string => {
-  // Default runtimes based on content type
+export const getContentRuntime = (contentType: string): string => {
   const defaultRuntimes: Record<string, number> = {
-    'movie': 120, // 2 hours average
-    'series': 45, // 45 minutes average
-    'anime': 24,  // 24 minutes average
+    'movie': 120,
+    'series': 45,
+    'anime': 24,
   };
   
   const minutes = defaultRuntimes[contentType] || 90;

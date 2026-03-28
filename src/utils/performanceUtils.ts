@@ -2,7 +2,12 @@
  * Performance monitoring and optimization utilities
  */
 
-import { analytics } from './analytics';
+// Import analytics as a side-effect or use dynamic import to avoid circular dependency
+// with productionOptimization.ts which is imported by main.tsx
+let analyticsInstance: any = null;
+import('./analytics').then(m => {
+  analyticsInstance = m.analytics || m.default;
+});
 
 // Performance metrics storage
 const performanceMetrics = {
@@ -77,10 +82,12 @@ export const setupPerformanceMonitoring = () => {
       const elementTag = lcpTyped && lcpTyped.element && typeof lcpTyped.element.tagName === 'string' ? lcpTyped.element.tagName : undefined;
 
       const startTime = lcpTyped?.startTime ?? 0;
-      analytics.trackPerformance('LCP', startTime, {
-        element: elementTag,
-        threshold: startTime > 2500 ? 'poor' : startTime > 1200 ? 'needs-improvement' : 'good'
-      });
+      if (analyticsInstance) {
+        analyticsInstance.trackPerformance('LCP', startTime, {
+          element: elementTag,
+          threshold: startTime > 2500 ? 'poor' : startTime > 1200 ? 'needs-improvement' : 'good'
+        });
+      }
     });
     lcpObserver.observe({ type: 'largest-contentful-paint', buffered: true });
   } catch (e) {
@@ -98,9 +105,11 @@ export const setupPerformanceMonitoring = () => {
           const fid = processingStart - entry.startTime;
           performanceMetrics.firstInputDelay = fid;
 
-          analytics.trackPerformance('FID', fid, {
-            threshold: fid > 300 ? 'poor' : fid > 100 ? 'needs-improvement' : 'good'
-          });
+          if (analyticsInstance) {
+            analyticsInstance.trackPerformance('FID', fid, {
+              threshold: fid > 300 ? 'poor' : fid > 100 ? 'needs-improvement' : 'good'
+            });
+          }
         }
       });
     });
@@ -125,9 +134,11 @@ export const setupPerformanceMonitoring = () => {
       
       performanceMetrics.cumulativeLayoutShift = clsScore;
       
-      analytics.trackPerformance('CLS', clsScore, {
-        threshold: clsScore > 0.25 ? 'poor' : clsScore > 0.1 ? 'needs-improvement' : 'good'
-      });
+      if (analyticsInstance) {
+        analyticsInstance.trackPerformance('CLS', clsScore, {
+          threshold: clsScore > 0.25 ? 'poor' : clsScore > 0.1 ? 'needs-improvement' : 'good'
+        });
+      }
     });
     clsObserver.observe({ type: 'layout-shift', buffered: true });
   } catch (e) {
@@ -141,9 +152,11 @@ export const setupPerformanceMonitoring = () => {
     performanceMetrics.pageLoadTime = perfData.loadEventEnd - perfData.fetchStart;
     performanceMetrics.domContentLoaded = perfData.domContentLoadedEventEnd - perfData.fetchStart;
     
-    analytics.trackPerformance('Page Load Time', performanceMetrics.pageLoadTime);
-    analytics.trackPerformance('DOM Content Loaded', performanceMetrics.domContentLoaded);
-    analytics.trackPerformance('TTFB', perfData.responseStart - perfData.fetchStart);
+    if (analyticsInstance) {
+      analyticsInstance.trackPerformance('Page Load Time', performanceMetrics.pageLoadTime);
+      analyticsInstance.trackPerformance('DOM Content Loaded', performanceMetrics.domContentLoaded);
+      analyticsInstance.trackPerformance('TTFB', perfData.responseStart - perfData.fetchStart);
+    }
   });
 
   // Page visibility API for performance optimization
@@ -274,20 +287,24 @@ export const monitorResourceLoading = () => {
         
         // Track large resources
         if (resource.transferSize > 1000000) { // > 1MB
-          analytics.trackEvent('large_resource_loaded', {
-            name: resource.name,
-            size: resource.transferSize,
-            duration: resource.duration
-          });
+          if (analyticsInstance) {
+            analyticsInstance.trackEvent('large_resource_loaded', {
+              name: resource.name,
+              size: resource.transferSize,
+              duration: resource.duration
+            });
+          }
         }
         
         // Track slow resources
         if (resource.duration > 5000) { // > 5 seconds
-          analytics.trackEvent('slow_resource_loaded', {
-            name: resource.name,
-            duration: resource.duration,
-            size: resource.transferSize
-          });
+          if (analyticsInstance) {
+            analyticsInstance.trackEvent('slow_resource_loaded', {
+              name: resource.name,
+              duration: resource.duration,
+              size: resource.transferSize
+            });
+          }
         }
       });
     });

@@ -85,6 +85,17 @@ export const getProviderFromSource = (sourceNumber: number): string =>
 
 export const getAvailableSources = (): number[] => [1, 2, 3, 4];
 
+/**
+ * Quality options for streaming and downloading
+ */
+export const QUALITY_OPTIONS = [
+  { value: "4k", label: "4K (2160p)" },
+  { value: "1080p", label: "Full HD (1080p)" },
+  { value: "720p", label: "HD (720p)" },
+  { value: "480p", label: "SD (480p)" },
+  { value: "360p", label: "Low (360p)" }
+];
+
 export const getDefaultSource = (isPremium = false): number =>
   isPremium ? PREMIUM_DEFAULT_SOURCE : DEFAULT_SOURCE;
 
@@ -175,4 +186,36 @@ export const getSourceLabel = (sourceNumber: number): string => {
 export const getSourceReferrer = (sourceNumber: number): string => {
   const cfg = SOURCE_CONFIGS[sourceNumber];
   return cfg?.referrer || '';
+};
+
+/**
+ * Get the internal source number from a user-facing provider ID
+ */
+export const getSourceFromProvider = (providerId: string): number => {
+  if (providerId.startsWith('source_')) {
+    const num = parseInt(providerId.replace('source_', ''), 10);
+    if (SOURCE_CONFIGS[num]) return num;
+  }
+  // Map legacy IDs to new system
+  const mapping: Record<string, number> = {
+    'vidsrc_me': 1,
+    'vidsrcme_ru': 2,
+    'vidsrc_embed_ru': 3,
+    'vidsrc_embed_su': 4,
+    'vidrock_net': 1
+  };
+  return mapping[providerId] || DEFAULT_SOURCE;
+};
+
+/**
+ * Get all available sources formatted for UI selectors
+ */
+export const getAllStreamingServices = () => {
+  return Object.entries(SOURCE_CONFIGS).map(([id, config]) => ({
+    id: `source_${id}`,
+    name: config.label,
+    isPremium: config.isPremium,
+    domain: config.domain,
+    key: config.key
+  }));
 };

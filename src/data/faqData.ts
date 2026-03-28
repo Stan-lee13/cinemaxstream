@@ -4,8 +4,8 @@ export const FAQ_DATA = [
     answer: "Click the 'Sign In' button in the top right corner, then select 'Sign Up' to create a new account with your email and password."
   },
   {
-    question: "Is CinemaxStream free to use?",
-    answer: "CinemaxStream offers both free and premium content. Basic features are free, while premium content requires a subscription."
+    question: "Is CineMaxStream free to use?",
+    answer: "CineMaxStream offers both free and premium content. Basic features are free, while premium content requires a subscription."
   },
   {
     question: "Can I download content for offline viewing?",
@@ -13,7 +13,7 @@ export const FAQ_DATA = [
   },
   {
     question: "What devices are supported?",
-    answer: "CinemaxStream works on all modern web browsers, smartphones, tablets, smart TVs, and streaming devices."
+    answer: "CineMaxStream works on all modern web browsers, smartphones, tablets, smart TVs, and streaming devices."
   },
   {
     question: "How do I cancel my subscription?",

@@ -4,6 +4,7 @@ import { User, Settings, CreditCard, Download, Bell, Shield, FileText, Trash2, M
 import BackButton from "@/components/BackButton";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import DeviceManagement from "@/components/DeviceManagement";
 import { useNavigate } from 'react-router-dom';
 
 const Account = () => {
@@ -193,6 +194,11 @@ const Account = () => {
           </div>
 
           <div className="grid grid-cols-1 gap-14">
+            {/* Device Management Section */}
+            <div className="space-y-8 bg-white/5 p-8 rounded-[40px] border border-white/5 backdrop-blur-3xl shadow-2xl shadow-black/40">
+              <DeviceManagement userId={user.id} />
+            </div>
+
             {accountSections.map((section, idx) => (
               <div key={idx} className="space-y-8">
                 <h2 className="section-title text-xs font-black text-gray-500 uppercase tracking-[0.3em] px-2 flex items-center gap-4">
@@ -267,7 +273,7 @@ const Account = () => {
             </div>
 
             <p className="mt-12 text-center text-xs text-gray-600 font-bold uppercase tracking-[0.2em]">
-              Cinemax Stream • Premium Experience • {new Date().getFullYear()}
+              CineMax Stream • Premium Experience • {new Date().getFullYear()}
             </p>
           </div>
         </div>

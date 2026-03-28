@@ -50,7 +50,7 @@ const InstallPrompt: React.FC = () => {
             <Download className="w-8 h-8 text-white" />
           </div>
           <CardTitle className="text-xl font-bold text-white">
-            Install CinemaxStream
+            Install CineMaxStream
           </CardTitle>
           <CardDescription className="text-gray-400">
             Get the full app experience with faster loading and offline access

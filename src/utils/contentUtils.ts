@@ -5,15 +5,10 @@
 
 import type { ContentItem } from '@/types/content';
 
-// Production streaming sources - displayed as "Source 1-5" to users
-// Internal mapping is handled in providerUtils.ts
-export const streamingProviders = [
-  { id: 'source_1', name: 'Source 1', contentType: 'all', isDefault: true },
-  { id: 'source_2', name: 'Source 2', contentType: 'all' },
-  { id: 'source_3', name: 'Source 3', contentType: 'all' },
-  { id: 'source_4', name: 'Source 4', contentType: 'all' },
-  { id: 'source_5', name: 'Source 5', contentType: 'all' }
-];
+import { getAllStreamingServices } from './providers/providerUtils';
+
+// Production streaming sources
+export const streamingProviders = getAllStreamingServices();
 
 // Download providers - empty as per requirement (streaming only)
 export const downloadProviders: { id: string; name: string; contentType: string }[] = [];

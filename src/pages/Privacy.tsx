@@ -59,7 +59,7 @@ const Privacy = () => {
                 <h2 className="text-xl font-bold text-white uppercase tracking-tight">Intelligence Introduction</h2>
               </div>
               <p className="text-gray-400 leading-relaxed font-medium">
-                At CinemaxStream, we respect your digital sovereignty and are committed to protecting your
+                At CineMaxStream, we respect your digital sovereignty and are committed to protecting your
                 neural metadata. This policy explains how we synthesize, index, and safeguard your
                 information when you synchronize with our service.
               </p>

@@ -13,9 +13,12 @@ export const initPerformanceMonitoring = () => {
       // Log LCP metric if > 2.5s (poor threshold)
       if (lcp && lcp.startTime > 2500) {
         try {
-          // Lazy import analytics to avoid circular deps
-          import('./analytics').then(({ analytics }) => {
-            analytics.trackPerformance('LCP', lcp.startTime, { threshold: lcp.startTime > 2500 ? 'poor' : lcp.startTime > 1200 ? 'needs-improvement' : 'good' });
+          // Dynamic import for analytics
+          import('./analytics').then((m) => {
+            const analytics = m.analytics || m.default;
+            if (analytics && typeof analytics.trackPerformance === 'function') {
+              analytics.trackPerformance('LCP', lcp.startTime, { threshold: lcp.startTime > 2500 ? 'poor' : lcp.startTime > 1200 ? 'needs-improvement' : 'good' });
+            }
           }).catch(() => {});
         } catch (e) {
           // no-op
@@ -39,8 +42,11 @@ export const initPerformanceMonitoring = () => {
       // Log CLS metric if > 0.1 (poor threshold)
       if (cumulativeScore > 0.1) {
         try {
-          import('./analytics').then(({ analytics }) => {
-            analytics.trackPerformance('CLS', cumulativeScore, { threshold: cumulativeScore > 0.25 ? 'poor' : cumulativeScore > 0.1 ? 'needs-improvement' : 'good' });
+          import('./analytics').then((m) => {
+            const analytics = m.analytics || m.default;
+            if (analytics && typeof analytics.trackPerformance === 'function') {
+              analytics.trackPerformance('CLS', cumulativeScore, { threshold: cumulativeScore > 0.25 ? 'poor' : cumulativeScore > 0.1 ? 'needs-improvement' : 'good' });
+            }
           }).catch(() => {});
         } catch (e) {
           // no-op

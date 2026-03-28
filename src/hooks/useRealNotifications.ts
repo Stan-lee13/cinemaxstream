@@ -128,8 +128,8 @@ export function useRealNotifications() {
   // Update page title with notification count
   useEffect(() => {
     document.title = notificationCount > 0
-      ? `(${notificationCount}) New Updates - CinemaxStream`
-      : 'CinemaxStream';
+      ? `(${notificationCount}) New Updates - CineMaxStream`
+      : 'CineMaxStream';
   }, [notificationCount]);
 
   const requestNotificationPermission = async () => {

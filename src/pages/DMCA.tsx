@@ -64,7 +64,7 @@ export default function DMCA() {
                     <h2 className="text-2xl font-black text-white uppercase tracking-tight">System Overview</h2>
                   </div>
                   <p className="text-gray-400 leading-relaxed font-bold mb-8">
-                    CinemaxStream operating as an intelligence aggregator for digital assets.
+                    CineMaxStream operating as an intelligence aggregator for digital assets.
                     We respect the creative sovereignty of originators and respond to validated takedown
                     signals when properly transmitted through our secure channels.
                   </p>
@@ -76,7 +76,7 @@ export default function DMCA() {
                       <div>
                         <p className="text-amber-500 font-black uppercase tracking-widest text-xs mb-2">Aggregator Protocol Notice</p>
                         <p className="text-gray-300 text-sm leading-relaxed font-medium">
-                          CinemaxStream is an automated indexing matrix. We do not host raw asset files on local storage nodes.
+                          CineMaxStream is an automated indexing matrix. We do not host raw asset files on local storage nodes.
                           We facilitate access to decentralized content buffers.
                         </p>
                       </div>

@@ -66,7 +66,7 @@ const OnboardingLanding: React.FC = () => {
             </h1>
 
             <p className="text-gray-300 text-base md:text-lg max-w-xl font-medium leading-relaxed">
-              Cinemax Stream combines cinematic visuals, ultra-low latency playback, and intelligent personalization
+              CineMax Stream combines cinematic visuals, ultra-low latency playback, and intelligent personalization
               to deliver a world-class experience on every device.
             </p>
 
@@ -182,7 +182,7 @@ const OnboardingLanding: React.FC = () => {
         </div>
 
         <p className="text-xs font-bold text-gray-600 uppercase tracking-[0.3em]">
-          &copy; {new Date().getFullYear()} Cinemax Stream • Internal Build v4.2.0
+          &copy; {new Date().getFullYear()} CineMax Stream • Internal Build v4.2.0
         </p>
 
         <div className="flex gap-8">

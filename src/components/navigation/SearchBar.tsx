@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { searchContent } from '@/services/tmdbApi';
 import { SearchResult } from '@/types/content';
 import { toast } from 'sonner';
+import ProductionValidator from '@/utils/productionValidation';
 
 const SearchBar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -28,7 +29,14 @@ const SearchBar: React.FC = () => {
       setError(null);
       
       try {
-        const searchResults = await searchContent(query);
+        const sanitizedQuery = ProductionValidator.sanitizeSearchQuery(query);
+        if (!sanitizedQuery && query.trim()) {
+          setResults([]);
+          setIsLoading(false);
+          return;
+        }
+
+        const searchResults = await searchContent(sanitizedQuery);
         // Map from API response to SearchResult
         const mappedResults: SearchResult[] = (searchResults?.results || [])
           .slice(0, 8)

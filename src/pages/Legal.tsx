@@ -42,7 +42,7 @@ const Legal = () => {
               Legal Information
             </h1>
             <p className="text-gray-400 text-xl font-medium leading-relaxed max-w-2xl">
-              Official disclosures, company parameters, and the regulatory framework of CinemaxStream.
+              Official disclosures, company parameters, and the regulatory framework of CineMaxStream.
             </p>
           </motion.div>
 
@@ -66,7 +66,7 @@ const Legal = () => {
                 <div className="bg-amber-500/5 border border-amber-500/20 rounded-3xl p-8 mb-8">
                   <p className="text-amber-500 font-black uppercase tracking-widest text-xs mb-3">Host Integration Notice</p>
                   <p className="text-gray-300 leading-relaxed font-bold">
-                    CinemaxStream is a decentralized content aggregation matrix. We index and facilitate
+                    CineMaxStream is a decentralized content aggregation matrix. We index and facilitate
                     neural links to digital assets across the global network. No proprietary copyrighted
                     sequences are stored on local nodes.
                   </p>
@@ -107,7 +107,7 @@ const Legal = () => {
                     <h3 className="text-xs font-black uppercase tracking-[0.2em] text-blue-500">Business Parameters</h3>
                     <div className="space-y-4">
                       {[
-                        { l: 'IDENTITY', v: 'CinemaxStream LLC' },
+                        { l: 'IDENTITY', v: 'CineMaxStream LLC' },
                         { l: 'VECTOR', v: 'Delaware, USA' },
                         { l: 'CORE ID', v: 'CMS-2024-001' },
                         { l: 'VAT BLOCK', v: 'US123456789' }
