@@ -24,7 +24,7 @@ export class ProductionSecurity {
       img-src 'self' data: https: blob:;
       media-src 'self' https: blob:;
       connect-src 'self' https://api.themoviedb.org https://supabase.co https://*.supabase.co;
-      frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://vidsrc.xyz https://vidsrc.su https://vidsrc.vip https://vidrock.net https://vidnest.fun https://player.videasy.net https://vidlink.pro;
+      frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://vidrock.net https://vidnest.fun https://player.videasy.net https://vidlink.pro;
       object-src 'none';
       base-uri 'self';
       form-action 'self';
@@ -109,9 +109,10 @@ const defaultSecurityConfig: SecurityConfig = {
     'themoviedb.org',
     'youtube.com',
     'youtube-nocookie.com',
-    'vidsrc.xyz',
-    'vidsrc.su',
-    'vidsrc.vip',
+    'vidrock.net',
+    'vidnest.fun',
+    'videasy.net',
+    'vidlink.pro',
     'supabase.co'
   ],
   rateLimit: {
