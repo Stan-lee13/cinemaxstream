@@ -160,9 +160,8 @@ export const useCreditSystem = () => {
       } else {
         setUserUsage(usage);
       }
-    } catch (err: unknown) {
-      // Production error handling - capture for monitoring
-      console.error('Error in checkAndResetDailyLimits:', getErrorMessage(err));
+    } catch {
+      // Silent fail - non-critical error
     }
   }, []);
 
@@ -284,9 +283,8 @@ export const useCreditSystem = () => {
 
         await checkAndResetDailyLimits(mappedUsage, transformedProfile.timezone);
         
-      } catch (err: unknown) {
-        // Production error handling - capture for monitoring  
-        console.error('Failed to initialize user credit system:', err);
+      } catch {
+        // Silent fail - will show toast error below
         setUserUsage(null);
         toast.error('Failed to load user data');
       } finally {

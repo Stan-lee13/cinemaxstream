@@ -110,8 +110,7 @@ export const useWatchTracking = () => {
       lastPlayTimeRef.current = Date.now();
 
       return sessionData;
-    } catch (error) {
-      console.error('Error starting watch session:', error);
+    } catch {
       return null;
     }
   }, [user]);
@@ -136,8 +135,8 @@ export const useWatchTracking = () => {
           setCurrentSession(prev => prev ? { ...prev, credit_deducted: true } : null);
         }
       }
-    } catch (error) {
-      console.error('Error analyzing watch session:', error);
+    } catch {
+      // Silent fail - credit deduction not critical
     }
   }, [deductStreamingCredit]);
 
@@ -186,8 +185,8 @@ export const useWatchTracking = () => {
           })
           .eq('id', currentSession.id);
       }
-    } catch (error) {
-      console.error('Error updating watch session:', error);
+    } catch {
+      // Silent fail - session update not critical
     }
 
     // Check if we should deduct credit on ended
@@ -254,8 +253,7 @@ const getContentDurationFromAI = async (title: string): Promise<number | undefin
     if (response.error) return undefined;
     
     return response.data?.duration;
-  } catch (error) {
-    console.error('Error getting content duration from AI:', error);
+  } catch {
     return undefined;
   }
 };
@@ -291,8 +289,7 @@ const analyzeWatchSessionWithAI = async (session: WatchSession): Promise<boolean
     if (response.error) return false;
     
     return response.data?.shouldDeduct === 'YES';
-  } catch (error) {
-    console.error('Error analyzing watch session with AI:', error);
+  } catch {
     // Fallback to basic rules
     const watchedMinutes = session.total_watched_time / 60;
     const watchedPercentage = session.content_duration 
