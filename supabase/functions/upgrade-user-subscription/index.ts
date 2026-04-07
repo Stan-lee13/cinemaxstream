@@ -69,7 +69,8 @@ const handler = async (req: Request): Promise<Response> => {
         .eq('role', 'admin')
         .maybeSingle();
 
-      const isRootAdmin = user.email?.toLowerCase() === 'stanleyvic13@gmail.com';
+      const adminEmails = Deno.env.get("ADMIN_EMAILS")?.split(',').map(e => e.trim().toLowerCase()) || [];
+      const isRootAdmin = user.email && adminEmails.includes(user.email.toLowerCase());
 
       if (!adminRole && !isRootAdmin) {
         return new Response(

@@ -5,6 +5,9 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
+// Admin emails from environment variable (comma-separated)
+const ADMIN_EMAILS = import.meta.env.VITE_ADMIN_EMAILS?.split(',').map(e => e.trim().toLowerCase()) || [];
+
 /**
  * Check if current user has premium access
  */
@@ -50,8 +53,8 @@ export const isAdmin = async (): Promise<boolean> => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return false;
     
-    // Root admin email check
-    if (user.email?.toLowerCase() === 'stanleyvic13@gmail.com') return true;
+    // Root admin email check from environment variable
+    if (user.email && ADMIN_EMAILS.includes(user.email.toLowerCase())) return true;
 
     // Check user_roles table
     const { data: roleData } = await supabase

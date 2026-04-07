@@ -21,6 +21,7 @@ export interface AppNotification {
   route?: string;
   isRead: boolean;
   type: 'wrap' | 'promo' | 'download' | 'account' | 'content' | 'system';
+  image?: string;
 }
 
 const LOCAL_KEY = 'app_event_notifications';

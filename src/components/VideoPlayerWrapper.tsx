@@ -31,13 +31,8 @@ import {
   getHealthSummary,
   getRankedSources,
 } from "@/utils/providers/smartSourceEngine";
-import {
-  enableAllProtection,
-  disableAllProtection,
-} from "@/utils/providers/adProtection";
 import { saveGlobalState, loadGlobalState } from "@/utils/globalState";
 import { Skeleton } from "./ui/skeleton";
-import { getBestDiscoveredSource } from "@/utils/providers/sourceDiscoveryEngine";
 
 interface VideoPlayerWrapperProps {
   contentId: string;
@@ -119,7 +114,6 @@ const VideoPlayerWrapper = ({
 
   const { startWatchSession } = useWatchTracking();
   const { saveProgress, getProgress } = useVideoProgress();
-  const [preloadedSource, setPreloadedSource] = useState<number | null>(null);
 
   // Health data for source selector
   const healthData = useMemo(() => {
@@ -143,68 +137,13 @@ const VideoPlayerWrapper = ({
     });
   }, [contentId, contentType, activeSource, seasonNumber, episodeNumber, autoPlay, progressState]);
 
-  // Resolve source from ContentDetail selector and source pre-discovery
+  // Resolve source from ContentDetail selector
   useEffect(() => {
-    let mounted = true;
-    const resolve = async () => {
-      if (typeof forcedSource === 'number' && forcedSource >= 1) {
-        setActiveSource(forcedSource);
-        setSavedSource(forcedSource);
-        return;
-      }
-
-      const discovered = await getBestDiscoveredSource(contentId, contentType);
-      if (mounted && typeof discovered === 'number') {
-        setActiveSource(discovered);
-        setSavedSource(discovered);
-      }
-    };
-    resolve();
-    return () => {
-      mounted = false;
-    };
-  }, [forcedSource, contentId, contentType, setSavedSource]);
-
-  // Multi-source preload race (top 2 ranked providers)
-  useEffect(() => {
-    let cancelled = false;
-    const ranked = getRankedSources();
-    const raceSources = ranked.slice(0, 2);
-    if (raceSources.length < 2) return;
-
-    const cleanup: HTMLIFrameElement[] = [];
-    raceSources.forEach((sourceNum) => {
-      const frame = document.createElement('iframe');
-      frame.src = getStreamingUrlForSource(contentId, sourceNum, {
-        contentType,
-        season: typeof seasonNumber === 'number' && !isNaN(seasonNumber) ? seasonNumber : undefined,
-        episodeNum: typeof episodeNumber === 'number' && !isNaN(episodeNumber) ? episodeNumber : undefined,
-        progress: progressState?.position,
-      });
-      frame.style.display = 'none';
-      frame.referrerPolicy = 'origin';
-
-      frame.onload = () => {
-        if (cancelled || preloadedSource !== null) return;
-        setPreloadedSource(sourceNum);
-        setActiveSource(sourceNum);
-        setSavedSource(sourceNum);
-      };
-
-      document.body.appendChild(frame);
-      cleanup.push(frame);
-    });
-
-    const timer = window.setTimeout(() => {
-      cleanup.forEach((f) => f.remove());
-    }, 9000);
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-      cleanup.forEach((f) => f.remove());
-    };
-  }, [contentId, contentType, seasonNumber, episodeNumber, progressState, setSavedSource, preloadedSource]);
+    if (typeof forcedSource === 'number' && forcedSource >= 1) {
+      setActiveSource(forcedSource);
+      setSavedSource(forcedSource);
+    }
+  }, [forcedSource, setSavedSource]);
 
   // Get referrer for current source
   const sourceReferrer = useMemo(() => {
@@ -246,14 +185,6 @@ const VideoPlayerWrapper = ({
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, [isLoading, activeSource, failedSources]);
-
-  // Anti-ad protection
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    enableAllProtection(container);
-    return () => disableAllProtection(container);
-  }, []);
 
   // Auto fullscreen landscape on mobile
   useEffect(() => {

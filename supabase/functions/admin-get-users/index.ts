@@ -30,8 +30,8 @@ serve(async (req) => {
       });
     }
 
-    // Check if user is admin (either by role or by email)
-    const ADMIN_EMAIL = "stanleyvic13@gmail.com";
+    // Check if user is admin (either by role or by email from env)
+    const adminEmails = Deno.env.get("ADMIN_EMAILS")?.split(',').map(e => e.trim().toLowerCase()) || [];
     const { data: roleData } = await supabaseUser
       .from("user_roles")
       .select("role")
@@ -39,7 +39,7 @@ serve(async (req) => {
       .eq("role", "admin")
       .maybeSingle();
 
-    const isAdmin = !!roleData || user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+    const isAdmin = !!roleData || (user.email && adminEmails.includes(user.email.toLowerCase()));
     
     if (!isAdmin) {
       return new Response(JSON.stringify({ error: "Admin access required" }), {

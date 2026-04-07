@@ -17,8 +17,12 @@ const TMDB_BASE_URL = "https://api.themoviedb.org/3";
 const TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p/original";
 const TMDB_POSTER_BASE_URL = "https://image.tmdb.org/t/p/w500";
 
-// API Key for TMDB - Using environment variable with fallback
-const API_KEY = import.meta.env.VITE_TMDB_API_KEY || "4626200399b08f9d04b72348e3625f15";
+// API Key for TMDB - Must be set via environment variable
+const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
+
+if (!API_KEY) {
+  throw new Error('Missing TMDB API key. Please set VITE_TMDB_API_KEY environment variable.');
+}
 
 const ensureArray = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
 

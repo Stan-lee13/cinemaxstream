@@ -1,11 +1,14 @@
-
 /**
  * Trailer provider utilities
  * Uses TMDb API to fetch official trailers from YouTube
  */
 
 const TMDB_BASE_URL = "https://api.themoviedb.org/3";
-const TMDB_API_KEY = "4626200399b08f9d04b72348e3625f15";
+const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
+
+if (!TMDB_API_KEY) {
+  throw new Error('Missing TMDB API key. Please set VITE_TMDB_API_KEY environment variable.');
+}
 
 /**
  * Get trailer URL from TMDb API

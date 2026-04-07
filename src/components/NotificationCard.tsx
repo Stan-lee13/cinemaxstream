@@ -1,10 +1,10 @@
 
 import React from "react";
-import { Notification } from "@/hooks/useNotifications";
+import { AppNotification } from "@/hooks/useEventNotifications";
 
 interface NotificationCardProps {
-  notification: Notification;
-  onClick: (notification: Notification) => void;
+  notification: AppNotification;
+  onClick: (notification: AppNotification) => void;
 }
 
 const NotificationCard: React.FC<NotificationCardProps> = ({ notification, onClick }) => (

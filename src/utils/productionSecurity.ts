@@ -88,15 +88,17 @@ export class ProductionSecurity {
     return token === this.config.csrfToken && token.length === 64;
   }
 
-  encryptSensitiveData(data: string): string {
-    // Simple base64 encoding for client-side data
-    // In production, use proper encryption
+  encodeSensitiveData(data: string): string {
+    // Base64 encoding for client-side data obfuscation
+    // WARNING: This is NOT encryption. Data is easily reversible.
+    // For real security, use server-side encryption with proper key management.
     return btoa(data);
   }
 
-  decryptSensitiveData(encryptedData: string): string {
+  decodeSensitiveData(encodedData: string): string {
+    // Decode base64 encoded data
     try {
-      return atob(encryptedData);
+      return atob(encodedData);
     } catch {
       return '';
     }
