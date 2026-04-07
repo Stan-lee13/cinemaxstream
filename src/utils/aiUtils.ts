@@ -17,13 +17,11 @@ export const getPersonalizedRecommendations = async (userId: string): Promise<Co
     });
 
     if (error) {
-      console.error('Error getting AI recommendations:', error);
       return [];
     }
 
     return data?.recommendations || [];
-  } catch (error) {
-    console.error('Error fetching personalized recommendations:', error);
+  } catch {
     return [];
   }
 };
@@ -41,8 +39,7 @@ export const generateRecommendations = async (
 
     // Filter out already watched content
     return recommendations.filter(item => !existingWatched.includes(item.id.toString()));
-  } catch (error) {
-    console.error('Error generating recommendations:', error);
+  } catch {
     return [];
   }
 };
@@ -110,8 +107,7 @@ export const analyzeUserSentiment = async (watchHistory: WatchHistoryEntry[]): P
       confidence,
       preferences: topGenres
     };
-  } catch (error) {
-    console.error('Error analyzing user sentiment:', error);
+  } catch {
     return {
       sentiment: 'neutral',
       confidence: 0,
@@ -132,7 +128,16 @@ export const analyzeContentSentiment = async (contentId: string): Promise<{
   try {
     // In a real implementation, this would analyze actual reviews
     // For now, we'll use TMDB rating as a basis
-    const response = await fetch(`https://api.themoviedb.org/3/movie/${contentId}?api_key=4626200399b08f9d04b72348e3625f15`);
+    const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
+    if (!TMDB_API_KEY) {
+      return {
+        positive: 0.6,
+        negative: 0.2,
+        neutral: 0.2,
+        overall: 'positive'
+      };
+    }
+    const response = await fetch(`https://api.themoviedb.org/3/movie/${contentId}?api_key=${TMDB_API_KEY}`);
     
     if (response.ok) {
       const data = await response.json();
@@ -160,8 +165,7 @@ export const analyzeContentSentiment = async (contentId: string): Promise<{
       neutral: 0.2,
       overall: 'positive'
     };
-  } catch (error) {
-    console.error('Error analyzing content sentiment:', error);
+  } catch {
     return {
       positive: 0.5,
       negative: 0.3,
@@ -189,8 +193,7 @@ export const generateContentSummary = async (contentDescription: string): Promis
     }
     
     return contentDescription;
-  } catch (error) {
-    console.error('Error generating summary:', error);
+  } catch {
     return "Summary generation failed.";
   }
 };
@@ -264,8 +267,7 @@ export const extractContentEntities = (content: ContentItem): {
       keywords: [...new Set(keywords)],
       themes: [...new Set(themes)]
     };
-  } catch (error) {
-    console.error('Error extracting content entities:', error);
+  } catch {
     return {
       genres: [],
       keywords: [],
@@ -311,8 +313,7 @@ export const extractEntities = async (contentDescription: string): Promise<{
     });
     
     return { people, locations, organizations };
-  } catch (error) {
-    console.error('Error extracting entities:', error);
+  } catch {
     return {
       people: [],
       locations: [],

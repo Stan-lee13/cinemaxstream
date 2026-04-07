@@ -58,13 +58,12 @@ class RealtimeSync {
 
       channel.subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-          console.log(`Subscribed to changes in ${String(table)}`);
+          // Successfully subscribed
         }
       });
 
       this.channels.set(table, channel as LocalRealtimeChannel);
-    } catch (error) {
-      console.error(`Failed to subscribe to ${String(table)} changes:`, error);
+    } catch {
       toast.error(`Failed to sync ${String(table)} data`);
     }
   }
@@ -130,8 +129,8 @@ class RealtimeSync {
           })
         );
       }
-    } catch (error) {
-      console.error('Failed to update local cache:', error);
+    } catch {
+      // Silent fail - cache update is not critical
     }
   }
 
@@ -150,7 +149,9 @@ class RealtimeSync {
 
     // If we're online, try to process immediately
     if (navigator.onLine) {
-      this.processSyncQueue().catch((err) => console.error('Error processing sync queue:', err));
+      this.processSyncQueue().catch(() => {
+        // Silent fail - will retry on next online event
+      });
     }
   }
 
@@ -254,7 +255,6 @@ class RealtimeSync {
           } catch (error) {
             retryCount++;
             if (retryCount === this.options.retryAttempts) {
-              console.error(`Failed to sync ${String(table)} after ${retryCount} attempts:`, error);
               toast.error(`Failed to sync some changes for ${String(table)}`);
             } else {
               await new Promise((resolve) => setTimeout(resolve, this.options.retryDelay));
@@ -277,16 +277,16 @@ class RealtimeSync {
   private async persistSyncQueue(key: string, queue: SyncQueueItem<TableName>[]): Promise<void> {
     try {
       localStorage.setItem(key, JSON.stringify(queue));
-    } catch (error) {
-      console.error('Failed to persist sync queue:', error);
+    } catch {
+      // Silent fail - queue persistence is not critical
     }
   }
 
   private async clearPersistedQueue(table: string): Promise<void> {
     try {
       localStorage.removeItem(`sync_queue_${table}`);
-    } catch (error) {
-      console.error('Failed to clear persisted queue:', error);
+    } catch {
+      // Silent fail - queue clearing is not critical
     }
   }
 
@@ -303,8 +303,8 @@ class RealtimeSync {
           }
         }
       }
-    } catch (error) {
-      console.error('Failed to restore sync queue:', error);
+    } catch {
+      // Silent fail - will start with empty queue
     }
   }
 }

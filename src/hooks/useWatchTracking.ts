@@ -230,8 +230,8 @@ export const useWatchTracking = () => {
         window.clearInterval(sessionIntervalRef.current);
         sessionIntervalRef.current = null;
       }
-    } catch (error) {
-      console.error('Error ending watch session:', error);
+    } catch {
+      // Silent fail - session end is not critical
     }
   }, [currentSession, checkAndDeductCredit]);
 
