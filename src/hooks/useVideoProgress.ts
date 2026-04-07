@@ -45,8 +45,8 @@ export const useVideoProgress = () => {
         const parsed = JSON.parse(stored) as VideoProgress[];
         setAllProgress(parsed);
       }
-    } catch (error) {
-      console.error('Failed to load video progress:', error);
+    } catch {
+      // Silent fail - start with empty progress
     }
   }, []);
 
@@ -107,8 +107,8 @@ export const useVideoProgress = () => {
       // Persist to localStorage
       try {
         localStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(updated));
-      } catch (error) {
-        console.error('Failed to save video progress:', error);
+      } catch {
+        // Silent fail - progress save is not critical
       }
 
       return updated;
@@ -143,8 +143,8 @@ export const useVideoProgress = () => {
 
       try {
         localStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(updated));
-      } catch (error) {
-        console.error('Failed to clear video progress:', error);
+      } catch {
+        // Silent fail - progress clear is not critical
       }
 
       return updated;
@@ -156,8 +156,8 @@ export const useVideoProgress = () => {
     setAllProgress([]);
     try {
       localStorage.removeItem(PROGRESS_STORAGE_KEY);
-    } catch (error) {
-      console.error('Failed to clear all video progress:', error);
+    } catch {
+      // Silent fail - progress clear is not critical
     }
   }, []);
 

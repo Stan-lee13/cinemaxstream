@@ -156,8 +156,8 @@ const Admin = () => {
             const data = await response.json();
             usersFromEdge = data.users || [];
           }
-        } catch (edgeError) {
-          console.error('Edge function error:', edgeError);
+        } catch {
+          // Silent fail - edge function error handled below
         }
       }
 
@@ -201,8 +201,7 @@ const Admin = () => {
       })));
 
       setPromoCodes((promoData || []) as PromoCode[]);
-    } catch (error) {
-      console.error('Fetch error:', error);
+    } catch {
       toast.error("Failed to load data");
     } finally {
       setIsLoading(false);
@@ -244,8 +243,7 @@ const Admin = () => {
 
       toast.success(isPremium ? "User downgraded to Free" : "User upgraded to Premium");
       fetchData();
-    } catch (error) {
-      console.error('Upgrade error:', error);
+    } catch {
       toast.error("Operation failed");
     }
   };
@@ -274,8 +272,7 @@ const Admin = () => {
         toast.success("User blocked");
       }
       fetchData();
-    } catch (error) {
-      console.error('Ban error:', error);
+    } catch {
       toast.error("Operation failed");
     }
   };
@@ -312,8 +309,7 @@ const Admin = () => {
 
       toast.success("User email confirmed");
       fetchData();
-    } catch (error) {
-      console.error('Confirm error:', error);
+    } catch {
       toast.error("Failed to confirm user email");
     }
   };
@@ -357,9 +353,8 @@ const Admin = () => {
 
       toast.success("Promo code created");
       setNewPromo({ code: "", description: "", tier: "premium", months: "12", maxUses: "", expiresAt: "" });
-    } catch (error) {
-      console.error('Create promo error:', error);
-      toast.error(`Failed to create promo code: ${getErrorMessage(error)}`);
+    } catch {
+      toast.error("Failed to create promo code");
     } finally {
       setIsSavingPromo(false);
     }
