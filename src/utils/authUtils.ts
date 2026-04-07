@@ -92,25 +92,21 @@ export const validatePremiumCode = async (code: string): Promise<boolean> => {
       .maybeSingle();
 
     if (error) {
-      console.error('Error fetching promo code:', error);
       return false;
     }
 
     if (!codeData) {
-      console.warn('Promo code not found or inactive:', normalizedCode);
       return false;
     }
 
     
     // Check expiration
     if (codeData.expires_at && new Date(codeData.expires_at) < new Date()) {
-      console.warn('Promo code expired:', normalizedCode);
       return false;
     }
     
     // Check max uses
     if (codeData.max_uses !== null && (codeData.current_uses ?? 0) >= codeData.max_uses) {
-      console.warn('Promo code max uses reached:', normalizedCode);
       return false;
     }
 
@@ -123,7 +119,6 @@ export const validatePremiumCode = async (code: string): Promise<boolean> => {
         .eq('user_id', user.id);
       
       if (count !== null && count >= codeData.per_user_limit) {
-        console.warn('User has reached per-user limit for this code');
         return false;
       }
     }
@@ -147,7 +142,6 @@ export const validatePremiumCode = async (code: string): Promise<boolean> => {
       });
 
     if (redemptionError) {
-      console.error('Failed to record redemption:', redemptionError);
       // Continue anyway - the main upgrade is more important
     }
 
@@ -161,8 +155,8 @@ export const validatePremiumCode = async (code: string): Promise<boolean> => {
         .eq('role', 'premium')
         .maybeSingle();
       existingRole = data;
-    } catch (roleLookupError) {
-      console.warn('Unable to verify existing user role before insert:', roleLookupError);
+    } catch {
+      // Silent fail - role lookup is not critical
     }
     
     // STEP 3: Insert premium role if not exists (admin policy required)
@@ -172,8 +166,8 @@ export const validatePremiumCode = async (code: string): Promise<boolean> => {
         await supabase
           .from('user_roles')
           .insert({ user_id: user.id, role: 'premium' as const });
-      } catch (roleError) {
-        console.warn('Could not insert user_roles (RLS restriction), continuing with profile update');
+      } catch {
+        // Silent fail - RLS restriction on user_roles
       }
     }
 
@@ -193,8 +187,6 @@ export const validatePremiumCode = async (code: string): Promise<boolean> => {
       .eq('id', user.id);
 
     if (profileError) {
-      console.warn('Direct profile update failed (expected with RLS):', profileError);
-      
       // Call edge function to perform admin-level update
       try {
         const { data, error: fnError } = await supabase.functions.invoke('upgrade-user-subscription', {
@@ -207,22 +199,19 @@ export const validatePremiumCode = async (code: string): Promise<boolean> => {
         });
 
         if (fnError) {
-          console.error('Edge function error:', fnError);
           return false;
         }
 
         if (data?.success) {
           return true;
         }
-      } catch (fnErr) {
-        console.error('Failed to call upgrade edge function:', fnErr);
+      } catch {
         return false;
       }
     }
 
     return true;
-  } catch (error) {
-    console.error('Error validating premium code:', error);
+  } catch {
     return false;
   }
 };
@@ -252,13 +241,11 @@ export const resendConfirmationEmail = async (email: string): Promise<boolean> =
     });
 
     if (error) {
-      console.error('Error resending confirmation:', error);
       return false;
     }
 
     return true;
-  } catch (error) {
-    console.error('Error resending confirmation email:', error);
+  } catch {
     return false;
   }
 };
