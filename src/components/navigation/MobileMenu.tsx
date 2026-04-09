@@ -23,7 +23,7 @@ import {
   Crown,
   Sparkles
 } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/authHooks";
 import { useUserTier } from "@/hooks/useUserTier";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { Badge } from "@/components/ui/badge";
