@@ -140,8 +140,8 @@ export const useSmartDownload = () => {
 
       try {
         searchResult = await performAISearch(requestData.id, contentTitle, contentType, seasonNumber, episodeNumber, year);
-      } catch (err) {
-        console.warn('AI search failed, falling back to direct link', err);
+      } catch {
+        // AI search failed, will fall back to direct link
       }
 
       // Step 2: Backend Scraping (Pro/Premium only) if AI search found something
@@ -171,7 +171,6 @@ export const useSmartDownload = () => {
       return { success: false, error: 'Download generation failed' };
 
     } catch (error) {
-      console.error('Download initiation error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast.error('Failed to process download request');
       return { success: false, error: errorMessage };
@@ -254,7 +253,6 @@ export const useSmartDownload = () => {
 
       return { success: false, error: 'No results found' };
     } catch (error) {
-      console.error('AI search error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       return { success: false, error: errorMessage };
     }
@@ -289,7 +287,6 @@ export const useSmartDownload = () => {
 
       return { success: false, error: scrapeResult.error };
     } catch (error) {
-      console.error('Backend scraping error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       return { success: false, error: errorMessage };
     }
