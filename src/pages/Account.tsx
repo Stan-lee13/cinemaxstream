@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/authHooks';
 import { User, Settings, CreditCard, Download, Bell, Shield, FileText, Trash2, Mail, ChevronRight, LogOut, History, Bookmark, Sparkles, Calendar } from 'lucide-react';
 import BackButton from "@/components/BackButton";
 import Navbar from "@/components/Navbar";

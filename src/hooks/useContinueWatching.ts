@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/authHooks';
 import { tmdbApi } from '@/services/tmdbApi';
 import { useVideoProgress } from './useVideoProgress';
 

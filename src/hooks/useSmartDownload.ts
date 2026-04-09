@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/authHooks';
 import { useCreditSystem } from '@/hooks/useCreditSystem';
 import { useUserTier } from '@/hooks/useUserTier'; // Add our new hook
 import { toast } from 'sonner';

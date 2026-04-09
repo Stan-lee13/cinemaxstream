@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Crown, Play, Download, Star, Check, Zap, X } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/authHooks';
 import { PremiumPromoModal } from '@/components/PremiumPromoModal';
 import { motion, AnimatePresence } from 'framer-motion';
 

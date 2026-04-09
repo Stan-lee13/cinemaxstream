@@ -8,7 +8,7 @@ import { Play, Download, Search, ImageOff } from "lucide-react";
 import { tmdbApi, ContentItem } from "@/services/tmdbApi";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/authHooks";
 import { getPersonalizedRecommendations } from "@/utils/videoUtils";
 import BackButton from "@/components/BackButton";
 

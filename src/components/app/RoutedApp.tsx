@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/authHooks";
 import AppRoutes from "./AppRoutes";
 import SplashScreen from "@/components/SplashScreen";
 import OnboardingAuth from "@/pages/OnboardingAuth";

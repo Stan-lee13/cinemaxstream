@@ -463,7 +463,6 @@ const VideoPlayerWrapper = ({
               src={videoSrc}
               className={`absolute inset-0 w-full h-full border-0 ${ASPECT_CLASSES[aspectRatio]}`}
               referrerPolicy="origin"
-              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation allow-pointer-lock allow-downloads"
               allowFullScreen
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
               title={title || "Video Player"}

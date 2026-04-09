@@ -1,6 +1,6 @@
 
 import { Crown, Lock } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/authHooks";
 import { 
   Tooltip,
   TooltipContent,
