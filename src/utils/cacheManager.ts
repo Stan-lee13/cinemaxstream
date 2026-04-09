@@ -209,8 +209,8 @@ class CacheManager<T = unknown> {
           }
         }
       }
-    } catch (error) {
-      console.warn('Failed to load cache from storage:', error);
+    } catch {
+      // Silent fail - cache persistence not critical
     }
   }
 
@@ -218,9 +218,8 @@ class CacheManager<T = unknown> {
   private saveToStorage(key: string, item: CacheItem<T>): void {
     try {
       localStorage.setItem(`cache_${key}`, JSON.stringify(item));
-    } catch (error) {
-      // Storage quota exceeded or not available
-      console.warn('Failed to save cache to storage:', error);
+    } catch {
+      // Storage quota exceeded or not available - silent fail
     }
   }
 
@@ -228,8 +227,8 @@ class CacheManager<T = unknown> {
   private removeFromStorage(key: string): void {
     try {
       localStorage.removeItem(`cache_${key}`);
-    } catch (error) {
-      console.warn('Failed to remove cache from storage:', error);
+    } catch {
+      // Silent fail - cache removal not critical
     }
   }
 
@@ -238,8 +237,8 @@ class CacheManager<T = unknown> {
     try {
       const keys = Object.keys(localStorage).filter(key => key.startsWith('cache_'));
       keys.forEach(key => localStorage.removeItem(key));
-    } catch (error) {
-      console.warn('Failed to clear cache from storage:', error);
+    } catch {
+      // Silent fail - cache clear not critical
     }
   }
 
