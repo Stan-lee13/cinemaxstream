@@ -40,7 +40,7 @@ export const useContinueWatching = () => {
       const recentProgress = getRecentlyWatched(8);
 
       // Fetch images and details from TMDB
-      const continueItems: ContinueWatchingItem[] = await Promise.all(
+      const continueItems = await Promise.all(
         recentProgress.map(async (progress) => {
           // Calculate progress percentage
           const progressPercent = progress.duration > 0 
@@ -78,7 +78,8 @@ export const useContinueWatching = () => {
       );
 
       // Filter out nulls (completed items) and set state
-      setContinueWatchingItems(continueItems.filter((item): item is ContinueWatchingItem => item !== null));
+      const validItems = continueItems.filter((item): item is NonNullable<typeof item> => item !== null);
+      setContinueWatchingItems(validItems as ContinueWatchingItem[]);
     } catch {
       setContinueWatchingItems([]);
     } finally {
