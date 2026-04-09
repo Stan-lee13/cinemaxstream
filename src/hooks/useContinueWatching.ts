@@ -78,7 +78,8 @@ export const useContinueWatching = () => {
       );
 
       // Filter out nulls (completed items) and set state
-      setContinueWatchingItems(continueItems.filter((item): item is ContinueWatchingItem => item !== null));
+      const validItems = continueItems.filter((item): item is NonNullable<typeof item> => item !== null);
+      setContinueWatchingItems(validItems as ContinueWatchingItem[]);
     } catch {
       setContinueWatchingItems([]);
     } finally {

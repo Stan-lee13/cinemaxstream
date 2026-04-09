@@ -15,4 +15,5 @@ export {
   QUALITY_OPTIONS,
   getStreamingUrlForSource as getStreamingUrl,
 } from './providers/providerUtils';
+export { getTrailerUrlImpl as getTrailerUrl } from './providers/trailerProviders';
 export { trackStreamingActivity, markContentAsComplete } from './trackingUtils';
