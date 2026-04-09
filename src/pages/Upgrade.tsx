@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/authHooks';
 import { useUserTier } from '@/hooks/useUserTier';
 import { validatePremiumCode } from '@/utils/authUtils';
 import { toast } from 'sonner';

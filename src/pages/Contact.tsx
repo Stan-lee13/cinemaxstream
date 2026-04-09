@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/authHooks';
 import { supabase } from '@/integrations/supabase/client';
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";

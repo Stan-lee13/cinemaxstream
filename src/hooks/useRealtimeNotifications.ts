@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/authHooks';
 import { toast } from 'sonner';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 

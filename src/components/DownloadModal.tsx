@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Download, AlertCircle, CheckCircle, X, Sparkles, Crown, Lock, FileVideo, Upload, Trash2, Play } from 'lucide-react';
 import { useCreditSystem } from '@/hooks/useCreditSystem';
 import { useUserTier } from '@/hooks/useUserTier';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/authHooks';
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';

@@ -10,7 +10,7 @@ import UserMenu from './navigation/UserMenu';
 import SearchBar from './navigation/SearchBar';
 import MobileSearchButton from './navigation/MobileSearchButton';
 import SkipLink from './SkipLink';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/authHooks';
 import NotificationBar from './NotificationBar';
 import { Compass } from 'lucide-react';
 

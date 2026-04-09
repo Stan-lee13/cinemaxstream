@@ -1,7 +1,7 @@
 import React, { useState, memo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Download, Crown } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/authHooks';
 import { useUserTier } from '@/hooks/useUserTier';
 import { useNavigate } from 'react-router-dom';
 import DownloadModal from './DownloadModal';

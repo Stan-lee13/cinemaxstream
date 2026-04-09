@@ -3,7 +3,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Check, X, Star, Zap, Shield, HelpCircle, Crown } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/authHooks';
 import { PremiumPromoModal } from '@/components/PremiumPromoModal';
 import BackButton from '@/components/BackButton';
 import { useNavigate } from 'react-router-dom';

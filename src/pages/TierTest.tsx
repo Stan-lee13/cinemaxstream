@@ -3,7 +3,7 @@ import ResponsiveLayout from '@/components/layout/ResponsiveLayout';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import TierDemo from '@/components/TierDemo';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/authHooks';
 
 const TierTest = () => {
   const { user, isAuthenticated } = useAuth();
