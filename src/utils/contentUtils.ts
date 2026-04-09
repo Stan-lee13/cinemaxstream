@@ -57,9 +57,8 @@ export const isPremiumContent = (contentId: string, releaseDate?: string, rating
  */
 export const getAvailableProviders = (contentId: string, contentType: string = 'movie') => {
   // All sources support all content types
-  return streamingProviders.filter(provider => 
-    provider.contentType === 'all' || provider.contentType === contentType
-  );
+  // All sources support all content types
+  return streamingProviders;
 };
 
 /**

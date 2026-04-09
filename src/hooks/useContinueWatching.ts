@@ -40,7 +40,7 @@ export const useContinueWatching = () => {
       const recentProgress = getRecentlyWatched(8);
 
       // Fetch images and details from TMDB
-      const continueItems: ContinueWatchingItem[] = await Promise.all(
+      const continueItems = await Promise.all(
         recentProgress.map(async (progress) => {
           // Calculate progress percentage
           const progressPercent = progress.duration > 0 

@@ -4,7 +4,7 @@
  * to reduce first-play buffering time.
  */
 
-import { getAvailableSources, getStreamingUrlForSource, type ProviderOptions } from './providerUtils';
+import { getAvailableSources, getStreamingUrlForSource, getSourceConfig, type ProviderOptions } from './providerUtils';
 import { cacheSet, cacheGet } from './metadataCache';
 
 const PRELOAD_KEY_PREFIX = 'preload_';
