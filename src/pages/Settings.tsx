@@ -264,6 +264,15 @@ const Settings = () => {
                                 ))}
                               </SelectContent>
                             </Select>
+                          ) : setting.type === 'action' ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="rounded-xl font-bold uppercase tracking-widest text-xs h-10 px-6 border-white/10 hover:bg-white/5"
+                              onClick={() => (setting.onChange as () => void)()}
+                            >
+                              Open Guide
+                            </Button>
                           ) : null}
                         </div>
                       </div>
@@ -289,6 +298,11 @@ const Settings = () => {
         </div>
       </div>
       <Footer />
+      <AdGuideModal
+        isOpen={adGuide.isOpen}
+        onClose={adGuide.close}
+        onDismissPermanently={adGuide.dismissPermanently}
+      />
     </div>
   );
 };
