@@ -332,25 +332,6 @@ const VideoPlayerWrapper = ({
     if (containerRef.current) requestFullscreenLandscape(containerRef.current);
   }, []);
 
-  const handlePiP = useCallback(async () => {
-    try {
-      const iframe = iframeRef.current;
-      if (!iframe) return;
-      try {
-        const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-        if (iframeDoc) {
-          const video = iframeDoc.querySelector('video');
-          if (video && document.pictureInPictureEnabled) {
-            await video.requestPictureInPicture();
-            return;
-          }
-        }
-      } catch { /* cross-origin */ }
-      toast.info('PiP is not available for this source.');
-    } catch {
-      toast.error('Picture-in-Picture failed');
-    }
-  }, []);
 
   const cycleAspectRatio = useCallback(() => {
     const ratios: AspectRatio[] = ['fit', 'fill', 'cinema', 'fullscreen'];
@@ -362,7 +343,7 @@ const VideoPlayerWrapper = ({
   }, [aspectRatio]);
 
   const iframeKey = `${contentId}-${seasonNumber ?? 1}-${episodeNumber ?? 1}-${activeSource}`;
-  const showPiP = isPipSupported();
+  const allSourcesFailed = failedSources.length >= getAvailableSources().length;
   const allSourcesFailed = failedSources.length >= getAvailableSources().length;
   const AspectIcon = ASPECT_ICONS[aspectRatio];
 
@@ -391,16 +372,6 @@ const VideoPlayerWrapper = ({
         >
           <AspectIcon className="h-4 w-4" />
         </Button>
-        {showPiP && (
-          <Button
-            variant="ghost" size="sm"
-            className="gap-1 text-muted-foreground hover:text-foreground"
-            onClick={handlePiP}
-            title="Picture-in-Picture"
-          >
-            <PictureInPicture2 className="h-4 w-4" />
-          </Button>
-        )}
         <Button
           variant="ghost" size="sm"
           className="gap-1 text-muted-foreground hover:text-foreground"
