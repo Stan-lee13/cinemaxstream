@@ -344,7 +344,6 @@ const VideoPlayerWrapper = ({
 
   const iframeKey = `${contentId}-${seasonNumber ?? 1}-${episodeNumber ?? 1}-${activeSource}`;
   const allSourcesFailed = failedSources.length >= getAvailableSources().length;
-  const allSourcesFailed = failedSources.length >= getAvailableSources().length;
   const AspectIcon = ASPECT_ICONS[aspectRatio];
 
   return (
