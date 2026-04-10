@@ -45,6 +45,11 @@ const App = () => {
         <InstallPrompt />
         <ProductionMonitor />
         <Walkthrough />
+        <AdGuideModal
+          isOpen={adGuide.isOpen}
+          onClose={adGuide.close}
+          onDismissPermanently={adGuide.dismissPermanently}
+        />
       </BrowserRouter>
     </TooltipProvider>
   );
