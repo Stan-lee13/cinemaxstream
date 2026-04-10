@@ -144,6 +144,20 @@ const Settings = () => {
           ]
         }
       ]
+    },
+    {
+      title: "Streaming",
+      icon: <Shield className="w-5 h-5 text-green-500" />,
+      settings: [
+        {
+          label: "Fix Ads / Improve Streaming",
+          description: "Setup DNS filtering to reduce ads on streams",
+          icon: <Shield className="w-4 h-4" />,
+          type: "action",
+          value: false,
+          onChange: () => adGuide.open()
+        }
+      ]
     }
   ];
 
