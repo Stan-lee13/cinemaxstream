@@ -16,7 +16,7 @@ import SourceSelector from "./SourceSelector";
 import CastButton from "./CastButton";
 import { AlertCircle, RefreshCw, Maximize, Loader2, Monitor, Expand, RectangleHorizontal, Tv } from "lucide-react";
 import { Button } from "./ui/button";
-import { requestFullscreenLandscape, exitFullscreenAndUnlock, isPipSupported, isMobileDevice } from "@/utils/playerUtils";
+import { requestFullscreenLandscape, exitFullscreenAndUnlock, isMobileDevice } from "@/utils/playerUtils";
 import {
   getStreamingUrlForSource,
   getAvailableSources,
