@@ -28,10 +28,13 @@ import {
   Sparkles
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAdGuide } from '@/hooks/useAdGuide';
+import AdGuideModal from '@/components/AdGuideModal';
 
 const Settings = () => {
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
+  const adGuide = useAdGuide();
   const [notifications, setNotifications] = useState(true);
   const [autoPlay, setAutoPlay] = useState(true);
   const [highQuality, setHighQuality] = useState(false);
@@ -141,6 +144,20 @@ const Settings = () => {
           ]
         }
       ]
+    },
+    {
+      title: "Streaming",
+      icon: <Shield className="w-5 h-5 text-green-500" />,
+      settings: [
+        {
+          label: "Fix Ads / Improve Streaming",
+          description: "Setup DNS filtering to reduce ads on streams",
+          icon: <Shield className="w-4 h-4" />,
+          type: "action",
+          value: false,
+          onChange: () => adGuide.open()
+        }
+      ]
     }
   ];
 
@@ -247,6 +264,15 @@ const Settings = () => {
                                 ))}
                               </SelectContent>
                             </Select>
+                          ) : setting.type === 'action' ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="rounded-xl font-bold uppercase tracking-widest text-xs h-10 px-6 border-white/10 hover:bg-white/5"
+                              onClick={() => (setting.onChange as () => void)()}
+                            >
+                              Open Guide
+                            </Button>
                           ) : null}
                         </div>
                       </div>
@@ -272,6 +298,11 @@ const Settings = () => {
         </div>
       </div>
       <Footer />
+      <AdGuideModal
+        isOpen={adGuide.isOpen}
+        onClose={adGuide.close}
+        onDismissPermanently={adGuide.dismissPermanently}
+      />
     </div>
   );
 };
