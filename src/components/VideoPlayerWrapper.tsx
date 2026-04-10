@@ -112,8 +112,9 @@ const VideoPlayerWrapper = ({
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadStartRef = useRef<number>(Date.now());
 
-  const { startWatchSession } = useWatchTracking();
+  const { startWatchSession, addWatchEvent, endWatchSession } = useWatchTracking();
   const { saveProgress, getProgress } = useVideoProgress();
+  const watchIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Health data for source selector
   const healthData = useMemo(() => {
@@ -237,13 +238,31 @@ const VideoPlayerWrapper = ({
     if (userProfile && userUsage && !canStream()) setShowUpgradeModal(true);
   }, [userProfile, userUsage, canStream]);
 
-  // Start watch session once
+  // Start watch session once + periodic watch time updates
   useEffect(() => {
     if (!hasStartedSession.current && canStream() && userProfile && userId) {
       hasStartedSession.current = true;
       startWatchSession(contentId, title || `Content ${contentId}`);
+
+      // Estimate watch time: every 60s, add 60s of watched time
+      // This is the best we can do without cross-origin iframe access
+      watchIntervalRef.current = setInterval(() => {
+        if (!isLoading && !loadError) {
+          addWatchEvent('pause', 0);
+        }
+      }, 60_000);
     }
-  }, [contentId, title, userProfile, userId, canStream, startWatchSession]);
+
+    return () => {
+      if (watchIntervalRef.current) {
+        clearInterval(watchIntervalRef.current);
+        watchIntervalRef.current = null;
+      }
+      if (hasStartedSession.current) {
+        endWatchSession();
+      }
+    };
+  }, [contentId, title, userProfile, userId, canStream, startWatchSession, addWatchEvent, endWatchSession, isLoading, loadError]);
 
   const handleIframeLoad = useCallback(() => {
     const latency = Date.now() - loadStartRef.current;
