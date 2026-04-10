@@ -8,6 +8,8 @@ import RoutedApp from "@/components/app/RoutedApp";
 import InstallPrompt from "@/components/InstallPrompt";
 import ProductionMonitor from "@/components/ProductionMonitor";
 import Walkthrough from "@/components/Walkthrough";
+import AdGuideModal from "@/components/AdGuideModal";
+import { useAdGuide } from "@/hooks/useAdGuide";
 
 // Show splash screen briefly on initial app load
 const App = () => {
