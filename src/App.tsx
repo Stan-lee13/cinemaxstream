@@ -13,6 +13,7 @@ import { useAdGuide } from "@/hooks/useAdGuide";
 
 // Show splash screen briefly on initial app load
 const App = () => {
+  const adGuide = useAdGuide();
   const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
