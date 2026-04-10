@@ -81,15 +81,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setIsBlocked(false);
             stopHealthMonitor();
           } else if (event === 'TOKEN_REFRESHED') {
-            // Token refreshed
+            // Re-check blocked status on every token refresh
+            if (currentSession?.user) {
+              checkBlockedStatus(currentSession.user.id);
+            }
           }
         }
       }
     );
 
+    // Periodic blocked user check every 2 minutes for real-time enforcement
+    const blockedCheckInterval = setInterval(() => {
+      if (user) {
+        checkBlockedStatus(user.id);
+      }
+    }, 2 * 60 * 1000);
+
     return () => {
       mounted = false;
       subscription.unsubscribe();
+      clearInterval(blockedCheckInterval);
     };
   }, []);
 
