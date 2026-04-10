@@ -28,10 +28,13 @@ import {
   Sparkles
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAdGuide } from '@/hooks/useAdGuide';
+import AdGuideModal from '@/components/AdGuideModal';
 
 const Settings = () => {
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
+  const adGuide = useAdGuide();
   const [notifications, setNotifications] = useState(true);
   const [autoPlay, setAutoPlay] = useState(true);
   const [highQuality, setHighQuality] = useState(false);
