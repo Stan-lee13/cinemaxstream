@@ -16,16 +16,38 @@ interface EpisodeSelectorProps {
 }
 
 const EpisodeSelector = ({ seasons, onEpisodeSelect, onSeasonChange, contentId, contentTitle }: EpisodeSelectorProps) => {
-  const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
+  // Restore persisted season selection for this content
+  const storageKey = contentId ? `ep_sel_season_${contentId}` : null;
+  const getPersistedSeason = (): number | null => {
+    if (!storageKey) return null;
+    try {
+      const val = localStorage.getItem(storageKey);
+      return val ? parseInt(val, 10) : null;
+    } catch { return null; }
+  };
+
+  const [selectedSeason, setSelectedSeasonRaw] = useState<number | null>(getPersistedSeason);
   const [expandedEpisodes, setExpandedEpisodes] = useState<number[]>([]);
   const [isLoadingEpisodes, setIsLoadingEpisodes] = useState(false);
 
-  // Set default selected season
+  // Persist season selection
+  const setSelectedSeason = (num: number | null) => {
+    setSelectedSeasonRaw(num);
+    if (storageKey && num !== null) {
+      try { localStorage.setItem(storageKey, String(num)); } catch { /* ignore */ }
+    }
+  };
+
+  // Set default selected season only if no persisted value
   useEffect(() => {
     if (seasons.length > 0 && selectedSeason === null) {
       setSelectedSeason(seasons[0].season_number);
     }
-  }, [seasons, selectedSeason]);
+    // If persisted season is not in the available seasons, reset
+    if (selectedSeason !== null && seasons.length > 0 && !seasons.find(s => s.season_number === selectedSeason)) {
+      setSelectedSeason(seasons[0].season_number);
+    }
+  }, [seasons]);
 
   // Reset loading state when episodes are loaded for the current season
   useEffect(() => {

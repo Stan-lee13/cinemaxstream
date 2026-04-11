@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { detectDeviceEnvironment } from "@/utils/deviceDetection";
 import { useCreditSystem } from "@/hooks/useCreditSystem";
 import { useUserTier } from "@/hooks/useUserTier";
 import { useWatchTracking } from "@/hooks/useWatchTracking";
@@ -80,12 +81,13 @@ const VideoPlayerWrapper = ({
   episodeId,
   seasonNumber,
   episodeNumber,
-  autoPlay = false,
+  autoPlay: autoPlayProp = false,
   onEnded,
   poster,
   title,
   forcedSource,
 }: VideoPlayerWrapperProps) => {
+  const autoPlay = autoPlayProp && detectDeviceEnvironment().supportsAutoplay;
   const { userProfile, canStream, userUsage } = useCreditSystem();
   const { tier, isPremium } = useUserTier(userId);
 
@@ -238,19 +240,18 @@ const VideoPlayerWrapper = ({
     if (userProfile && userUsage && !canStream()) setShowUpgradeModal(true);
   }, [userProfile, userUsage, canStream]);
 
-  // Start watch session once + periodic watch time updates
+  // Start watch session once + periodic watch time updates (15s heartbeat)
   useEffect(() => {
     if (!hasStartedSession.current && canStream() && userProfile && userId) {
       hasStartedSession.current = true;
       startWatchSession(contentId, title || `Content ${contentId}`);
 
-      // Estimate watch time: every 60s, add 60s of watched time
-      // This is the best we can do without cross-origin iframe access
+      // Estimate watch time: every 15s, record a heartbeat
       watchIntervalRef.current = setInterval(() => {
         if (!isLoading && !loadError) {
           addWatchEvent('pause', 0);
         }
-      }, 60_000);
+      }, 15_000);
     }
 
     return () => {

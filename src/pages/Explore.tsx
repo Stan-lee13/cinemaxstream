@@ -4,6 +4,7 @@
  */
 
 import { useState, useMemo, useCallback } from 'react';
+import { useScrollRestore } from '@/hooks/usePersistentState';
 import { useQuery } from '@tanstack/react-query';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -33,6 +34,8 @@ const SORT_OPTIONS = [
 ];
 
 const Explore = () => {
+  useScrollRestore('explore');
+  
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [selectedYear, setSelectedYear] = useState<string>('');
   const [minRating, setMinRating] = useState<number>(0);
