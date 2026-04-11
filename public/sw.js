@@ -95,6 +95,24 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// Handle notification click — navigate to the route stored in data
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const route = event.notification.data?.route || '/';
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          client.focus();
+          client.navigate(route);
+          return;
+        }
+      }
+      return clients.openWindow(route);
+    })
+  );
+});
+
 // Fetch event - intelligent caching strategies
 self.addEventListener('fetch', (event) => {
   // Skip cross-origin requests and non-GET requests

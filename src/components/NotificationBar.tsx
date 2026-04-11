@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Bell, X, Check } from 'lucide-react';
+import { Bell, BellRing, X, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useEventNotifications, AppNotification } from '@/hooks/useEventNotifications';
+import { getNativePermission, requestNativePermission } from '@/utils/nativeNotifications';
 
 const NotificationBar = () => {
   const {
@@ -15,6 +16,12 @@ const NotificationBar = () => {
 
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [nativePerm, setNativePerm] = useState<NotificationPermission>(getNativePermission());
+
+  const handleEnableNative = async () => {
+    const granted = await requestNativePermission();
+    setNativePerm(granted ? 'granted' : 'denied');
+  };
 
   // Check for time-based wrap triggers on mount and periodically
   useEffect(() => {
@@ -89,6 +96,21 @@ const NotificationBar = () => {
               </Button>
             </div>
           </div>
+
+          {/* Native notification permission banner */}
+          {nativePerm !== 'granted' && nativePerm !== 'denied' && (
+            <div className="p-3 border-b border-border bg-accent/30">
+              <div className="flex items-center gap-2">
+                <BellRing size={16} className="text-primary shrink-0" />
+                <p className="text-xs text-muted-foreground flex-1">
+                  Get notified about new releases even when the app is closed
+                </p>
+                <Button size="sm" variant="secondary" className="text-xs h-7 px-3" onClick={handleEnableNative}>
+                  Enable
+                </Button>
+              </div>
+            </div>
+          )}
 
           <div className="max-h-[400px] overflow-y-auto">
             {notifications.length > 0 ? (
