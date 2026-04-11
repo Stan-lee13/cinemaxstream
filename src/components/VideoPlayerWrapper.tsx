@@ -81,13 +81,13 @@ const VideoPlayerWrapper = ({
   episodeId,
   seasonNumber,
   episodeNumber,
-  const [autoPlay, setAutoPlayState] = useState<boolean>(
-    _autoPlay && detectDeviceEnvironment().supportsAutoplay
-  );
+  autoPlay: autoPlayProp = false,
+  onEnded,
   poster,
   title,
   forcedSource,
 }: VideoPlayerWrapperProps) => {
+  const autoPlay = autoPlayProp && detectDeviceEnvironment().supportsAutoplay;
   const { userProfile, canStream, userUsage } = useCreditSystem();
   const { tier, isPremium } = useUserTier(userId);
 
