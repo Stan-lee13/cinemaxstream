@@ -1,9 +1,9 @@
 // Responsive, clean, modernized login/signup screen with soft dark glassy/neuromorphic look
-// Includes email confirmation resend functionality
+// Includes email confirmation resend functionality and Google sign-in
 import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Eye, EyeOff, Mail, Lock, LogIn, User, RefreshCw, CheckCircle } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, LogIn, User, RefreshCw, Chrome, Info } from "lucide-react";
 import useAuth from "@/contexts/authHooks";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -14,7 +14,7 @@ const glassClass =
   "backdrop-blur-lg bg-white/10 dark:bg-zinc-900/50 rounded-2xl shadow-2xl border border-white/10 dark:border-zinc-700/30";
 
 const OnboardingAuth: React.FC = () => {
-  const { signIn, signUp, isLoading } = useAuth();
+  const { signIn, signUp, signInWithGoogle, isLoading } = useAuth();
   const [tab, setTab] = useState<"signin" | "signup">("signin");
   const [showPassword, setShowPassword] = useState(false);
   const [formVals, setFormVals] = useState({ email: "", password: "" });
@@ -224,7 +224,17 @@ const OnboardingAuth: React.FC = () => {
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">{tab === "signup" ? "Password must be at least 6 characters" : null}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {tab === "signup" ? "Use at least 6 characters with a mix of letters and numbers." : null}
+            </p>
+            {tab === "signup" && (
+              <div className="mt-2 p-2.5 rounded-lg bg-primary/5 border border-primary/10 flex items-start gap-2">
+                <Info className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  After signing up, check your email for a confirmation link from Supabase and click it to activate your account.
+                </p>
+              </div>
+            )}
           </div>
           <Button
             type="submit"
@@ -246,6 +256,34 @@ const OnboardingAuth: React.FC = () => {
                 : "Already have an account? Sign in"}
             </button>
           </div>
+
+          {/* Divider */}
+          <div className="relative my-1">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border"></div>
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card/80 px-2 text-muted-foreground">Or continue with</span>
+            </div>
+          </div>
+
+          {/* Google Sign-In */}
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full gap-2 border-border"
+            onClick={async () => {
+              try {
+                await signInWithGoogle();
+              } catch {
+                // handled in context
+              }
+            }}
+            disabled={isLoading}
+          >
+            <Chrome className="h-4 w-4" />
+            Sign in with Google
+          </Button>
         </form>
 
         {/* Resend link for existing users */}
