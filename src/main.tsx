@@ -42,17 +42,16 @@ if (config.enableErrorReporting) {
   errorReporter.captureMessage('Application initialized', 'Main', 'low');
 }
 
-// Register service worker
-if ('serviceWorker' in navigator) {
+// Register service worker (skip in iframe/preview to avoid cache issues)
+const isInIframe = (() => { try { return window.self !== window.top; } catch { return true; } })();
+const isPreviewHost = window.location.hostname.includes('id-preview--') || window.location.hostname.includes('lovableproject.com');
+
+if ('serviceWorker' in navigator && !isInIframe && !isPreviewHost) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then(() => {
-        // Service worker registered successfully
-      })
-      .catch(() => {
-        // Service worker registration failed - silently handle
-      });
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
   });
+} else if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
 }
 
 const container = document.getElementById('root');
