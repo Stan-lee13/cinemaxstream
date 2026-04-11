@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useScrollRestore } from "@/hooks/usePersistentState";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -29,6 +30,9 @@ const CategoryPage = () => {
   
   // Check if we're on a similar content route
   const isSimilarRoute = location.pathname.startsWith('/similar/');
+  
+  // Scroll restoration
+  useScrollRestore(`category_${category}`);
   
   // Scroll to top on page load
   useEffect(() => {
