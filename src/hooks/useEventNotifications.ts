@@ -12,6 +12,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/authHooks';
+import { sendNativeNotification, getNativePermission } from '@/utils/nativeNotifications';
 
 export interface AppNotification {
   id: string;
@@ -84,6 +85,14 @@ export function useEventNotifications() {
 
     // Optimistically add to state
     setNotifications(prev => [newNotif, ...prev].slice(0, 50));
+
+    // Fire native browser notification (throttled internally)
+    if (getNativePermission() === 'granted') {
+      sendNativeNotification(notif.title, notif.message, {
+        route: notif.route,
+        tag: `cinemax-${notif.type}-${Date.now()}`,
+      });
+    }
 
     // Persist to DB if authenticated
     if (user) {
