@@ -36,6 +36,7 @@ const Settings = () => {
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
   const adGuide = useAdGuide();
+  const onboarding = useInteractiveOnboarding();
   const [notifications, setNotifications] = useState(true);
   const [autoPlay, setAutoPlay] = useState(true);
   const [highQuality, setHighQuality] = useState(false);
