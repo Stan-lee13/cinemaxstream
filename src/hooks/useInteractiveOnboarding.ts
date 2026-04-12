@@ -5,7 +5,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import introJs, { type TooltipPosition } from 'intro.js';
+import introJs from 'intro.js';
 import 'intro.js/introjs.css';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -34,7 +34,7 @@ export function useInteractiveOnboarding() {
       element: '[data-tour-id="search-bar"], [data-tour-id="mobile-search"]',
       title: '🔍 Search',
       intro: 'Find any movie or TV show instantly. Just start typing!',
-      position: 'bottom',
+      position: 'bottom' as const,
     },
     {
       element: '[data-tour-id="notifications-button"]',
