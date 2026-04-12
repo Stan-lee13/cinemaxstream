@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card } from "@/components/ui/card";
+import { useInteractiveOnboarding } from '@/hooks/useInteractiveOnboarding';
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -30,6 +30,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useAdGuide } from '@/hooks/useAdGuide';
 import AdGuideModal from '@/components/AdGuideModal';
+import { Card } from "@/components/ui/card";
 
 const Settings = () => {
   const { user } = useAuth();
