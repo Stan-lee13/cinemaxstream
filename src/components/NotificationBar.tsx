@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Bell, BellRing, X, Check } from 'lucide-react';
+import { Bell, BellRing, X, Check, TestTube2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useEventNotifications, AppNotification } from '@/hooks/useEventNotifications';
-import { getNativePermission, requestNativePermission } from '@/utils/nativeNotifications';
+import { getNativePermission, requestNativePermission, sendNativeNotification } from '@/utils/nativeNotifications';
 
 const NotificationBar = () => {
   const {
@@ -12,6 +12,7 @@ const NotificationBar = () => {
     markAsRead,
     markAllAsRead,
     checkWrapTriggers,
+    addNotification,
   } = useEventNotifications();
 
   const navigate = useNavigate();
@@ -109,6 +110,31 @@ const NotificationBar = () => {
                   Enable
                 </Button>
               </div>
+            </div>
+          )}
+
+          {/* Test notification trigger */}
+          {nativePerm === 'granted' && (
+            <div className="p-2 border-b border-border/50 flex justify-end">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-[10px] h-6 px-2 text-muted-foreground hover:text-foreground gap-1"
+                onClick={async () => {
+                  addNotification({
+                    title: '🔔 Test Notification',
+                    message: 'Notifications are working! You will receive alerts for new releases.',
+                    type: 'system',
+                  });
+                  await sendNativeNotification(
+                    '🔔 CineMaxStream',
+                    'Notifications are working! You will receive alerts for new releases.',
+                    { tag: 'test-notif' }
+                  );
+                }}
+              >
+                <TestTube2 size={10} /> Test
+              </Button>
             </div>
           )}
 

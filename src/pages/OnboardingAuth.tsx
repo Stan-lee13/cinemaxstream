@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { resendConfirmationEmail } from "@/utils/authUtils";
 import ProductionValidator from "@/utils/productionValidation";
+import PasswordStrengthIndicator from "@/components/PasswordStrengthIndicator";
 
 const glassClass =
   "backdrop-blur-lg bg-white/10 dark:bg-zinc-900/50 rounded-2xl shadow-2xl border border-white/10 dark:border-zinc-700/30";
@@ -224,8 +225,9 @@ const OnboardingAuth: React.FC = () => {
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
+            {tab === "signup" && <PasswordStrengthIndicator password={formVals.password} />}
             <p className="text-xs text-muted-foreground mt-1">
-              {tab === "signup" ? "Use at least 6 characters with a mix of letters and numbers." : null}
+              {tab === "signup" ? "Use at least 6 characters with uppercase, numbers & symbols." : null}
             </p>
             {tab === "signup" && (
               <div className="mt-2 p-2.5 rounded-lg bg-primary/5 border border-primary/10 flex items-start gap-2">
