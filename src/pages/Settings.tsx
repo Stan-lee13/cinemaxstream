@@ -158,6 +158,18 @@ const Settings = () => {
           type: "action",
           value: false,
           onChange: () => adGuide.open()
+        },
+        {
+          label: "Replay Guided Tour",
+          description: "Walk through the app features step by step",
+          icon: <Sparkles className="w-4 h-4" />,
+          type: "action",
+          value: false,
+          onChange: () => {
+            onboarding.resetOnboarding();
+            navigate('/home');
+            setTimeout(() => onboarding.startOnboarding(), 1000);
+          }
         }
       ]
     }
