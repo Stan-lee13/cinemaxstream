@@ -17,7 +17,7 @@ export function useInteractiveOnboarding() {
   const [isRunning, setIsRunning] = useState(false);
   const isMobile = useIsMobile();
 
-  const steps = [
+  const steps: Array<{ title: string; intro: string; element?: string; position?: 'top' | 'bottom' | 'left' | 'right' }> = [
     {
       title: '👋 Welcome to CineMaxStream!',
       intro: 'Let us give you a quick interactive tour. We\'ll highlight each feature so you know exactly where everything is.',
@@ -34,7 +34,7 @@ export function useInteractiveOnboarding() {
       element: '[data-tour-id="search-bar"], [data-tour-id="mobile-search"]',
       title: '🔍 Search',
       intro: 'Find any movie or TV show instantly. Just start typing!',
-      position: 'bottom' as const,
+      position: 'bottom',
     },
     {
       element: '[data-tour-id="notifications-button"]',
