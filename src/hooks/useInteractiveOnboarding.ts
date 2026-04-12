@@ -5,7 +5,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import introJs from 'intro.js';
+import introJs, { type TooltipPosition } from 'intro.js';
 import 'intro.js/introjs.css';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useIsMobile } from '@/hooks/use-mobile';
