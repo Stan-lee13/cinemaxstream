@@ -324,4 +324,59 @@
       max-width: 80px;
     }
   }
+
+  /* intro.js dark theme overrides */
+  .introjs-tooltip {
+    background: hsl(var(--card)) !important;
+    color: hsl(var(--foreground)) !important;
+    border: 1px solid hsl(var(--border)) !important;
+    border-radius: 1rem !important;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5) !important;
+  }
+  .introjs-tooltip-title {
+    color: hsl(var(--foreground)) !important;
+  }
+  .introjs-tooltiptext {
+    color: hsl(var(--muted-foreground)) !important;
+  }
+  .introjs-button {
+    background: hsl(var(--primary)) !important;
+    color: hsl(var(--primary-foreground)) !important;
+    border: none !important;
+    border-radius: 0.5rem !important;
+    padding: 0.4rem 1rem !important;
+    font-size: 0.8rem !important;
+    text-shadow: none !important;
+  }
+  .introjs-button:hover {
+    opacity: 0.9 !important;
+  }
+  .introjs-skipbutton {
+    color: hsl(var(--muted-foreground)) !important;
+  }
+  .introjs-helperLayer {
+    border-radius: 0.75rem !important;
+    box-shadow: 0 0 0 5000px rgba(0,0,0,0.75) !important;
+  }
+  .introjs-progressbar {
+    background: hsl(var(--primary)) !important;
+  }
+  .introjs-progress {
+    background: hsl(var(--muted)) !important;
+  }
+  .introjs-bullets ul li a.active {
+    background: hsl(var(--primary)) !important;
+  }
+  .introjs-arrow.top {
+    border-bottom-color: hsl(var(--card)) !important;
+  }
+  .introjs-arrow.bottom {
+    border-top-color: hsl(var(--card)) !important;
+  }
+  .introjs-arrow.left {
+    border-right-color: hsl(var(--card)) !important;
+  }
+  .introjs-arrow.right {
+    border-left-color: hsl(var(--card)) !important;
+  }
 }

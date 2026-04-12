@@ -28,7 +28,7 @@ export interface SourceConfig {
 const SOURCE_CONFIGS: Record<number, SourceConfig> = {
   1: {
     key: 'vidrock',
-    label: 'Vidrock',
+    label: 'Source 1',
     domain: 'vidrock.net',
     isPremium: true,
     referrer: 'https://vidrock.net',
@@ -36,7 +36,7 @@ const SOURCE_CONFIGS: Record<number, SourceConfig> = {
   },
   2: {
     key: 'vidnest',
-    label: 'Vidnest',
+    label: 'Source 2',
     domain: 'vidnest.fun',
     isPremium: false,
     referrer: 'https://vidnest.fun',
@@ -44,7 +44,7 @@ const SOURCE_CONFIGS: Record<number, SourceConfig> = {
   },
   3: {
     key: 'videasy',
-    label: 'Videasy',
+    label: 'Source 3',
     domain: 'player.videasy.net',
     isPremium: false,
     referrer: 'https://player.videasy.net',
@@ -52,7 +52,7 @@ const SOURCE_CONFIGS: Record<number, SourceConfig> = {
   },
   4: {
     key: 'vidlink',
-    label: 'Vidlink',
+    label: 'Source 4',
     domain: 'vidlink.pro',
     isPremium: false,
     referrer: 'https://vidlink.pro',

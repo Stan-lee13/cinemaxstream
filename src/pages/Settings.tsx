@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card } from "@/components/ui/card";
+import { useInteractiveOnboarding } from '@/hooks/useInteractiveOnboarding';
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -30,11 +30,13 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useAdGuide } from '@/hooks/useAdGuide';
 import AdGuideModal from '@/components/AdGuideModal';
+import { Card } from "@/components/ui/card";
 
 const Settings = () => {
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
   const adGuide = useAdGuide();
+  const onboarding = useInteractiveOnboarding();
   const [notifications, setNotifications] = useState(true);
   const [autoPlay, setAutoPlay] = useState(true);
   const [highQuality, setHighQuality] = useState(false);
@@ -156,6 +158,18 @@ const Settings = () => {
           type: "action",
           value: false,
           onChange: () => adGuide.open()
+        },
+        {
+          label: "Replay Guided Tour",
+          description: "Walk through the app features step by step",
+          icon: <Sparkles className="w-4 h-4" />,
+          type: "action",
+          value: false,
+          onChange: () => {
+            onboarding.resetOnboarding();
+            navigate('/home');
+            setTimeout(() => onboarding.startOnboarding(), 1000);
+          }
         }
       ]
     }
