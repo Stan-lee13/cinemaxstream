@@ -179,7 +179,7 @@ const Privacy = () => {
                 For deeper inquiries into our defensive protocols, initiate a secure mail stream.
               </p>
                 <a
-                href="mailto:stanleyvic13@gmail.com"
+                href="mailto:cinemaxstream7@gmail.com"
                 className="inline-flex items-center h-14 px-10 bg-white text-black hover:bg-emerald-500 hover:text-white rounded-xl font-bold transition-all shadow-xl shadow-emerald-500/5 hover:scale-[1.02]"
                 >
                   Inquire via Signal

@@ -5,6 +5,7 @@ import BackButton from "@/components/BackButton";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import DeviceManagement from "@/components/DeviceManagement";
+import { PromoCodeSection } from "@/components/PromoCodeSection";
 import { useNavigate } from 'react-router-dom';
 
 const Account = () => {
@@ -194,6 +195,15 @@ const Account = () => {
           </div>
 
           <div className="grid grid-cols-1 gap-14">
+            {/* Promo Code / Subscription Status */}
+            <div className="space-y-4">
+              <h2 className="text-xs font-black text-gray-500 uppercase tracking-[0.3em] px-2 flex items-center gap-4">
+                Subscription
+                <div className="h-[1px] flex-1 bg-gradient-to-r from-white/10 to-transparent" />
+              </h2>
+              <PromoCodeSection />
+            </div>
+
             {/* Device Management Section */}
             <div className="space-y-8 bg-white/5 p-8 rounded-[40px] border border-white/5 backdrop-blur-3xl shadow-2xl shadow-black/40">
               <DeviceManagement userId={user.id} />

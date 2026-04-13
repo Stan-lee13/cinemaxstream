@@ -341,7 +341,7 @@ const ContactSupport: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-xs font-black text-gray-500 uppercase tracking-widest mb-1">Secure Mail</p>
-                      <p className="text-sm font-bold text-white">support@cinemax.com</p>
+                      <p className="text-sm font-bold text-white">cinemaxstream7@gmail.com</p>
                     </div>
                   </div>
                   <div className="flex gap-4 items-center group/item cursor-pointer">

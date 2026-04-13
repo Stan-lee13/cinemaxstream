@@ -109,10 +109,10 @@ const Terms = () => {
                 If you require clarification on these protocols, please establish an uplink via email.
               </p>
               <a
-                href="mailto:stanleyvic13@gmail.com"
+                href="mailto:cinemaxstream7@gmail.com"
                 className="inline-flex items-center h-12 px-8 bg-white text-black hover:bg-blue-500 hover:text-white rounded-xl font-bold transition-all"
               >
-                stanleyvic13@gmail.com
+                cinemaxstream7@gmail.com
               </a>
             </div>
           </div>

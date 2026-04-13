@@ -37,7 +37,7 @@ import {
 import LoadingState from "@/components/LoadingState";
 import { getErrorMessage } from "@/utils/errorHelpers";
 
-const ADMIN_EMAIL = "stanleyvic13@gmail.com";
+const ADMIN_EMAIL = "cinemaxstream7@gmail.com";
 
 interface UserData {
   id: string;

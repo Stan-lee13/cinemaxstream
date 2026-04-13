@@ -186,8 +186,22 @@ const MobileMenu: React.FC = () => {
                 to="/profile" 
                 className="flex items-center gap-3 text-white hover:text-cinemax-400 py-3 px-2 rounded-lg hover:bg-white/5 transition-colors"
               >
+                <User size={20} />
+                <span className="text-base font-medium">Profile</span>
+              </Link>
+              <Link 
+                to="/settings" 
+                className="flex items-center gap-3 text-white hover:text-cinemax-400 py-3 px-2 rounded-lg hover:bg-white/5 transition-colors"
+              >
                 <Settings size={20} />
-                <span className="text-base font-medium">Profile Settings</span>
+                <span className="text-base font-medium">Settings</span>
+              </Link>
+              <Link 
+                to="/upgrade" 
+                className="flex items-center gap-3 text-amber-400 hover:text-amber-300 py-3 px-2 rounded-lg hover:bg-amber-500/10 transition-colors"
+              >
+                <Crown size={20} />
+                <span className="text-base font-medium">Upgrade / Promo</span>
               </Link>
               <div className="border-t border-gray-700 my-2"></div>
               <button 
