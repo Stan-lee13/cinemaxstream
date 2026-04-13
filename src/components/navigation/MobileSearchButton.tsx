@@ -14,6 +14,7 @@ const MobileSearchButton: React.FC = () => {
         size="icon"
         onClick={() => setIsOpen(true)}
         className="md:hidden text-foreground hover:text-primary"
+        data-tour-id="mobile-search"
         aria-label="Open search"
       >
         <Search className="h-5 w-5" />
