@@ -9,6 +9,7 @@ import { useTheme } from '@/hooks/themeContext';
 import BackButton from "@/components/BackButton";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { PromoCodeSection } from "@/components/PromoCodeSection";
 import { toast } from 'sonner';
 import {
   Monitor,
@@ -297,7 +298,12 @@ const Settings = () => {
             ))}
           </div>
 
-          <div className="mt-20 p-10 rounded-[32px] bg-gradient-to-br from-blue-900/20 to-purple-900/20 border border-white/5 flex flex-col md:flex-row items-center justify-between gap-8 group">
+          {/* Promo Code Section */}
+          <div className="mt-10">
+            <PromoCodeSection />
+          </div>
+
+          <div className="mt-10 p-10 rounded-[32px] bg-gradient-to-br from-blue-900/20 to-purple-900/20 border border-white/5 flex flex-col md:flex-row items-center justify-between gap-8 group">
             <div>
               <h3 className="text-2xl font-black mb-2 uppercase tracking-tighter">Professional Calibration?</h3>
               <p className="text-gray-400 font-medium italic">Our expert systems are ready to optimize your setup.</p>

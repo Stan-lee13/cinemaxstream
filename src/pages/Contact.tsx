@@ -159,7 +159,7 @@ const Contact = () => {
                   <Mail className="w-5 h-5 text-blue-400" />
                   <h3 className="font-black uppercase tracking-tighter">Direct</h3>
                 </div>
-                <p className="text-xs text-gray-500">support@cinemax-stream.com</p>
+                <p className="text-xs text-gray-500">cinemaxstream7@gmail.com</p>
               </Card>
             </motion.div>
           </div>
