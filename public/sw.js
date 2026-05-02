@@ -35,7 +35,7 @@ const MAX_AGE = {
 };
 
 // Helper function to clean old cache entries
-const cleanCache = async (cacheName, maxSize = MAX_CACHE_SIZE) => {
+const cleanCache = async (cacheName, maxSize = 100) => {
   const cache = await caches.open(cacheName);
   const keys = await cache.keys();
   if (keys.length > maxSize) {
@@ -44,12 +44,13 @@ const cleanCache = async (cacheName, maxSize = MAX_CACHE_SIZE) => {
   }
 };
 
-// Check if cache entry is expired
-const isCacheExpired = (response) => {
+// Check if cache entry is expired (compares against numeric ms, not the MAX_AGE map)
+const isCacheExpired = (response, kind = 'dynamic') => {
   const dateHeader = response.headers.get('date');
   if (!dateHeader) return false;
   const cacheDate = new Date(dateHeader).getTime();
-  return Date.now() - cacheDate > MAX_AGE;
+  const ttl = MAX_AGE[kind] ?? MAX_AGE.dynamic;
+  return Date.now() - cacheDate > ttl;
 };
 
 // Install event - cache static assets
