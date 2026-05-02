@@ -129,7 +129,7 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       caches.open(STATIC_CACHE).then(cache => {
         return cache.match(request).then(response => {
-          if (response && !isCacheExpired(response)) {
+          if (response && !isCacheExpired(response, 'static')) {
             return response;
           }
           return fetch(request).then(fetchResponse => {
@@ -149,7 +149,7 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       caches.open(IMAGE_CACHE).then(cache => {
         return cache.match(request).then(response => {
-          if (response && !isCacheExpired(response)) {
+          if (response && !isCacheExpired(response, 'images')) {
             return response;
           }
           return fetch(request).then(fetchResponse => {
@@ -214,7 +214,7 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(request)
       .then(response => {
-        if (response && !isCacheExpired(response)) {
+        if (response && !isCacheExpired(response, 'dynamic')) {
           return response;
         }
         return fetch(request).then(fetchResponse => {
