@@ -226,8 +226,8 @@ const Walkthrough = ({ forceShow = false, onComplete }: WalkthroughProps) => {
     onComplete?.();
   };
 
-  // Don't render if not authenticated or walkthrough already seen
-  if (!isAuthenticated || (!forceShow && hasSeenWalkthrough)) {
+  // Don't render if not authenticated, or already seen and not manually re-triggered
+  if (!isAuthenticated || (!forceShow && !manualTrigger && hasSeenWalkthrough)) {
     return null;
   }
 
