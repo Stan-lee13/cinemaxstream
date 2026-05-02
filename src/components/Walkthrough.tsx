@@ -137,24 +137,31 @@ const Walkthrough = ({ forceShow = false, onComplete }: WalkthroughProps) => {
   const location = useLocation();
   const [hasSeenWalkthrough, setHasSeenWalkthrough] = useLocalStorage<boolean>('walkthrough-completed', false);
   const [isOpen, setIsOpen] = useState(false);
+  const [manualTrigger, setManualTrigger] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [showSpotlight, setShowSpotlight] = useState(false);
   const spotlightRef = useRef<HTMLDivElement>(null);
 
   const steps = isMobile ? mobileSteps : desktopSteps;
 
-  // Only show walkthrough to authenticated users on non-landing pages
+  // Listen for external trigger (e.g. Settings → Replay Tour)
   useEffect(() => {
-    // Don't show on landing page (/) even if authenticated
-    if (location.pathname === '/') {
-      return;
-    }
+    const handler = () => {
+      setHasSeenWalkthrough(false);
+      setCurrentStep(0);
+      setManualTrigger(true);
+      setIsOpen(true);
+    };
+    window.addEventListener('walkthrough:start', handler);
+    return () => window.removeEventListener('walkthrough:start', handler);
+  }, [setHasSeenWalkthrough]);
+
+  // Auto-show for first-time authenticated users on non-landing pages
+  useEffect(() => {
+    if (location.pathname === '/') return;
 
     if ((forceShow || !hasSeenWalkthrough) && isAuthenticated && user) {
-      // Small delay to let the app load first
-      const timer = setTimeout(() => {
-        setIsOpen(true);
-      }, 1000);
+      const timer = setTimeout(() => setIsOpen(true), 1000);
       return () => clearTimeout(timer);
     }
   }, [forceShow, hasSeenWalkthrough, isAuthenticated, user, location.pathname]);
@@ -208,6 +215,7 @@ const Walkthrough = ({ forceShow = false, onComplete }: WalkthroughProps) => {
     setIsOpen(false);
     setCurrentStep(0);
     setShowSpotlight(false);
+    setManualTrigger(false);
     onComplete?.();
   };
 
@@ -216,11 +224,12 @@ const Walkthrough = ({ forceShow = false, onComplete }: WalkthroughProps) => {
     setIsOpen(false);
     setCurrentStep(0);
     setShowSpotlight(false);
+    setManualTrigger(false);
     onComplete?.();
   };
 
-  // Don't render if not authenticated or walkthrough already seen
-  if (!isAuthenticated || (!forceShow && hasSeenWalkthrough)) {
+  // Don't render if not authenticated, or already seen and not manually re-triggered
+  if (!isAuthenticated || (!forceShow && !manualTrigger && hasSeenWalkthrough)) {
     return null;
   }
 
