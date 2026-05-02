@@ -10,22 +10,14 @@ import ProductionMonitor from "@/components/ProductionMonitor";
 import Walkthrough from "@/components/Walkthrough";
 import AdGuideModal from "@/components/AdGuideModal";
 import { useAdGuide } from "@/hooks/useAdGuide";
-import { useInteractiveOnboarding } from "@/hooks/useInteractiveOnboarding";
-import { useAuth } from "@/contexts/authHooks";
+import { useNewContentNotifier } from "@/hooks/useNewContentNotifier";
 
 const AppInner = () => {
   const adGuide = useAdGuide();
-  const { isAuthenticated } = useAuth();
-  const onboarding = useInteractiveOnboarding();
 
-  // Auto-start interactive onboarding for first-time authenticated users
-  useEffect(() => {
-    if (isAuthenticated && !onboarding.completed && !onboarding.isRunning) {
-      // Delay to let page render
-      const t = setTimeout(() => onboarding.startOnboarding(), 2000);
-      return () => clearTimeout(t);
-    }
-  }, [isAuthenticated, onboarding.completed, onboarding.isRunning]);
+  // Subscribes to Supabase Realtime + polls TMDB to deliver in-app + native
+  // browser notifications when new movies/series drop.
+  useNewContentNotifier();
 
   return (
     <>
