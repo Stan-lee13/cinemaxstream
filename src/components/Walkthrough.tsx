@@ -215,6 +215,7 @@ const Walkthrough = ({ forceShow = false, onComplete }: WalkthroughProps) => {
     setIsOpen(false);
     setCurrentStep(0);
     setShowSpotlight(false);
+    setManualTrigger(false);
     onComplete?.();
   };
 
@@ -223,6 +224,7 @@ const Walkthrough = ({ forceShow = false, onComplete }: WalkthroughProps) => {
     setIsOpen(false);
     setCurrentStep(0);
     setShowSpotlight(false);
+    setManualTrigger(false);
     onComplete?.();
   };
 
