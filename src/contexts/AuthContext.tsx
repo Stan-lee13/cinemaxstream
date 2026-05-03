@@ -16,7 +16,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isPremium, setIsPremium] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
+  const userRef = useRef<User | null>(null);
 
+  useEffect(() => { userRef.current = user; }, [user]);
   useEffect(() => {
     let mounted = true;
 
