@@ -94,8 +94,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Periodic blocked user check every 2 minutes for real-time enforcement
     const blockedCheckInterval = setInterval(() => {
-      if (user) {
-        checkBlockedStatus(user.id);
+      const u = userRef.current;
+      if (u) {
+        checkBlockedStatus(u.id);
       }
     }, 2 * 60 * 1000);
 
