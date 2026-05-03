@@ -67,6 +67,46 @@ export function useEventNotifications() {
     load();
   }, [user]);
 
+  // Realtime sync: keep NotificationBar in sync across tabs/devices
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel(`user-notifications-${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'user_notifications', filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const n = payload.new as {
+              id: string; title: string; message: string; created_at: string;
+              route: string | null; is_read: boolean; type: string;
+            };
+            setNotifications(prev => {
+              if (prev.some(p => p.id === n.id)) return prev;
+              return [{
+                id: n.id,
+                title: n.title,
+                message: n.message,
+                date: n.created_at,
+                route: n.route ?? undefined,
+                isRead: n.is_read,
+                type: n.type as AppNotification['type'],
+              }, ...prev].slice(0, 50);
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            const n = payload.new as { id: string; is_read: boolean };
+            setNotifications(prev => prev.map(p => p.id === n.id ? { ...p, isRead: n.is_read } : p));
+          } else if (payload.eventType === 'DELETE') {
+            const n = payload.old as { id: string };
+            setNotifications(prev => prev.filter(p => p.id !== n.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
+
   // Sync to localStorage for non-auth fallback
   useEffect(() => {
     if (!user && loaded) {
