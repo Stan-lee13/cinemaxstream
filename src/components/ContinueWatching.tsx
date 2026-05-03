@@ -21,7 +21,9 @@ const ContinueWatchingCard: React.FC<ContinueWatchingCardProps> = memo(({ item, 
   const navigate = useNavigate();
 
   const handleContinue = () => {
-    navigate(`/content/${item.contentId}`);
+    navigate(`/content/${item.contentId}`, {
+      state: { contentType: item.contentType },
+    });
   };
 
   const formatProgress = (progress: number) => {
@@ -125,7 +127,7 @@ const ContinueWatchingCard: React.FC<ContinueWatchingCardProps> = memo(({ item, 
 ContinueWatchingCard.displayName = 'ContinueWatchingCard';
 
 const ContinueWatching: React.FC = memo(() => {
-  const { continueWatchingItems, isLoading } = useContinueWatching();
+  const { continueWatchingItems, isLoading, removeItem } = useContinueWatching();
 
   if (isLoading) {
     return (
@@ -164,7 +166,7 @@ const ContinueWatching: React.FC = memo(() => {
         <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-none -mx-4 px-4">
           <AnimatePresence>
             {continueWatchingItems.map((item) => (
-              <ContinueWatchingCard key={item.id} item={item} />
+              <ContinueWatchingCard key={item.id} item={item} onRemove={removeItem} />
             ))}
           </AnimatePresence>
         </div>
