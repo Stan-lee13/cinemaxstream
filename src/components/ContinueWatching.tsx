@@ -127,7 +127,7 @@ const ContinueWatchingCard: React.FC<ContinueWatchingCardProps> = memo(({ item, 
 ContinueWatchingCard.displayName = 'ContinueWatchingCard';
 
 const ContinueWatching: React.FC = memo(() => {
-  const { continueWatchingItems, isLoading } = useContinueWatching();
+  const { continueWatchingItems, isLoading, removeItem } = useContinueWatching();
 
   if (isLoading) {
     return (
