@@ -5,8 +5,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-// Admin emails from environment variable (comma-separated)
-const ADMIN_EMAILS = import.meta.env.VITE_ADMIN_EMAILS?.split(',').map(e => e.trim().toLowerCase()) || [];
+// Admin status is verified server-side via user_roles + has_role(); no client-side email lists.
 
 /**
  * Check if current user has premium access
