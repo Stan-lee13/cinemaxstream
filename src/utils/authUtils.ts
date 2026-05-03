@@ -217,12 +217,25 @@ export const validatePremiumCode = async (code: string): Promise<boolean> => {
 /**
  * Generate a secure random password
  */
-export const generateSecurePassword = (length: number = 12): string => {
-  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+';
-  let password = charset[Math.floor(Math.random() * 26)] + charset[Math.floor(Math.random() * 26) + 26] + 
-                 charset[Math.floor(Math.random() * 10) + 52] + charset[Math.floor(Math.random() * 12) + 62];
-  for (let i = 4; i < length; i++) password += charset[Math.floor(Math.random() * charset.length)];
-  return password.split('').sort(() => 0.5 - Math.random()).join('');
+export const generateSecurePassword = (length: number = 16): string => {
+  const lowers = 'abcdefghijklmnopqrstuvwxyz';
+  const uppers = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const digits = '0123456789';
+  const symbols = '!@#$%^&*()_+-=[]{}';
+  const all = lowers + uppers + digits + symbols;
+  const buf = new Uint32Array(length);
+  crypto.getRandomValues(buf);
+  const pick = (set: string, n: number) => set[n % set.length];
+  const chars = [pick(lowers, buf[0]), pick(uppers, buf[1]), pick(digits, buf[2]), pick(symbols, buf[3])];
+  for (let i = 4; i < length; i++) chars.push(pick(all, buf[i]));
+  // Cryptographic shuffle
+  const shuffleBuf = new Uint32Array(chars.length);
+  crypto.getRandomValues(shuffleBuf);
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = shuffleBuf[i] % (i + 1);
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+  return chars.join('');
 };
 
 /**
