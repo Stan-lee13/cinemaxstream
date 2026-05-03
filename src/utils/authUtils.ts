@@ -52,8 +52,7 @@ export const isAdmin = async (): Promise<boolean> => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return false;
     
-    // Root admin email check from environment variable
-    if (user.email && ADMIN_EMAILS.includes(user.email.toLowerCase())) return true;
+    // Admin checked exclusively via user_roles RLS table
 
     // Check user_roles table
     const { data: roleData } = await supabase
