@@ -12,112 +12,122 @@ interface UpgradeRequest {
   tier: 'premium' | 'free';
   expiresAt: string;
   codeId?: string;
+  promoCode?: string;
 }
 
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // Create admin client with service role key
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
+      auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // Verify the request is from an authenticated user
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "No authorization header" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    if (!authHeader) return json({ error: "No authorization header" }, 401);
 
-    // Create regular client to verify the user
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: {
-        headers: { Authorization: authHeader },
-      },
+      global: { headers: { Authorization: authHeader } },
     });
 
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    if (authError || !user) return json({ error: "Unauthorized" }, 401);
 
     const body: UpgradeRequest = await req.json();
 
-    // Security: User can only upgrade themselves, or be an admin
+    // Authorization: self or admin only
     if (body.userId !== user.id) {
-      // Check if requester is admin
       const { data: adminRole } = await supabaseAdmin
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id)
         .eq('role', 'admin')
         .maybeSingle();
-
-      const adminEmails = Deno.env.get("ADMIN_EMAILS")?.split(',').map(e => e.trim().toLowerCase()) || [];
-      const isRootAdmin = user.email && adminEmails.includes(user.email.toLowerCase());
-
-      if (!adminRole && !isRootAdmin) {
-        return new Response(
-          JSON.stringify({ error: "Cannot upgrade other users" }),
-          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
+      if (!adminRole) return json({ error: "Cannot upgrade other users" }, 403);
     }
 
-    console.log(`Upgrading user ${body.userId} to ${body.tier} until ${body.expiresAt}`);
+    let codeId = body.codeId;
+    let expiresAt = body.expiresAt;
 
-    // Update user_profiles with admin privileges
+    // Atomic server-side promo validation when promoCode provided
+    if (body.promoCode) {
+      const normalized = body.promoCode.trim().toUpperCase();
+      const { data: codeData, error: codeErr } = await supabaseAdmin
+        .from('premium_codes')
+        .select('*')
+        .eq('code', normalized)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (codeErr || !codeData) return json({ error: "Invalid promo code" }, 400);
+
+      if (codeData.expires_at && new Date(codeData.expires_at) < new Date())
+        return json({ error: "Promo code expired" }, 400);
+
+      if (codeData.max_uses !== null && (codeData.current_uses ?? 0) >= codeData.max_uses)
+        return json({ error: "Promo code usage limit reached" }, 400);
+
+      if (codeData.per_user_limit !== null) {
+        const { count } = await supabaseAdmin
+          .from('promo_code_redemptions')
+          .select('*', { count: 'exact', head: true })
+          .eq('code_id', codeData.id)
+          .eq('user_id', body.userId);
+        if (count !== null && count >= codeData.per_user_limit)
+          return json({ error: "You have already redeemed this code" }, 400);
+      }
+
+      const expiry = new Date();
+      if (codeData.months_granted && codeData.months_granted > 0) {
+        expiry.setMonth(expiry.getMonth() + codeData.months_granted);
+      } else {
+        expiry.setDate(expiry.getDate() + (codeData.duration_days ?? 30));
+      }
+      expiresAt = expiry.toISOString();
+      codeId = codeData.id;
+
+      // Record redemption
+      await supabaseAdmin.from('promo_code_redemptions').insert({
+        code_id: codeData.id,
+        user_id: body.userId,
+      });
+      await supabaseAdmin
+        .from('premium_codes')
+        .update({ current_uses: (codeData.current_uses ?? 0) + 1 })
+        .eq('id', codeData.id);
+    }
+
     const { error: profileError } = await supabaseAdmin
       .from('user_profiles')
       .update({
         subscription_tier: body.tier,
         role: body.tier,
-        subscription_expires_at: body.expiresAt
+        subscription_expires_at: expiresAt,
       })
       .eq('id', body.userId);
 
     if (profileError) {
-      console.error('Profile update error:', profileError);
-      return new Response(
-        JSON.stringify({ error: "Failed to update profile", details: profileError.message }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return json({ error: "Failed to update profile", details: profileError.message }, 500);
     }
 
-    // Upsert user_roles
     if (body.tier === 'premium') {
-      const { error: roleError } = await supabaseAdmin
+      await supabaseAdmin
         .from('user_roles')
-        .upsert({ 
-          user_id: body.userId, 
-          role: 'premium',
-          granted_at: new Date().toISOString()
-        }, { 
-          onConflict: 'user_id,role' 
-        });
-
-      if (roleError) {
-        console.error('Role upsert error:', roleError);
-        // Continue anyway - profile is source of truth
-      }
+        .upsert(
+          { user_id: body.userId, role: 'premium', granted_at: new Date().toISOString() },
+          { onConflict: 'user_id,role' }
+        );
     } else {
-      // Downgrade - remove premium role
       await supabaseAdmin
         .from('user_roles')
         .delete()
@@ -125,35 +135,24 @@ const handler = async (req: Request): Promise<Response> => {
         .eq('role', 'premium');
     }
 
-    // Update promo code usage if provided
-    if (body.codeId) {
+    // Legacy path: increment usage when called with codeId only
+    if (!body.promoCode && codeId) {
       const { data: codeData } = await supabaseAdmin
         .from('premium_codes')
         .select('current_uses')
-        .eq('id', body.codeId)
-        .single();
-
+        .eq('id', codeId)
+        .maybeSingle();
       if (codeData) {
         await supabaseAdmin
           .from('premium_codes')
           .update({ current_uses: (codeData.current_uses ?? 0) + 1 })
-          .eq('id', body.codeId);
+          .eq('id', codeId);
       }
     }
 
-    console.log(`Successfully upgraded user ${body.userId}`);
-
-    return new Response(
-      JSON.stringify({ success: true, tier: body.tier, expiresAt: body.expiresAt }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-
+    return json({ success: true, tier: body.tier, expiresAt });
   } catch (error) {
-    console.error("Upgrade error:", error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Internal server error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return json({ error: error instanceof Error ? error.message : "Internal server error" }, 500);
   }
 };
 

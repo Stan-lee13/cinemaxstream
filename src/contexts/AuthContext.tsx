@@ -1,4 +1,4 @@
-import { useState, useEffect, ReactNode } from 'react';
+import { useState, useEffect, useRef, ReactNode } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from '@supabase/supabase-js';
 import { toast } from 'sonner';
@@ -16,7 +16,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isPremium, setIsPremium] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
+  const userRef = useRef<User | null>(null);
 
+  useEffect(() => { userRef.current = user; }, [user]);
   useEffect(() => {
     let mounted = true;
 
@@ -92,8 +94,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Periodic blocked user check every 2 minutes for real-time enforcement
     const blockedCheckInterval = setInterval(() => {
-      if (user) {
-        checkBlockedStatus(user.id);
+      const u = userRef.current;
+      if (u) {
+        checkBlockedStatus(u.id);
       }
     }, 2 * 60 * 1000);
 
