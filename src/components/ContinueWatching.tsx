@@ -166,7 +166,7 @@ const ContinueWatching: React.FC = memo(() => {
         <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-none -mx-4 px-4">
           <AnimatePresence>
             {continueWatchingItems.map((item) => (
-              <ContinueWatchingCard key={item.id} item={item} />
+              <ContinueWatchingCard key={item.id} item={item} onRemove={removeItem} />
             ))}
           </AnimatePresence>
         </div>
