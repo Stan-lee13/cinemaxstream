@@ -21,7 +21,9 @@ const ContinueWatchingCard: React.FC<ContinueWatchingCardProps> = memo(({ item, 
   const navigate = useNavigate();
 
   const handleContinue = () => {
-    navigate(`/content/${item.contentId}`);
+    navigate(`/content/${item.contentId}`, {
+      state: { contentType: item.contentType },
+    });
   };
 
   const formatProgress = (progress: number) => {
