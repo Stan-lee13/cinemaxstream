@@ -444,6 +444,36 @@ export type Database = {
           },
         ]
       }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       stream_health_metrics: {
         Row: {
           checked_at: string | null
@@ -633,30 +663,48 @@ export type Database = {
         Row: {
           completed: boolean | null
           content_id: string | null
+          content_type: string | null
           created_at: string
+          duration_seconds: number | null
           episode_id: string | null
+          episode_number: number | null
           id: string
           last_watched: string
+          poster_url: string | null
+          season_number: number | null
+          title: string | null
           user_id: string
           watch_position: number | null
         }
         Insert: {
           completed?: boolean | null
           content_id?: string | null
+          content_type?: string | null
           created_at?: string
+          duration_seconds?: number | null
           episode_id?: string | null
+          episode_number?: number | null
           id?: string
           last_watched?: string
+          poster_url?: string | null
+          season_number?: number | null
+          title?: string | null
           user_id: string
           watch_position?: number | null
         }
         Update: {
           completed?: boolean | null
           content_id?: string | null
+          content_type?: string | null
           created_at?: string
+          duration_seconds?: number | null
           episode_id?: string | null
+          episode_number?: number | null
           id?: string
           last_watched?: string
+          poster_url?: string | null
+          season_number?: number | null
+          title?: string | null
           user_id?: string
           watch_position?: number | null
         }
