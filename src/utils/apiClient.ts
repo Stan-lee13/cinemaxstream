@@ -26,7 +26,7 @@ class ApiClient {
   constructor() {
     const appConfig = getConfig();
     this.config = {
-      baseURL: appConfig.apiBaseUrl,
+      baseURL: '',
       timeout: appConfig.requestTimeout,
       maxRetries: appConfig.maxRetries,
       retryDelay: 1000
