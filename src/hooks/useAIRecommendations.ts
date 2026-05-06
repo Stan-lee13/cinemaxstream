@@ -8,6 +8,13 @@ export interface AIRecommendation {
   reason: string;
   genre: string;
   confidence: number;
+  tmdb_id?: number;
+  poster_path?: string | null;
+  backdrop_path?: string | null;
+  overview?: string;
+  vote_average?: number;
+  content_type?: 'movie' | 'series';
+  year?: string;
 }
 
 export interface UserWatchData {
