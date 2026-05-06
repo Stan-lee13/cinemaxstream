@@ -15,6 +15,15 @@ export function getNativePermission(): NotificationPermission {
 export async function requestNativePermission(): Promise<boolean> {
   if (!('Notification' in window)) return false;
   const result = await Notification.requestPermission();
+  if (result === 'granted') {
+    // Best-effort Web Push subscribe so notifications work even when the app is closed.
+    try {
+      const { subscribeToWebPush } = await import('@/utils/webPush');
+      await subscribeToWebPush();
+    } catch {
+      /* ignore */
+    }
+  }
   return result === 'granted';
 }
 
